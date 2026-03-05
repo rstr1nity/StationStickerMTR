@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.mtr.core.data.Station;
 import org.mtr.mod.client.MinecraftClientData;
 import org.mtr.core.data.Position;
+import com.mojang.math.Vector3f;
 
 public class StationStickerRenderer implements BlockEntityRenderer<StationStickerBlockEntity> {
     private static final float STICKER_WIDTH = 0.5f;
@@ -61,19 +62,45 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
 
         poseStack.pushPose();
 
+        // Центр блока
         poseStack.translate(0.5, 0.5, 0.5);
-        poseStack.mulPose(Direction.UP.getRotation());
-        poseStack.mulPose(facing.getOpposite().getRotation());
-        poseStack.translate(0, 0, 0.5 - STICKER_DEPTH / 2);
 
+        // 🔄 РАЗНАЯ логика для разных сторон!
+        if (facing == Direction.UP) {
+            // Блок на ЗЕМЛЕ - текст смотрит ВВЕРХ
+            poseStack.mulPose(Vector3f.YP.rotationDegrees(180)); // Поворот на 180° чтобы читался
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
+            poseStack.translate(0, 0.375f, 0);
+        } else if (facing == Direction.DOWN) {
+            // Блок на ПОТОЛКЕ - текст смотрит ВНИЗ
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(0));
+            poseStack.translate(0, -0.01f, 0);
+        } else {
+            // Блок на СТЕНЕ - текст ВЕРТИКАЛЬНО
+//            poseStack.mulPose(Vector3f.YP.rotationDegrees(90));
+            poseStack.mulPose(Vector3f.ZP.rotationDegrees(180));
+            poseStack.translate(0, 0, -0.379f);
+        }
+
+        // Рисуем фон
         renderColoredRect(poseStack, bufferSource,
                 -STICKER_WIDTH/2, -STICKER_HEIGHT/2,
                 STICKER_WIDTH, STICKER_HEIGHT,
                 stationColor | 0xFF000000,
                 packedLight);
 
+        // Масштаб текста
+        poseStack.pushPose();
+        // Для блока на земле инвертируем Y чтобы текст не был перевернут
+        if (facing == Direction.UP) {
+            poseStack.scale(0.025f, -0.025f, 0.025f);
+        } else {
+            poseStack.scale(-0.025f, 0.025f, 0.025f);
+        }
+
         renderText(poseStack, bufferSource, stationName, packedLight);
 
+        poseStack.popPose();
         poseStack.popPose();
     }
 
@@ -107,12 +134,19 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                             String text, int light) {
         if (text == null || text.isEmpty()) return;
 
+        // Получаем ширину текста в пикселях
+        float width = Minecraft.getInstance().font.width(text);
+
+        // Рисуем.
+        // X: -width / 2 (центрируем)
+        // Y: -4 (немного ниже центра, в единицах шрифта)
+        // Важно: из-за scale(0.025f) эти координаты станут маленькими в мире
         Minecraft.getInstance().font.drawInBatch(
                 text,
-                -Minecraft.getInstance().font.width(text) / 2.0f,
-                -4,
-                0xFFFFFF,
-                false,
+                -width / 2.0f,
+                -4.0f,
+                0xFFFFFF, // Белый цвет
+                false,    // Без тени
                 poseStack.last().pose(),
                 bufferSource,
                 false,

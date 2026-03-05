@@ -27,10 +27,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
+
+
 public class StationStickerBlock extends BaseEntityBlock {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
     // Добавь эти константы для тонкого хитбокса:
+    protected static final VoxelShape UP_AABB = Block.box(0, 14, 0, 16, 16, 16);
+    protected static final VoxelShape DOWN_AABB = Block.box(0, 0, 0, 16, 2, 16);
     protected static final VoxelShape NORTH_AABB = Block.box(0, 0, 14, 16, 16, 16);
     protected static final VoxelShape SOUTH_AABB = Block.box(0, 0, 0, 16, 16, 2);
     protected static final VoxelShape WEST_AABB = Block.box(14, 0, 0, 16, 16, 16);
@@ -46,7 +50,6 @@ public class StationStickerBlock extends BaseEntityBlock {
                 .setValue(FACING, Direction.NORTH));
     }
 
-    // Добавь этот метод для тонкого хитбокса:
     @Override
     public VoxelShape getShape(BlockState state, net.minecraft.world.level.BlockGetter level,
                                BlockPos pos, CollisionContext context) {
@@ -55,7 +58,8 @@ public class StationStickerBlock extends BaseEntityBlock {
             case SOUTH -> SOUTH_AABB;
             case WEST -> WEST_AABB;
             case EAST -> EAST_AABB;
-            default -> NORTH_AABB;
+            case UP -> UP_AABB;       // ← Добавлено
+            case DOWN -> DOWN_AABB;   // ← Добавлено
         };
     }
 
@@ -64,11 +68,12 @@ public class StationStickerBlock extends BaseEntityBlock {
         builder.add(FACING);
     }
 
+
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite());
+                .setValue(FACING, context.getClickedFace()); // ← Используем сторону клика!
     }
 
     @Nullable
