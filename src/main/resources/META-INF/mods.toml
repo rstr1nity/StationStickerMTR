@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[40,)"
+license="All rights reserved"
+
+[[mods]]
+modId="stationsticker"
+version="1.0.0"
+displayName="Station Sticker"
+description='''
+Adds station sticker signs for MTR
+'''
+authors="YourName"
+logoFile="logo.png"
+
+[[dependencies.stationsticker]]
+modId="forge"
+mandatory=true
+versionRange="[43.4.6,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.stationsticker]]
+modId="mtr"
+mandatory=false  # ИЗМЕНЕНО С true НА false!
+versionRange="[4.0.2,)"
+ordering="AFTER"
+side="BOTH"

@@ -1,0 +1,6 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "particle": "stationsticker:block/station_sticker"
+  }
+}
