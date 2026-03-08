@@ -89,7 +89,8 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                 1.0f,
                 0.325f,
                 stationColor | 0xFF000000,
-                packedLight
+                packedLight,
+                -0.01f
         );
 
 
@@ -170,29 +171,29 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
     }
     private void renderColoredRect(PoseStack poseStack, MultiBufferSource bufferSource,
                                    float x, float y, float width, float height,
-                                   int color, int light) {
+                                   int color, int light, float zOffset) {
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.text(
+                new ResourceLocation("textures/misc/white.png")));
 
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.text(new net.minecraft.resources.ResourceLocation("textures/misc/white.png")));
-
-        vertexConsumer.vertex(poseStack.last().pose(), x, y, 0)
+        vertexConsumer.vertex(poseStack.last().pose(), x, y, zOffset)
                 .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
                 .uv(0, 0)
                 .uv2(light)
                 .endVertex();
 
-        vertexConsumer.vertex(poseStack.last().pose(), x + width, y, 0)
+        vertexConsumer.vertex(poseStack.last().pose(), x + width, y, zOffset)
                 .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
                 .uv(1, 0)
                 .uv2(light)
                 .endVertex();
 
-        vertexConsumer.vertex(poseStack.last().pose(), x + width, y + height, 0)
+        vertexConsumer.vertex(poseStack.last().pose(), x + width, y + height, zOffset)
                 .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
                 .uv(1, 1)
                 .uv2(light)
                 .endVertex();
 
-        vertexConsumer.vertex(poseStack.last().pose(), x, y + height, 0)
+        vertexConsumer.vertex(poseStack.last().pose(), x, y + height, zOffset)
                 .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
                 .uv(0, 1)
                 .uv2(light)
