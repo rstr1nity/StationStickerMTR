@@ -44,6 +44,16 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         if (level == null) return;
 
         Direction facing = state.getValue(StationStickerBlock.FACING);
+
+        int[] lineInfo = getLineInfo(level, pos, facing);
+        int lineLength = lineInfo[0];
+        int indexInLine = lineInfo[1];
+        int desiredSpacing = 8;
+
+        int spacing = Math.max(1, desiredSpacing);
+
+
+
         Station station = findStationAt(pos);
 
         if (station == null) return;
@@ -52,7 +62,8 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         int stationColor = station.getColor();
 
         renderSticker(poseStack, bufferSource, facing,
-                stationName, stationColor, packedLight);
+                stationName, stationColor, packedLight,
+                lineLength, indexInLine);
     }
 
     private Station findStationAt(BlockPos pos) {
@@ -61,10 +72,57 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                 .findFirst()
                 .orElse(null);
     }
+    private int[] getLineInfo(Level level, BlockPos pos, Direction facing) {
 
+        Direction dir1;
+        Direction dir2;
+
+        // Определяем ось линии
+        if (facing == Direction.NORTH || facing == Direction.SOUTH) {
+            dir1 = Direction.WEST;
+            dir2 = Direction.EAST;
+        } else {
+            dir1 = Direction.NORTH;
+            dir2 = Direction.SOUTH;
+        }
+
+        int length = 1;
+        int index = 0;
+
+        // Идём назад
+        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
+        checkPos.set(pos);
+
+        for (int i = 0; i < 128; i++) {
+            checkPos.move(dir1);
+
+            if (!(level.getBlockState(checkPos).getBlock() instanceof StationStickerBlock)) {
+                break;
+            }
+
+            length++;
+            index++;
+        }
+
+        // Идём вперёд
+        checkPos.set(pos);
+
+        for (int i = 0; i < 128; i++) {
+            checkPos.move(dir2);
+
+            if (!(level.getBlockState(checkPos).getBlock() instanceof StationStickerBlock)) {
+                break;
+            }
+
+            length++;
+        }
+
+        return new int[]{length, index};
+    }
     private void renderSticker(PoseStack poseStack, MultiBufferSource bufferSource,
                                Direction facing, String stationName,
-                               int stationColor, int packedLight) {
+                               int stationColor, int packedLight,
+                               int lineLength, int indexInLine) {
 
         poseStack.pushPose();
 
@@ -101,8 +159,12 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         } else {
             poseStack.scale(-0.025f, 0.025f, 0.025f);
         }
-
-        renderText(poseStack, bufferSource, stationName, packedLight);
+        int desiredSpacing = 8;
+        int textCount = Math.max(1, lineLength / desiredSpacing);
+        int spacing = Math.max(1, lineLength / textCount);
+        if (indexInLine % spacing == 0) {
+            renderText(poseStack, bufferSource, stationName, packedLight);
+        }
 
         poseStack.popPose();
         poseStack.popPose();
