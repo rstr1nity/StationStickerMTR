@@ -128,14 +128,33 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
 
         poseStack.translate(0.5, 0.5, 0.501);
 
+// ПРАВИЛЬНЫЙ поворот для каждой стороны
         if (facing == Direction.UP) {
-            poseStack.mulPose(Vector3f.YP.rotationDegrees(180));
+            // Верхняя грань
             poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
             poseStack.translate(0, 0.375f, 0);
-        } else if (facing == Direction.DOWN) {
+        }
+        else if (facing == Direction.DOWN) {
+            // Нижняя грань
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(-90));
             poseStack.translate(0, -0.01f, 0);
-        } else {
-            poseStack.mulPose(Vector3f.ZP.rotationDegrees(180));
+        }
+        else {
+            // Для всех стен - поворачиваем так, чтобы текст смотрел наружу от стены
+            switch (facing) {
+                case NORTH:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(180));
+                    break;
+                case SOUTH:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    break;
+                case EAST:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(90));
+                    break;
+                case WEST:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(-90));
+                    break;
+            }
             poseStack.translate(0, 0, -0.379f);
         }
         // Полоска цвета станции сверху
@@ -157,7 +176,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         if (facing == Direction.UP) {
             poseStack.scale(0.025f, -0.025f, 0.025f);
         } else {
-            poseStack.scale(-0.025f, 0.025f, 0.025f);
+            poseStack.scale(0.025f, -0.025f, 0.025f);
         }
         int desiredSpacing = 8;
         int textCount = Math.max(1, lineLength / desiredSpacing);
