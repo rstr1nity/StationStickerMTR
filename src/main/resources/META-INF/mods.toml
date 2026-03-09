@@ -7,10 +7,13 @@ modId="stationsticker"
 version="1.0.0"
 displayName="Station Sticker"
 description='''
-Adds station sticker signs for MTR
+Adds customizable station name stickers that automatically display the station name and line color.
+    Place them along platforms for better navigation, just like in real metro systems!
 '''
-authors="YourName"
+authors="Tr1nity"
 logoFile="logo.png"
+credits="Thanks to the MTR team and kykko"
+license="MIT"
 
 [[dependencies.stationsticker]]
 modId="forge"
