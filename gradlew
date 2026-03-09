@@ -243,3 +243,8 @@ eval "set -- $(
     )" '"$@"'
 
 exec "$JAVACMD" "$@"
+allprojects {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:none"
+    }
+}

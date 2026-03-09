@@ -11,16 +11,23 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.mtr.core.data.Station;
 import org.mtr.mod.client.MinecraftClientData;
 import org.mtr.core.data.Position;
+import com.mojang.math.Vector3f;
 
 public class StationStickerRenderer implements BlockEntityRenderer<StationStickerBlockEntity> {
+
     private static final float STICKER_WIDTH = 0.5f;
     private static final float STICKER_HEIGHT = 0.2f;
     private static final float STICKER_DEPTH = 0.01f;
+
+    // ТВОЯ ТЕКСТУРА
+    private static final ResourceLocation STICKER_TEXTURE =
+            new ResourceLocation("stationsticker", "textures/block/station_sticker.png");
 
     public StationStickerRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -37,6 +44,16 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         if (level == null) return;
 
         Direction facing = state.getValue(StationStickerBlock.FACING);
+
+        int[] lineInfo = getLineInfo(level, pos, facing);
+        int lineLength = lineInfo[0];
+        int indexInLine = lineInfo[1];
+        int desiredSpacing = 8;
+
+        int spacing = Math.max(1, desiredSpacing);
+
+
+
         Station station = findStationAt(pos);
 
         if (station == null) return;
@@ -45,7 +62,8 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         int stationColor = station.getColor();
 
         renderSticker(poseStack, bufferSource, facing,
-                stationName, stationColor, packedLight);
+                stationName, stationColor, packedLight,
+                lineLength, indexInLine);
     }
 
     private Station findStationAt(BlockPos pos) {
@@ -54,63 +72,175 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                 .findFirst()
                 .orElse(null);
     }
+    private int[] getLineInfo(Level level, BlockPos pos, Direction facing) {
 
+        Direction dir1;
+        Direction dir2;
+
+        // Определяем ось линии
+        if (facing == Direction.NORTH || facing == Direction.SOUTH) {
+            dir1 = Direction.WEST;
+            dir2 = Direction.EAST;
+        } else {
+            dir1 = Direction.NORTH;
+            dir2 = Direction.SOUTH;
+        }
+
+        int length = 1;
+        int index = 0;
+
+        // Идём назад
+        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
+        checkPos.set(pos);
+
+        for (int i = 0; i < 128; i++) {
+            checkPos.move(dir1);
+
+            if (!(level.getBlockState(checkPos).getBlock() instanceof StationStickerBlock)) {
+                break;
+            }
+
+            length++;
+            index++;
+        }
+
+        // Идём вперёд
+        checkPos.set(pos);
+
+        for (int i = 0; i < 128; i++) {
+            checkPos.move(dir2);
+
+            if (!(level.getBlockState(checkPos).getBlock() instanceof StationStickerBlock)) {
+                break;
+            }
+
+            length++;
+        }
+
+        return new int[]{length, index};
+    }
     private void renderSticker(PoseStack poseStack, MultiBufferSource bufferSource,
                                Direction facing, String stationName,
-                               int stationColor, int packedLight) {
+                               int stationColor, int packedLight,
+                               int lineLength, int indexInLine) {
 
         poseStack.pushPose();
 
-        poseStack.translate(0.5, 0.5, 0.5);
-        poseStack.mulPose(Direction.UP.getRotation());
-        poseStack.mulPose(facing.getOpposite().getRotation());
-        poseStack.translate(0, 0, 0.5 - STICKER_DEPTH / 2);
+        poseStack.translate(0.5, 0.5, 0.501);
 
-        renderColoredRect(poseStack, bufferSource,
-                -STICKER_WIDTH/2, -STICKER_HEIGHT/2,
-                STICKER_WIDTH, STICKER_HEIGHT,
+// ПРАВИЛЬНЫЙ поворот для каждой стороны
+        if (facing == Direction.UP) {
+            // Верхняя грань
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
+            poseStack.translate(0, 0.375f, 0);
+        }
+        else if (facing == Direction.DOWN) {
+            // Нижняя грань
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(-90));
+            poseStack.translate(0, -0.01f, 0);
+        }
+        else {
+            // Для всех стен - поворачиваем так, чтобы текст смотрел наружу от стены
+            switch (facing) {
+                case NORTH:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(180));
+                    break;
+                case SOUTH:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    break;
+                case EAST:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(90));
+                    break;
+                case WEST:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(-90));
+                    break;
+            }
+            poseStack.translate(0, 0, -0.379f);
+        }
+        // Полоска цвета станции сверху
+        renderColoredRect(
+                poseStack,
+                bufferSource,
+                -0.5f,
+                -0.15f,
+                1.0f,
+                0.325f,
                 stationColor | 0xFF000000,
-                packedLight);
+                packedLight,
+                -0.01f
+        );
 
-        renderText(poseStack, bufferSource, stationName, packedLight);
 
+        poseStack.pushPose();
+
+        if (facing == Direction.UP) {
+            poseStack.scale(0.025f, -0.025f, 0.025f);
+        } else {
+            poseStack.scale(0.025f, -0.025f, 0.025f);
+        }
+        int desiredSpacing = 8;
+        int textCount = Math.max(1, lineLength / desiredSpacing);
+        int spacing = Math.max(1, lineLength / textCount);
+        if (indexInLine % spacing == 0) {
+            renderText(poseStack, bufferSource, stationName, packedLight);
+        }
+
+        poseStack.popPose();
         poseStack.popPose();
     }
 
-    private void renderColoredRect(PoseStack poseStack, MultiBufferSource bufferSource,
-                                   float x, float y, float width, float height,
-                                   int color, int light) {
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.translucent());
 
-        for (int side = 0; side < 2; side++) {
-            float zOffset = side == 0 ? 0 : STICKER_DEPTH;
+    private void renderTexturedRect(PoseStack poseStack, MultiBufferSource bufferSource,
+                                    float x, float y, float width, float height,
+                                    int color, int light) {
+
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(
+                RenderType.text(STICKER_TEXTURE)
+        );
+
+        float zOffset = -0.1f;
 
             vertexConsumer.vertex(poseStack.last().pose(), x, y, zOffset)
-                    .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF)
-                    .uv(0, 0).uv2(light).normal(0, 0, 1).endVertex();
+                    .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
+                    .uv(0, 0)
+                    .uv2(light)
+                    .normal(0, 0, 1)
+                    .endVertex();
 
             vertexConsumer.vertex(poseStack.last().pose(), x + width, y, zOffset)
-                    .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF)
-                    .uv(1, 0).uv2(light).normal(0, 0, 1).endVertex();
+                    .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
+                    .uv(1, 0)
+                    .uv2(light)
+                    .normal(0, 0, 1)
+                    .endVertex();
 
             vertexConsumer.vertex(poseStack.last().pose(), x + width, y + height, zOffset)
-                    .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF)
-                    .uv(1, 1).uv2(light).normal(0, 0, 1).endVertex();
+                    .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
+                    .uv(1, 1)
+                    .uv2(light)
+                    .normal(0, 0, 1)
+                    .endVertex();
 
             vertexConsumer.vertex(poseStack.last().pose(), x, y + height, zOffset)
-                    .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, (color >> 24) & 0xFF)
-                    .uv(0, 1).uv2(light).normal(0, 0, 1).endVertex();
-        }
+                    .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
+                    .uv(0, 1)
+                    .uv2(light)
+                    .normal(0, 0, 1)
+                    .endVertex();
+
     }
 
     private void renderText(PoseStack poseStack, MultiBufferSource bufferSource,
                             String text, int light) {
+
         if (text == null || text.isEmpty()) return;
+
+        float width = Minecraft.getInstance().font.width(text);
 
         Minecraft.getInstance().font.drawInBatch(
                 text,
-                -Minecraft.getInstance().font.width(text) / 2.0f,
-                -4,
+                -width / 2.0f,
+                -4.0f,
                 0xFFFFFF,
                 false,
                 poseStack.last().pose(),
@@ -120,7 +250,36 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                 light
         );
     }
+    private void renderColoredRect(PoseStack poseStack, MultiBufferSource bufferSource,
+                                   float x, float y, float width, float height,
+                                   int color, int light, float zOffset) {
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.text(
+                new ResourceLocation("textures/misc/white.png")));
 
+        vertexConsumer.vertex(poseStack.last().pose(), x, y, zOffset)
+                .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
+                .uv(0, 0)
+                .uv2(light)
+                .endVertex();
+
+        vertexConsumer.vertex(poseStack.last().pose(), x + width, y, zOffset)
+                .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
+                .uv(1, 0)
+                .uv2(light)
+                .endVertex();
+
+        vertexConsumer.vertex(poseStack.last().pose(), x + width, y + height, zOffset)
+                .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
+                .uv(1, 1)
+                .uv2(light)
+                .endVertex();
+
+        vertexConsumer.vertex(poseStack.last().pose(), x, y + height, zOffset)
+                .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)
+                .uv(0, 1)
+                .uv2(light)
+                .endVertex();
+    }
     @Override
     public boolean shouldRenderOffScreen(StationStickerBlockEntity entity) {
         return true;

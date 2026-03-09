@@ -1,3 +1,6 @@
 {
-  "parent": "stationsticker:block/station_sticker"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "stationsticker:item/station-sticker-item"
+  }
 }

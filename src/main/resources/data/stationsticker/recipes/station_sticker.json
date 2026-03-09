@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "D D",
+    " S ",
+    "D D"
+  ],
+  "key": {
+    "S": {
+      "tag": "minecraft:signs"
+    },
+    "D": {
+      "tag": "forge:dyes"
+    }
+  },
+  "result": {
+    "item": "stationsticker:station_sticker",
+    "count": 1
+  }
+}
