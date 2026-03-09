@@ -18,25 +18,30 @@ public class ModBlocks {
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, StationStickerMod.MOD_ID);
 
-    // ИСПРАВЬ: CreativeModeTab (было CreativeMod eTab)
-    // ИСПРАВЬ: "stationsticker" (было "stationsticker " с пробелом)
-    public static final CreativeModeTab STICKER_TAB = new CreativeModeTab("stationsticker") {
-        @Override
-        public ItemStack makeIcon() {
-            return new ItemStack(STATION_STICKER.get());
-        }
-    };
-
-    // ИСПРАВЬ: "station_sticker" (было "station_sticker " с пробелом)
+    // Регистрируем блок
     public static final RegistryObject<StationStickerBlock> STATION_STICKER =
             registerBlock("station_sticker",
                     () -> new StationStickerBlock());
 
+    // В 1.20.1 вкладка создается, но предметы добавляются в неё отдельно
+    public static final CreativeModeTab STICKER_TAB = CreativeModeTab.builder()
+            .title(net.minecraft.network.chat.Component.literal("Station Stickers"))
+            .icon(() -> new ItemStack(STATION_STICKER.get()))
+            .build();
+
     private static <T extends Block> RegistryObject<T> registerBlock(String name,
                                                                      java.util.function.Supplier<T> block) {
         RegistryObject<T> registeredBlock = BLOCKS.register(name, block);
+
+        // В 1.20.1 НЕТ .tab() - просто регистрируем предмет
         ITEMS.register(name, () -> new BlockItem(registeredBlock.get(),
-                new Item.Properties().tab(STICKER_TAB)));
+                new Item.Properties()));
+
         return registeredBlock;
+    }
+
+    // Метод для добавления предметов в творческую вкладку
+    public static void addToTab() {
+        // Этот метод будет вызван из события
     }
 }

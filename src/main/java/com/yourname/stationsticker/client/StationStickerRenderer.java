@@ -17,7 +17,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.mtr.core.data.Station;
 import org.mtr.mod.client.MinecraftClientData;
 import org.mtr.core.data.Position;
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
+import net.minecraft.client.gui.Font;
 
 public class StationStickerRenderer implements BlockEntityRenderer<StationStickerBlockEntity> {
 
@@ -131,28 +132,28 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
 // ПРАВИЛЬНЫЙ поворот для каждой стороны
         if (facing == Direction.UP) {
             // Верхняя грань
-            poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
+            poseStack.mulPose(Axis.XP.rotationDegrees(90));
             poseStack.translate(0, 0.375f, 0);
         }
         else if (facing == Direction.DOWN) {
             // Нижняя грань
-            poseStack.mulPose(Vector3f.XP.rotationDegrees(-90));
+            poseStack.mulPose(Axis.XP.rotationDegrees(-90));
             poseStack.translate(0, -0.01f, 0);
         }
         else {
             // Для всех стен - поворачиваем так, чтобы текст смотрел наружу от стены
             switch (facing) {
                 case NORTH:
-                    poseStack.mulPose(Vector3f.YP.rotationDegrees(180));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(180));
                     break;
                 case SOUTH:
-                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(0));
                     break;
                 case EAST:
-                    poseStack.mulPose(Vector3f.YP.rotationDegrees(90));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(90));
                     break;
                 case WEST:
-                    poseStack.mulPose(Vector3f.YP.rotationDegrees(-90));
+                    poseStack.mulPose(Axis.YP.rotationDegrees(-90));
                     break;
             }
             poseStack.translate(0, 0, -0.379f);
@@ -245,7 +246,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                 false,
                 poseStack.last().pose(),
                 bufferSource,
-                false,
+                Font.DisplayMode.NORMAL,
                 0,
                 light
         );
@@ -254,7 +255,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                                    float x, float y, float width, float height,
                                    int color, int light, float zOffset) {
         VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.text(
-                new ResourceLocation("textures/misc/white.png")));
+                new ResourceLocation("minecraft", "textures/misc/white.png")));
 
         vertexConsumer.vertex(poseStack.last().pose(), x, y, zOffset)
                 .color((color >> 16) & 255, (color >> 8) & 255, color & 255, (color >> 24) & 255)

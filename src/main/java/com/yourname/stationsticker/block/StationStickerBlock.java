@@ -19,7 +19,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -41,7 +40,7 @@ public class StationStickerBlock extends BaseEntityBlock {
     protected static final VoxelShape EAST_AABB = Block.box(0, 0, 0, 2, 16, 16);
 
     public StationStickerBlock() {
-        super(Properties.of(Material.METAL)
+        super(Properties.of()
                 .strength(1.0f)
                 .sound(SoundType.METAL)
                 .noOcclusion()
