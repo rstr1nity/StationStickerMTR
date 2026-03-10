@@ -27,14 +27,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
-
-
 public class StationStickerBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
-    // Добавь эти константы для тонкого хитбокса:
-    protected static final VoxelShape UP_AABB = Block.box(0, 14, 0, 16, 16, 16);
-    protected static final VoxelShape DOWN_AABB = Block.box(0, 0, 0, 16, 2, 16);
+    // ВАЖНО: создаем СВОЁ свойство с уникальным именем "horizontal_facing"
+    public static final DirectionProperty HORIZONTAL_FACING =
+            DirectionProperty.create("horizontal_facing", Direction.Plane.HORIZONTAL);
+
+    protected static final VoxelShape UP_AABB = Block.box(0, 0, 0, 16, 2, 16);
+    protected static final VoxelShape DOWN_AABB = Block.box(0, 14, 0, 16, 16, 16);
     protected static final VoxelShape NORTH_AABB = Block.box(0, 0, 14, 16, 16, 16);
     protected static final VoxelShape SOUTH_AABB = Block.box(0, 0, 0, 16, 16, 2);
     protected static final VoxelShape WEST_AABB = Block.box(14, 0, 0, 16, 16, 16);
@@ -45,9 +46,11 @@ public class StationStickerBlock extends BaseEntityBlock {
                 .strength(1.0f)
                 .sound(SoundType.METAL)
                 .noOcclusion()
-                .noCollission()); // Важно!
-        this.registerDefaultState(this.stateDefinition.any()
-                .setValue(FACING, Direction.NORTH));
+                .noCollission());
+        this.registerDefaultState(
+                this.stateDefinition.any()
+                        .setValue(FACING, Direction.NORTH)
+                        .setValue(HORIZONTAL_FACING, Direction.NORTH));
     }
 
     @Override
@@ -58,22 +61,30 @@ public class StationStickerBlock extends BaseEntityBlock {
             case SOUTH -> SOUTH_AABB;
             case WEST -> WEST_AABB;
             case EAST -> EAST_AABB;
-            case UP -> UP_AABB;       // ← Добавлено
-            case DOWN -> DOWN_AABB;   // ← Добавлено
+            case UP -> UP_AABB;
+            case DOWN -> DOWN_AABB;
         };
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, HORIZONTAL_FACING); // ОБА свойства с РАЗНЫМИ именами!
     }
-
 
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState()
-                .setValue(FACING, context.getClickedFace()); // ← Используем сторону клика!
+        Direction clickedFace = context.getClickedFace();
+        Direction playerDir = context.getHorizontalDirection().getOpposite();
+
+        BlockState state = this.defaultBlockState().setValue(FACING, clickedFace);
+
+        // Для пола и потолка сохраняем горизонтальное направление
+        if (clickedFace == Direction.UP || clickedFace == Direction.DOWN) {
+            state = state.setValue(HORIZONTAL_FACING, playerDir);
+        }
+
+        return state;
     }
 
     @Nullable

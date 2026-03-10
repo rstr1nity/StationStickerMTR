@@ -61,7 +61,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         String stationName = station.getName();
         int stationColor = station.getColor();
 
-        renderSticker(poseStack, bufferSource, facing,
+        renderSticker(entity, poseStack, bufferSource, facing,
                 stationName, stationColor, packedLight,
                 lineLength, indexInLine);
     }
@@ -119,7 +119,8 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
 
         return new int[]{length, index};
     }
-    private void renderSticker(PoseStack poseStack, MultiBufferSource bufferSource,
+    private void renderSticker(StationStickerBlockEntity entity,
+                               PoseStack poseStack, MultiBufferSource bufferSource,
                                Direction facing, String stationName,
                                int stationColor, int packedLight,
                                int lineLength, int indexInLine) {
@@ -130,14 +131,72 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
 
 // ПРАВИЛЬНЫЙ поворот для каждой стороны
         if (facing == Direction.UP) {
-            // Верхняя грань
-            poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
-            poseStack.translate(0, 0.375f, 0);
+            // 1. Наклоняем блок
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(-90));
+
+            // 2. Получаем горизонтальное направление (куда смотрел игрок)
+            Direction horizontal = entity.getBlockState().getValue(StationStickerBlock.HORIZONTAL_FACING);
+
+            // 3. ПРАВИЛЬНЫЙ поворот для каждой стороны:
+            switch (horizontal) {
+                case NORTH:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.ZP.rotationDegrees(270));
+                    break;
+                case SOUTH:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.ZP.rotationDegrees(90));// текст смотрит на север
+                    break;
+                case EAST:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.ZP.rotationDegrees(180));
+                    poseStack.mulPose(Vector3f.XP.rotationDegrees(0));// текст смотрит на запад
+                    break;
+                case WEST:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.ZP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.XP.rotationDegrees(0));// текст смотрит на восток
+                    break;
+            }
+
+
+            poseStack.mulPose(Vector3f.ZP.rotationDegrees(-90));
+
+            poseStack.translate(0, 0, -0.48f);
         }
         else if (facing == Direction.DOWN) {
-            // Нижняя грань
-            poseStack.mulPose(Vector3f.XP.rotationDegrees(-90));
-            poseStack.translate(0, -0.01f, 0);
+            // 1. Наклоняем блок (кладём на потолок)
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
+
+            // 2. Получаем горизонтальное направление (куда смотрел игрок)
+            Direction horizontal = entity.getBlockState().getValue(StationStickerBlock.HORIZONTAL_FACING);
+
+            // 3. ПРАВИЛЬНЫЙ поворот для каждой стороны:
+            switch (horizontal) {
+                case NORTH:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.ZP.rotationDegrees(270));
+                    break;
+                case SOUTH:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.ZP.rotationDegrees(90));// текст смотрит на север
+                    break;
+                case EAST:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.ZP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.XP.rotationDegrees(0));// текст смотрит на запад
+                    break;
+                case WEST:
+                    poseStack.mulPose(Vector3f.YP.rotationDegrees(0));
+                    poseStack.mulPose(Vector3f.ZP.rotationDegrees(180));
+                    poseStack.mulPose(Vector3f.XP.rotationDegrees(0));// текст смотрит на восток
+                    break;
+            }
+
+
+            poseStack.mulPose(Vector3f.ZP.rotationDegrees(-90));
+
+            poseStack.translate(0, 0, -0.48f);
         }
         else {
             // Для всех стен - поворачиваем так, чтобы текст смотрел наружу от стены
