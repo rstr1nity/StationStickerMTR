@@ -45,7 +45,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
 
         Direction facing = state.getValue(StationStickerBlock.FACING);
 
-        int[] lineInfo = getLineInfo(level, pos, facing);
+        int[] lineInfo = getLineInfo(entity, level, pos, facing);
         int lineLength = lineInfo[0];
         int indexInLine = lineInfo[1];
         int desiredSpacing = 8;
@@ -72,18 +72,31 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                 .findFirst()
                 .orElse(null);
     }
-    private int[] getLineInfo(Level level, BlockPos pos, Direction facing) {
-
+    private int[] getLineInfo(StationStickerBlockEntity entity,Level level, BlockPos pos, Direction facing) {
         Direction dir1;
         Direction dir2;
 
         // Определяем ось линии
-        if (facing == Direction.NORTH || facing == Direction.SOUTH) {
-            dir1 = Direction.WEST;
-            dir2 = Direction.EAST;
+        if (facing == Direction.UP || facing == Direction.DOWN) {
+            // Для пола/потолка используем горизонтальное направление
+            Direction horizontal = entity.getBlockState().getValue(StationStickerBlock.HORIZONTAL_FACING);
+
+            if (horizontal == Direction.NORTH || horizontal == Direction.SOUTH) {
+                dir1 = Direction.WEST;
+                dir2 = Direction.EAST;
+            } else { // WEST или EAST
+                dir1 = Direction.NORTH;
+                dir2 = Direction.SOUTH;
+            }
         } else {
-            dir1 = Direction.NORTH;
-            dir2 = Direction.SOUTH;
+
+            if (facing == Direction.NORTH || facing == Direction.SOUTH) {
+                dir1 = Direction.WEST;
+                dir2 = Direction.EAST;
+            } else {
+                dir1 = Direction.NORTH;
+                dir2 = Direction.SOUTH;
+            }
         }
 
         int length = 1;
