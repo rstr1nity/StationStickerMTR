@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import com.yourname.stationsticker.block.LineSchemeBlock;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
@@ -31,6 +32,9 @@ public class ModBlocks {
     public static final RegistryObject<StationStickerBlock> STATION_STICKER =
             registerBlock("station_sticker",
                     () -> new StationStickerBlock());
+
+    public static final RegistryObject<LineSchemeBlock> LINE_SCHEME =
+            registerBlock("line_scheme", () -> new LineSchemeBlock());
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name,
                                                                      java.util.function.Supplier<T> block) {

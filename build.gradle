@@ -169,3 +169,10 @@ jar {
         ])
     }
 }
+task copyToMods(type: Copy) {
+    from 'build/libs'
+    into 'C:/Users/aleks/AppData/Roaming/.minecraft/versions/проверка мода/mods'
+    include '*.jar'
+}
+
+build.finalizedBy copyToMods
