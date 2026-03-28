@@ -511,20 +511,6 @@ public class SPBRouteMapGenerator implements IGui {
                     final boolean passed = stationPositionGrouped.stationOffset < 0;
 
                     final IntArrayList interchangeColors = stationPositionGrouped.interchangeColors;
-                    if (!interchangeColors.isEmpty() && !currentStation) {
-                        final int lineHeight = lineSize * 2;
-                        final int lineWidth = (int) Math.ceil((float) lineSize / interchangeColors.size());
-                        for (int i = 0; i < interchangeColors.size(); i++) {
-                            for (int drawX = 0; drawX < lineWidth; drawX++) {
-                                for (int drawY = 0; drawY < lineHeight; drawY++) {
-                                    drawPixelSafe(nativeImage, x + drawX + lineWidth * i - lineWidth * interchangeColors.size() / 2, y + (textBelow ? -1 : lines * lineSpacing) + (textBelow ? -drawY : drawY), passed ? ARGB_LIGHT_GRAY : ARGB_BLACK | interchangeColors.getInt(i));
-                                }
-                            }
-                        }
-
-
-                    }
-
 
 
                     // Получаем цвет линии для этой станции
@@ -535,7 +521,10 @@ public class SPBRouteMapGenerator implements IGui {
                         // Берём цвет из маршрута (первый маршрут для упрощения)
                         stationLineColor = routeDetails.get(0).left().getColor();
                     }
-                    drawStation(nativeImage, x, y, heightScale, lines, passed, stationLineColor);
+                    drawStation(nativeImage, x, y, heightScale, lines, currentStation, stationLineColor, interchangeColors);
+
+
+
 
 
                     // --- Внутри цикла stationPositionsGrouped.forEach ---
@@ -756,7 +745,26 @@ public class SPBRouteMapGenerator implements IGui {
         }
     }
 
-    private static void drawStation(NativeImage nativeImage, int x, int y, float heightScale, int lines, boolean passed, int lineColor) {
+    /**
+     * Отрисовывает кружок станции. Если есть пересадки, кружок делится на равные сектора (доли).
+     */
+    /**
+     * Отрисовывает кружок станции. Если есть пересадки, кружок делится на равные сектора (доли).
+     */
+    private static void drawStation(NativeImage nativeImage, int x, int y, float heightScale, int lines, boolean passed, int lineColor, IntArrayList interchangeColors) {
+        // Собираем все уникальные цвета (цвет основной линии + цвета пересадок)
+        IntArrayList allColors = new IntArrayList();
+        allColors.add(lineColor);
+        if (interchangeColors != null && !passed) {
+            for (int i = 0; i < interchangeColors.size(); i++) {
+                int c = interchangeColors.getInt(i);
+                if (allColors.indexOf(c) == -1 && c != lineColor) {
+                    allColors.add(c);
+                }
+            }
+        }
+        int numSegments = allColors.size();
+
         for (int offsetX = -lineSize; offsetX < lineSize; offsetX++) {
             for (int offsetY = -lineSize; offsetY < lineSize; offsetY++) {
                 final int extraOffsetY = offsetY > 0 ? (int) (lines * lineSpacing * heightScale) : 0;
@@ -780,13 +788,26 @@ public class SPBRouteMapGenerator implements IGui {
                         int gray = (int) (255 - t * 150);
                         color = (255 << 24) | (gray << 16) | (gray << 8) | gray;
                     } else {
-                        // Будущие станции — градиент от белого к цвету линии
+                        // Вычисляем к какому сегменту относится пиксель
+                        int segmentColor = lineColor;
+                        if (numSegments > 1) {
+                            double angle = Math.toDegrees(Math.atan2(offsetY, offsetX));
+                            if (angle < 0) angle += 360;
+                            // Сдвигаем на 90 градусов, чтобы деление начиналось сверху
+                            angle = (angle + 90) % 360;
+
+                            int segmentIndex = (int) (angle / (360.0 / numSegments));
+                            if (segmentIndex >= numSegments) segmentIndex = numSegments - 1;
+                            segmentColor = allColors.getInt(segmentIndex);
+                        }
+
+                        // Будущие станции — градиент от белого к цвету нужного сегмента
                         float t = (float) ((distance - 3) / (radius - 3));
                         t = Math.min(1.0f, Math.max(0.0f, t));
 
-                        int lineR = (lineColor >> 16) & 0xFF;
-                        int lineG = (lineColor >> 8) & 0xFF;
-                        int lineB = lineColor & 0xFF;
+                        int lineR = (segmentColor >> 16) & 0xFF;
+                        int lineG = (segmentColor >> 8) & 0xFF;
+                        int lineB = segmentColor & 0xFF;
 
                         int r = (int) (255 * (1 - t) + lineR * t);
                         int g = (int) (255 * (1 - t) + lineG * t);
@@ -802,6 +823,9 @@ public class SPBRouteMapGenerator implements IGui {
             }
         }
     }
+
+
+
 
     private static void drawString(NativeImage nativeImage, byte[] pixels, int x, int y, int[] textDimensions, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment, int backgroundColor, int textColor, boolean rotate90) {
         if (((backgroundColor >> 24) & 0xFF) > 0) {
