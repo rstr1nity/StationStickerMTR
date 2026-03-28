@@ -1,5 +1,8 @@
 package com.yourname.stationsticker.client;
 
+import org.mtr.core.data.Platform;
+import org.mtr.core.data.SimplifiedRoute;
+import org.mtr.core.data.SimplifiedRoutePlatform;
 import org.mtr.core.servlet.MessageQueue;
 import org.mtr.libraries.it.unimi.dsi.fastutil.objects.Object2LongArrayMap;
 import org.mtr.libraries.it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
@@ -7,6 +10,7 @@ import org.mtr.libraries.it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.mtr.libraries.it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import org.mtr.mapping.holder.*;
 import org.mtr.mod.Init;
+import org.mtr.mod.client.MinecraftClientData; // <-- ДОБАВЛЕН ИМПОРТ
 import org.mtr.mod.config.Config;
 import org.mtr.mod.render.MainRenderer;
 import org.mtr.mod.render.MoreRenderLayers;
@@ -62,16 +66,60 @@ public class SPBDynamicTextureCache implements IGui {
         deletedResourcesToRemove.forEach(deletedResources::removeLong);
     }
 
+    // ================== ИЗМЕНЕНИЯ ЗДЕСЬ ==================
+
     public DynamicResource getRouteMap(long platformId, boolean vertical, boolean flip, float aspectRatio, boolean transparentWhite) {
-        String key = String.format("spb_route_map_%s_%s_%s_%s_%s", platformId, vertical, flip, aspectRatio, transparentWhite);
+        // 1. Генерируем "версию" данных, которая уникальна для текущего состояния схемы
+        final long dataVersion = generateDataVersion(platformId);
+
+        // 2. Включаем эту версию в ключ. Если данные изменятся, ключ тоже изменится.
+        String key = String.format("spb_route_map_v3_%s_%s_%s_%s_%s_%s", platformId, dataVersion, vertical, flip, aspectRatio, transparentWhite);
+
+        // 3. Остальной код остается прежним. getResource сам создаст новую текстуру для нового ключа.
         return getResource(key, () -> SPBRouteMapGenerator.generateRouteMap(platformId, vertical, flip, aspectRatio, transparentWhite),
                 transparentWhite ? DefaultRenderingColor.TRANSPARENT : DefaultRenderingColor.WHITE);
     }
+
+    /**
+     * Создает уникальный хэш (версию) для всех данных, которые влияют на вид схемы.
+     * Если этот хэш изменится, значит, схему нужно перерисовать.
+     */
+    private long generateDataVersion(long platformId) {
+        long hash = 1;
+        final MinecraftClientData clientData = MinecraftClientData.getInstance();
+        if (clientData == null) return 0;
+
+        final Platform platform = clientData.platformIdMap.get(platformId);
+        if (platform == null) return 0;
+
+        hash = 31 * hash + platform.getName().hashCode();
+        if (platform.area != null) {
+            hash = 31 * hash + platform.area.getName().hashCode();
+            hash = 31 * hash + platform.area.getColor();
+        }
+
+        // Проверяем все маршруты, которые проходят через эту платформу
+        for (SimplifiedRoute route : clientData.simplifiedRoutes) {
+            if (route.getPlatformIndex(platformId) >= 0) {
+                hash = 31 * hash + route.getName().hashCode();
+                hash = 31 * hash + route.getColor();
+                hash = 31 * hash + route.getCircularState().hashCode();
+
+                // Хэшируем все названия станций в маршруте, чтобы отловить его изменение
+                for (SimplifiedRoutePlatform srp : route.getPlatforms()) {
+                    hash = 31 * hash + srp.getStationName().hashCode();
+                }
+            }
+        }
+        return hash;
+    }
+    // ================== КОНЕЦ ИЗМЕНЕНИЙ ==================
 
     private DynamicResource getResource(String key, Supplier<NativeImage> supplier, DefaultRenderingColor defaultRenderingColor) {
         resourceRegistryQueue.process(Runnable::run);
         final DynamicResource dynamicResource = dynamicResources.get(key);
 
+        // Эта проверка теперь будет работать правильно, потому что `key` уже содержит версию данных
         if (dynamicResource != null && !dynamicResource.needsRefresh) {
             dynamicResource.expiryTime = System.currentTimeMillis() + COOLDOWN_TIME;
             return dynamicResource;
@@ -111,8 +159,6 @@ public class SPBDynamicTextureCache implements IGui {
                     MinecraftClient.getInstance().getTextureManager().registerTexture(identifier, new AbstractTexture(nativeImageBackedTexture.data));
                     dynamicResourceNew = new DynamicResource(identifier, nativeImageBackedTexture);
                     dynamicResources.put(key, dynamicResourceNew);
-                } else {
-                    dynamicResourceNew = null;
                 }
 
                 generatingResources.remove(key);

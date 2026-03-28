@@ -2,6 +2,8 @@ package com.yourname.stationsticker.client;
 
 import com.yourname.stationsticker.block.LineSchemeBlock;
 import com.yourname.stationsticker.block.entity.LineSchemeEntity;
+// Убедитесь, что импортируете ваш класс кэша
+// import com.yourname.stationsticker.client.SPBDynamicTextureCache;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
@@ -23,22 +25,22 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
     private static final float SCHEME_HEIGHT = 2.0f;
     private static final float SCHEME_Z_OFFSET = 0.005f;
 
-    private static long lastDataVersion = 0;
-
     public LineSchemeRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     private float getRotationAngle(Direction facing) {
-        switch (facing) {
-            case NORTH: return 0;
-            case EAST: return -90;
-            case SOUTH: return 180;
-            case WEST: return 90;
-            default: return 0;
-        }
+        return switch (facing) {
+            case NORTH -> 0;
+            case EAST -> -90;
+            case SOUTH -> 180;
+            case WEST -> 90;
+            default -> 0;
+        };
     }
 
+    // Этот метод можно оставить, он нужен для поиска
     private Platform findPlatformAt(BlockPos pos) {
+        // ... ваш код поиска платформы без изменений ...
         Station station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(pos.getX(), pos.getY(), pos.getZ()));
         if (station == null) return null;
 
@@ -55,9 +57,6 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
                 Math.abs(platform.getMidPosition().getZ() - pos.getZ()) < 10;
     }
 
-    private long getDataVersion() {
-        return MinecraftClientData.getInstance().simplifiedRoutes.hashCode();
-    }
 
     @Override
     public void render(LineSchemeEntity entity, float partialTick,
@@ -65,13 +64,11 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
                        net.minecraft.client.renderer.MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
 
-        SPBDynamicTextureCache.instance.refresh();
-
         Level level = entity.getLevel();
+        if (level == null) return;
+
         BlockPos pos = entity.getBlockPos();
         BlockState state = entity.getBlockState();
-
-        if (level == null) return;
 
         Direction facing = state.getValue(LineSchemeBlock.FACING);
 
@@ -80,12 +77,15 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
 
         long platformId = platform.getId();
 
-        // Проверяем, изменились ли данные
-        long currentVersion = getDataVersion();
-        if (currentVersion != lastDataVersion) {
-            lastDataVersion = currentVersion;
-            SPBDynamicTextureCache.instance.refresh(); // Сбрасываем кэш
-        }
+        //  !!!!!!!!!! УБИРАЕМ ВСЮ ЛОГИКУ С ВЕРСИЯМИ И REFRESH !!!!!!!!!!!
+
+        // Просто запрашиваем текстуру у кэша каждый кадр.
+        // Кэш сам решит, нужно ли ее пересоздавать.
+        // ПРИМЕЧАНИЕ: Я предполагаю, что getRouteMap возвращает объект,
+        // у которого есть поле .identifier, как в MTR.
+        // Если у вас не так, адаптируйте под свой код.
+        var texture = SPBDynamicTextureCache.instance.getRouteMap(platformId, false, false, SCHEME_WIDTH / SCHEME_HEIGHT, false);
+        if (texture == null) return;
 
         StoredMatrixTransformations transformations = new StoredMatrixTransformations(
                 pos.getX() + 0.5,
@@ -97,9 +97,6 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
             graphicsHolder.rotateYDegrees(-getRotationAngle(facing));
             graphicsHolder.translate(0, 0, 0.5 - SCHEME_Z_OFFSET);
         });
-
-        var texture = SPBDynamicTextureCache.instance.getRouteMap(platformId, false, false, 1.0f, false);
-        if (texture == null) return;
 
         MainRenderer.scheduleRender(texture.identifier, false, QueuedRenderLayer.EXTERIOR,
                 (graphicsHolder, offset) -> {
