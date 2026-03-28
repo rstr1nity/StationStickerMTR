@@ -26,6 +26,7 @@ import java.util.function.BiConsumer;
 
 public class SPBRouteMapGenerator implements IGui {
 
+    private static final float TEXT_SPACING_FROM_CIRCLE = 1.05f; // Объяви этот константой выше в классе
     private static int scale;
     private static int lineSize;
     private static int lineSpacing;
@@ -505,7 +506,7 @@ public class SPBRouteMapGenerator implements IGui {
                     final int x = Math.round((stationPositionGrouped.stationPosition.x + xOffset) * scale * widthScale);
                     final int y = Math.round((stationPositionGrouped.stationPosition.y + yOffset) * scale * heightScale);
                     final int lines = stationPositionGrouped.stationPosition.isCommon ? colorIndices[colorIndices.length - 1] : 0;
-                    final boolean textBelow = vertical || (stationPositionGrouped.stationPosition.isCommon ? Math.abs(stationPositionGrouped.stationOffset) % 2 == 0 : y >= yOffset * scale);
+                    final boolean textBelow = vertical || (stationPositionGrouped.stationPosition.isCommon ? Math.round(stationPositionGrouped.stationPosition.x * 2) % 2 == 0 : y >= yOffset * scale);
                     final boolean currentStation = stationPositionGrouped.stationOffset == 0;
                     final boolean passed = stationPositionGrouped.stationOffset < 0;
 
@@ -537,41 +538,53 @@ public class SPBRouteMapGenerator implements IGui {
                     drawStation(nativeImage, x, y, heightScale, lines, passed, stationLineColor);
 
 
-                    // НОВЫЙ КОД: рисуем названия станций
-                    String stationName = key.split("\\|\\|")[0];
-                    boolean isEnglishOnly = stationName.matches("[A-Za-z\\s]+");
+                    // --- Внутри цикла stationPositionsGrouped.forEach ---
 
-                    int nameX = x;
-                    int nameY = y + (textBelow ? lines * lineSpacing : -1) + (textBelow ? 1 : -1) * lineSize * 5 / 4;
+                    String stationName = key.split("\\|\\|")[0];
+                    boolean isEnglishOnly = stationName.matches("[A-Za-z0-9\\s\\-]+");
+
+                    int nameX = x; // Привязка строго по центру кружка
                     int textColor = passed ? ARGB_LIGHT_GRAY : (currentStation ? stationLineColor : ARGB_BLACK);
+                    float angle = -55f;
+
+// Учет высоты пересадочного узла (если кружков несколько)
+                    int totalLinesHeight = (int) Math.round(lines * lineSpacing * heightScale);
+                    int verticalOffset = (int) (lineSize * TEXT_SPACING_FROM_CIRCLE);
 
                     if (isEnglishOnly) {
-                        // Станция с английским названием — только одно название сверху (горизонтально)
-                        int[] dims = new int[2];
-                        byte[] pix = clientCache.getTextPixels(stationName, dims, maxStringWidth, (int) ((fontSizeBig + fontSizeSmall) * DynamicTextureCache.LINE_HEIGHT_MULTIPLIER), fontSizeBig, fontSizeSmall, fontSizeSmall / 4, HorizontalAlignment.CENTER);
-                        drawString(nativeImage, pix, nameX, nameY, dims, HorizontalAlignment.CENTER, textBelow ? VerticalAlignment.TOP : VerticalAlignment.BOTTOM, 0, textColor, vertical);
+                        // --- ТОЛЬКО АНГЛИЙСКОЕ (Сверху, начинается от верхнего края) ---
+                        int[] engDims = new int[2];
+                        byte[] engPix = clientCache.getTextPixels(stationName, engDims, scale * 5, fontSizeBig, fontSizeBig, fontSizeSmall, 0, HorizontalAlignment.CENTER);
+
+                        // anchorX = x (центр), anchorY = y - verticalOffset (самый верх кружка)
+                        // Pivot: 0.0f (начало слова), 1.0f (низ слова)
+                        drawRotatedString(nativeImage, engPix, engDims, x+3, y - verticalOffset, angle, textColor, 0.0f, 1.0f);
+
                     } else {
-                        // Русская станция — только диагональные названия
+                        // --- РУССКОЕ (Сверху) + ТРАНСЛИТ (Снизу) ---
                         String englishName = transliterate(stationName);
 
-                        // Определяем цвет для текущей станции (чуть темнее цвета линии)
-                        int currentStationColor = textColor;
-                        if (currentStation) {
-                            int r = (stationLineColor >> 16) & 0xFF;
-                            int g = (stationLineColor >> 8) & 0xFF;
-                            int b = stationLineColor & 0xFF;
-                            currentStationColor = (255 << 24) | ((int)(r * 0.8) << 16) | ((int)(g * 0.8) << 8) | (int)(b * 0.8);
-                        }
+                        // 1. Русское название (Верхнее)
+                        int[] rusDims = new int[2];
+                        byte[] rusPix = clientCache.getTextPixels(stationName, rusDims, scale * 5, fontSizeBig, fontSizeBig, fontSizeSmall, 0, HorizontalAlignment.CENTER);
 
-                        // Русское название по диагонали сверху
-                        drawDiagonalText(nativeImage, stationName, nameX, nameY - 8, currentStationColor, -45);
+                        // Начинается от верхней точки кружка
+                        drawRotatedString(nativeImage, rusPix, rusDims, x+22, y - verticalOffset, angle, textColor, 0.0f, 1.0f);
 
-                        // Английское название по диагонали снизу
-                        if (!englishName.isEmpty() && !englishName.equals(stationName)) {
-                            int englishColor = currentStation ? currentStationColor : 0xFF808080;
-                            drawDiagonalText(nativeImage, englishName, nameX, nameY + 12, englishColor, -45);
+                        // 2. Английское название (Нижнее)
+                        if (!englishName.isEmpty()) {
+                            int[] transDims = new int[2];
+                            byte[] transPix = clientCache.getTextPixels(englishName, transDims, scale * 5, fontSizeSmall * 2, fontSizeSmall * 2, fontSizeSmall, 0, HorizontalAlignment.CENTER);
+
+                            // Заканчивается у нижней точки кружка (с учетом высоты пересадки)
+                            // anchorX = x (центр), anchorY = y + высота + verticalOffset (самый низ кружка)
+                            // Pivot: 1.0f (КОНЕЦ слова), 0.0f (ВЕРХ слова)
+                            drawRotatedString(nativeImage, transPix, transDims, x-19, y + totalLinesHeight + verticalOffset, angle, textColor, 1.0f, 0.0f);
                         }
                     }
+
+
+
                 }));
 
                 if (transparentWhite) {
@@ -996,57 +1009,20 @@ public class SPBRouteMapGenerator implements IGui {
         textImage.close();
     }
 
-    private static void drawDiagonalText(NativeImage nativeImage, String text, int centerX, int centerY, int textColor, int angleDegrees) {
+    private static void drawStationNameCorrected(NativeImage nativeImage, String text, int x, int y, int textColor) {
         if (text == null || text.isEmpty()) return;
 
-        // Получаем пиксели текста
         int[] dimensions = new int[2];
-        byte[] pixels = DynamicTextureCache.instance.getTextPixels(text, dimensions, fontSizeBig, fontSizeSmall);
+        // ВАЖНО: передаем большую maxWidth (scale * 4), чтобы текст не сжимался в кашу
+        byte[] pixels = DynamicTextureCache.instance.getTextPixels(text, dimensions, scale * 4, fontSizeBig, fontSizeBig, fontSizeSmall, 0, HorizontalAlignment.CENTER);
+
         if (pixels == null) return;
 
-        int textWidth = dimensions[0];
-        int textHeight = dimensions[1];
-
-        // Создаём временное изображение для текста
-        NativeImage textImage = null;
-        try {
-            textImage = new NativeImage(NativeImageFormat.getAbgrMapped(), textWidth, textHeight, false);
-            for (int i = 0; i < textWidth * textHeight; i++) {
-                int alpha = pixels[i] & 0xFF;
-                if (alpha > 0) {
-                    int color = (alpha << 24) | (textColor & RGB_WHITE);
-                    int px = i % textWidth;
-                    int py = i / textWidth;
-                    textImage.setPixelColor(px, py, color);
-                }
-            }
-
-            double angleRad = Math.toRadians(angleDegrees);
-            double cos = Math.cos(angleRad);
-            double sin = Math.sin(angleRad);
-
-            int startX = centerX - textWidth / 2;
-            int startY = centerY - textHeight / 2;
-
-            for (int i = 0; i < textWidth; i++) {
-                for (int j = 0; j < textHeight; j++) {
-                    int color = textImage.getColor(i, j);
-                    if (color != 0) {
-                        int rotatedX = (int)(startX + i * cos - j * sin);
-                        int rotatedY = (int)(startY + i * sin + j * cos);
-                        if (rotatedX >= 0 && rotatedX < nativeImage.getWidth() &&
-                                rotatedY >= 0 && rotatedY < nativeImage.getHeight()) {
-                            blendPixel(nativeImage, rotatedX, rotatedY, color);
-                        }
-                    }
-                }
-            }
-        } finally {
-            if (textImage != null) {
-                textImage.close(); // ← ОЧЕНЬ ВАЖНО!
-            }
-        }
+        // Используем уже готовую функцию drawString, она работает стабильнее твоего цикла
+        // Она правильно смешивает альфа-канал и не создает глитчей
+        drawString(nativeImage, pixels, x, y, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.TOP, 0, textColor, false);
     }
+
 
     private static String transliterate(String text) {
         char[] rus = {'а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ','ъ','ы','ь','э','ю','я'};
@@ -1066,5 +1042,43 @@ public class SPBRouteMapGenerator implements IGui {
         }
         return result.toString();
     }
+
+
+    private static void drawRotatedString(NativeImage nativeImage, byte[] pixels, int[] dimensions, int anchorX, int anchorY, float angleDegrees, int textColor, float alignX, float alignY) {
+        if (pixels == null) return;
+
+        int textWidth = dimensions[0];
+        int textHeight = dimensions[1];
+        double angleRad = Math.toRadians(angleDegrees);
+        double cos = Math.cos(angleRad);
+        double sin = Math.sin(angleRad);
+
+        // Точка вращения внутри текста
+        int pivotX = (int) (textWidth * alignX);
+        int pivotY = (int) (textHeight * alignY);
+
+        // Размер области для поиска пикселей (с запасом)
+        int size = Math.max(textWidth, textHeight) * 2;
+
+        for (int dx = -size; dx <= size; dx++) {
+            for (int dy = -size; dy <= size; dy++) {
+                // Обратное вращение
+                int srcX = (int) Math.round(dx * cos + dy * sin) + pivotX;
+                int srcY = (int) Math.round(dy * cos - dx * sin) + pivotY;
+
+                if (srcX >= 0 && srcX < textWidth && srcY >= 0 && srcY < textHeight) {
+                    int i = srcY * textWidth + srcX;
+                    int alpha = pixels[i] & 0xFF;
+                    if (alpha > 30) {
+                        blendPixel(nativeImage, anchorX + dx, anchorY + dy, (alpha << 24) | (textColor & RGB_WHITE));
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
 
 }
