@@ -51,333 +51,6 @@ public class SPBRouteMapGenerator implements IGui {
         fontSizeSmall = fontSizeBig / 2;
     }
 
-    public static NativeImage generatePixelatedText(String text, int textColor, int maxWidth, double cjkSizeRatio, boolean fullPixel) {
-        try {
-            final int scale = fullPixel ? 1 : PIXEL_SCALE;
-            final int newMaxWidth = maxWidth / scale;
-            final int[] dimensions = new int[2];
-            final byte[] pixels = DynamicTextureCache.instance.getTextPixels(text, dimensions, newMaxWidth, Integer.MAX_VALUE, (int) Math.round(PIXEL_RESOLUTION * (cjkSizeRatio > 0 ? cjkSizeRatio + 1 : 1)), (int) Math.round(PIXEL_RESOLUTION * (cjkSizeRatio < 0 ? 1 - cjkSizeRatio : 1)), 0, HorizontalAlignment.CENTER);
-            final int width = Math.min(newMaxWidth, dimensions[0]) * scale;
-            final int height = dimensions[1] * scale;
-
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, height, false);
-            nativeImage.fillRect(0, 0, width, height, 0);
-            drawStringPixelated(nativeImage, pixels, dimensions, textColor, fullPixel);
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateColorStrip(long platformId) {
-        try {
-            final IntArrayList colors = getRouteStream(platformId, (simplifiedRoute, currentStationIndex) -> {
-            });
-            if (colors.isEmpty()) {
-                final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), 1, 1, false);
-                nativeImage.setPixelColor(0, 0, 0);
-                return nativeImage;
-            } else {
-                final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), 1, colors.size(), false);
-                for (int i = 0; i < colors.size(); i++) {
-                    drawPixelSafe(nativeImage, 0, i, ARGB_BLACK | colors.getInt(i));
-                }
-                return nativeImage;
-            }
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateStationName(String stationName, float aspectRatio) {
-        if (aspectRatio <= 0) {
-            return null;
-        }
-
-        try {
-            final int height = scale * 2;
-            final int width = Math.round(height * aspectRatio);
-            final int padding = scale / 16;
-            final int[] dimensions = new int[2];
-            final byte[] pixels = DynamicTextureCache.instance.getTextPixels(stationName, dimensions, width - padding * 2, height - padding * 2, fontSizeBig * 2, fontSizeSmall * 2, padding, HorizontalAlignment.CENTER);
-
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, height, false);
-            nativeImage.fillRect(0, 0, width, height, 0);
-            drawString(nativeImage, pixels, width / 2, height / 2, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, 0, ARGB_WHITE, false);
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateTallStationName(int textColor, String stationName, int stationColor, float aspectRatio) {
-        if (aspectRatio <= 0) {
-            return null;
-        }
-
-        try {
-            final int width = Math.round(scale * 1.6F);
-            final int height = Math.round(width / aspectRatio);
-            final int[] dimensions = new int[2];
-            final byte[] pixels = DynamicTextureCache.instance.getTextPixels(IGui.formatVerticalChinese(stationName), dimensions, width, height, fontSizeBig * 2, fontSizeSmall * 2, 0, HorizontalAlignment.CENTER);
-
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, height, false);
-            nativeImage.fillRect(0, 0, width, height, 0);
-            drawString(nativeImage, pixels, width / 2, height / 2, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, ARGB_BLACK | stationColor, textColor, false);
-            clearColor(nativeImage, invertColor(ARGB_BLACK | stationColor));
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateStationNameEntrance(int textColor, String stationName, float aspectRatio) {
-        if (aspectRatio <= 0) {
-            return null;
-        }
-
-        try {
-            final int size = scale * 2;
-            final int width = Math.round(size * aspectRatio);
-            final int padding = scale / 16;
-            final int[] dimensions = new int[2];
-            final byte[] pixels = DynamicTextureCache.instance.getTextPixels(stationName, dimensions, width - size - padding, size - padding * 2, fontSizeBig * 3, fontSizeSmall * 3, padding, HorizontalAlignment.LEFT);
-            final int xOffset = (width - dimensions[0] - size) / 2;
-            final int fakeBackgroundColor = textColor == ARGB_BLACK ? textColor + 0x010101 : 0;
-
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, size, false);
-            nativeImage.fillRect(0, 0, width, size, fakeBackgroundColor);
-            drawResource(nativeImage, LOGO_RESOURCE, xOffset, 0, size, size, false, 0, 1, 0, true);
-            drawString(nativeImage, pixels, size + xOffset, size / 2, dimensions, HorizontalAlignment.LEFT, VerticalAlignment.CENTER, fakeBackgroundColor, textColor, false);
-            clearColor(nativeImage, invertColor(fakeBackgroundColor));
-
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateSingleRowStationName(long platformId, float aspectRatio) {
-        if (aspectRatio <= 0) {
-            return null;
-        }
-
-        try {
-            final int[] dimensions = new int[2];
-            final byte[] pixels = DynamicTextureCache.instance.getTextPixels(getStationName(platformId).replace("|", " | "), dimensions, fontSizeBig, fontSizeSmall);
-            final int padding = dimensions[1] / 2;
-            final int height = dimensions[1] + padding;
-            final int width = Math.max(Math.round(height * aspectRatio), dimensions[0] + padding);
-
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, height, false);
-            nativeImage.fillRect(0, 0, width, height, ARGB_WHITE);
-            drawString(nativeImage, pixels, width / 2, height / 2, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, 0, ARGB_BLACK, false);
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateSignText(String text, HorizontalAlignment horizontalAlignment, float paddingScale, int backgroundColor, int textColor) {
-        try {
-            final int height = scale;
-            final int padding = Math.round(height * paddingScale);
-            final int tileSize = height - padding * 2;
-            final int tilePadding = tileSize / 4;
-
-            final int[] dimensions = new int[2];
-            final byte[] pixels = DynamicTextureCache.instance.getTextPixels(text, dimensions, Integer.MAX_VALUE, (int) (tileSize * DynamicTextureCache.LINE_HEIGHT_MULTIPLIER), tileSize * 3 / 5, tileSize * 3 / 10, tilePadding, horizontalAlignment);
-            final int width = dimensions[0] - tilePadding * 2;
-
-            if (width <= 0 || height <= 0) {
-                return null;
-            }
-
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, height, false);
-            nativeImage.fillRect(0, 0, width, height, 0);
-            drawString(nativeImage, pixels, width / 2, height / 2, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, backgroundColor, textColor, false);
-            clearColor(nativeImage, invertColor(backgroundColor));
-
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateLiftPanel(String text, int textColor) {
-        try {
-            final int width = Math.round(scale * 1.5F);
-            final int height = fontSizeSmall * 2 * text.split("\\|").length;
-            final int[] dimensions = new int[2];
-            final byte[] pixels = DynamicTextureCache.instance.getTextPixels(text.toUpperCase(Locale.ENGLISH), dimensions, width, height, fontSizeSmall * 2, fontSizeSmall * 2, 0, HorizontalAlignment.CENTER);
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, height, false);
-            nativeImage.fillRect(0, 0, width, height, 0);
-            drawString(nativeImage, pixels, width / 2, height / 2, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, ARGB_BLACK, textColor, false);
-            clearColor(nativeImage, invertColor(ARGB_BLACK));
-
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateExitSignLetter(String exitLetter, String exitNumber, int backgroundColor) {
-        try {
-            final int size = scale / 2;
-            final boolean noNumber = exitNumber.isEmpty();
-            final int textSize = size * 7 / 8;
-            final int[] dimensions1 = new int[2];
-            final byte[] pixels1 = DynamicTextureCache.instance.getTextPixels(exitLetter, dimensions1, noNumber ? textSize : textSize * 2 / 3, textSize, textSize, size, size, HorizontalAlignment.CENTER);
-            final int[] dimensions2 = new int[2];
-            final byte[] pixels2 = noNumber ? null : DynamicTextureCache.instance.getTextPixels(exitNumber, dimensions2, textSize / 3, textSize, textSize / 2, textSize / 2, size, HorizontalAlignment.CENTER);
-
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), size, size, false);
-            nativeImage.fillRect(0, 0, size, size, backgroundColor);
-            drawResource(nativeImage, EXIT_RESOURCE, 0, 0, size, size, false, 0, 1, 0, true);
-            drawString(nativeImage, pixels1, size / 2 - (noNumber ? 0 : textSize / 6 - size / 32), size / 2, dimensions1, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, 0, ARGB_WHITE, false);
-            if (!noNumber) {
-                drawString(nativeImage, pixels2, size / 2 + textSize / 3 - size / 32, size / 2 + textSize / 8, dimensions2, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, 0, ARGB_WHITE, false);
-            }
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateRouteSquare(int color, String routeName, HorizontalAlignment horizontalAlignment) {
-        try {
-            final int padding = scale / 32;
-            final int[] dimensions = new int[2];
-            final byte[] pixels = DynamicTextureCache.instance.getTextPixels(routeName, dimensions, Integer.MAX_VALUE, (int) ((fontSizeBig + fontSizeSmall) * DynamicTextureCache.LINE_HEIGHT_MULTIPLIER), fontSizeBig, fontSizeSmall, padding, horizontalAlignment);
-
-            final int width = dimensions[0] + padding * 2;
-            final int height = dimensions[1] + padding * 2;
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, height, false);
-            nativeImage.fillRect(0, 0, width, height, invertColor(ARGB_BLACK | color));
-            drawString(nativeImage, pixels, width / 2, height / 2, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, 0, ARGB_WHITE, false);
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
-    public static NativeImage generateDirectionArrow(long platformId, boolean hasLeft, boolean hasRight, HorizontalAlignment horizontalAlignment, boolean showToString, float paddingScale, float aspectRatio, int backgroundColor, int textColor, int transparentColor) {
-        if (aspectRatio <= 0) {
-            return null;
-        }
-
-        try {
-            final ObjectArrayList<String> destinations = new ObjectArrayList<>();
-            final IntArrayList colors = getRouteStream(platformId, (simplifiedRoute, currentStationIndex) -> {
-                final String tempMarker;
-                switch (simplifiedRoute.getCircularState()) {
-                    case CLOCKWISE:
-                        tempMarker = TEMP_CIRCULAR_MARKER_CLOCKWISE;
-                        break;
-                    case ANTICLOCKWISE:
-                        tempMarker = TEMP_CIRCULAR_MARKER_ANTICLOCKWISE;
-                        break;
-                    default:
-                        tempMarker = "";
-                }
-                destinations.add(tempMarker + simplifiedRoute.getPlatforms().get(currentStationIndex).getDestination());
-            });
-            final boolean isTerminating = destinations.isEmpty();
-
-            final boolean leftToRight = horizontalAlignment == HorizontalAlignment.CENTER ? hasLeft || !hasRight : horizontalAlignment != HorizontalAlignment.RIGHT;
-            final int height = scale;
-            final int width = Math.round(height * aspectRatio);
-            final int padding = Math.round(height * paddingScale);
-            final int tileSize = height - padding * 2;
-
-            if (width <= 0 || height <= 0) {
-                return null;
-            }
-
-            final DynamicTextureCache clientCache = DynamicTextureCache.instance;
-            final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), width, height, false);
-            nativeImage.fillRect(0, 0, width, height, invertColor(backgroundColor));
-
-            final int circleX;
-            if (isTerminating) {
-                circleX = (int) horizontalAlignment.getOffset(0, tileSize - width);
-            } else {
-                String destinationString = IGui.mergeStations(destinations);
-                final boolean isClockwise = destinationString.startsWith(TEMP_CIRCULAR_MARKER_CLOCKWISE);
-                final boolean isAnticlockwise = destinationString.startsWith(TEMP_CIRCULAR_MARKER_ANTICLOCKWISE);
-                destinationString = destinationString.replace(TEMP_CIRCULAR_MARKER_CLOCKWISE, "").replace(TEMP_CIRCULAR_MARKER_ANTICLOCKWISE, "");
-                if (!destinationString.isEmpty()) {
-                    if (isClockwise) {
-                        destinationString = IGui.insertTranslation(TranslationProvider.GUI_MTR_CLOCKWISE_VIA_CJK, TranslationProvider.GUI_MTR_CLOCKWISE_VIA, 1, destinationString);
-                    } else if (isAnticlockwise) {
-                        destinationString = IGui.insertTranslation(TranslationProvider.GUI_MTR_ANTICLOCKWISE_VIA_CJK, TranslationProvider.GUI_MTR_ANTICLOCKWISE_VIA, 1, destinationString);
-                    } else if (showToString) {
-                        destinationString = IGui.insertTranslation(TranslationProvider.GUI_MTR_TO_CJK, TranslationProvider.GUI_MTR_TO, 1, destinationString);
-                    }
-                }
-
-                final int tilePadding = tileSize / 4;
-                final int leftSize = ((hasLeft ? 1 : 0) + (leftToRight ? 1 : 0)) * (tileSize + tilePadding);
-                final int rightSize = ((hasRight ? 1 : 0) + (leftToRight ? 0 : 1)) * (tileSize + tilePadding);
-
-                final int[] dimensionsDestination = new int[2];
-                final byte[] pixelsDestination = clientCache.getTextPixels(destinationString, dimensionsDestination, width - leftSize - rightSize - padding * (showToString ? 2 : 1), (int) (tileSize * DynamicTextureCache.LINE_HEIGHT_MULTIPLIER), tileSize * 3 / 5, tileSize * 3 / 10, tilePadding, leftToRight ? HorizontalAlignment.LEFT : HorizontalAlignment.RIGHT);
-                final int leftPadding = (int) horizontalAlignment.getOffset(0, leftSize + rightSize + dimensionsDestination[0] - tilePadding * 2 - width);
-                drawString(nativeImage, pixelsDestination, leftPadding + leftSize - tilePadding, height / 2, dimensionsDestination, HorizontalAlignment.LEFT, VerticalAlignment.CENTER, backgroundColor, textColor, false);
-
-                if (hasLeft) {
-                    drawResource(nativeImage, ARROW_RESOURCE, leftPadding, padding, tileSize, tileSize, false, 0, 1, textColor, false);
-                }
-                if (hasRight) {
-                    drawResource(nativeImage, ARROW_RESOURCE, leftPadding + leftSize + dimensionsDestination[0] - tilePadding * 2 + rightSize - tileSize, padding, tileSize, tileSize, true, 0, 1, textColor, false);
-                }
-
-                circleX = leftPadding + leftSize + (leftToRight ? -tileSize - tilePadding : dimensionsDestination[0] - tilePadding);
-            }
-
-            for (int i = 0; i < colors.size(); i++) {
-                drawResource(nativeImage, CIRCLE_RESOURCE, circleX, padding, tileSize, tileSize, false, (float) i / colors.size(), (i + 1F) / colors.size(), colors.getInt(i), false);
-            }
-
-            final Platform platform = MinecraftClientData.getInstance().platformIdMap.get(platformId);
-            if (platform != null) {
-                final int[] dimensionsPlatformNumber = new int[2];
-                final byte[] pixelsPlatformNumber = clientCache.getTextPixels(platform.getName(), dimensionsPlatformNumber, tileSize, (int) (tileSize * DynamicTextureCache.LINE_HEIGHT_MULTIPLIER * 3 / 4), tileSize * 3 / 4, tileSize * 3 / 4, 0, HorizontalAlignment.CENTER);
-                drawString(nativeImage, pixelsPlatformNumber, circleX + tileSize / 2, padding + tileSize / 2, dimensionsPlatformNumber, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, 0, ARGB_WHITE, false);
-            }
-
-            if (transparentColor != 0) {
-                clearColor(nativeImage, invertColor(transparentColor));
-            }
-
-            return nativeImage;
-        } catch (Exception e) {
-            Init.LOGGER.error("", e);
-        }
-
-        return null;
-    }
-
     public static NativeImage generateRouteMap(long platformId, boolean vertical, boolean flip, float aspectRatio, boolean transparentWhite) {
         if (aspectRatio <= 0) {
             return null;
@@ -580,6 +253,22 @@ public class SPBRouteMapGenerator implements IGui {
                     clearColor(nativeImage, ARGB_WHITE);
                 }
 
+                int arrowColor = ARGB_BLACK;
+                if (!routeDetails.isEmpty()) {
+
+                    arrowColor = 0xFF000000 | routeDetails.get(0).left().getColor();
+                }
+
+                int imgWidth = nativeImage.getWidth();
+                int topPadding = 20; // Отступ сверху
+                int sidePadding = 40; // Отступ от краев
+
+
+                drawArrow(nativeImage, sidePadding, topPadding, arrowColor, false);
+
+
+                drawArrow(nativeImage, imgWidth - sidePadding, topPadding, arrowColor, false);
+
                 return nativeImage;
             } else {
                 final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), 1, 1, false);
@@ -592,18 +281,7 @@ public class SPBRouteMapGenerator implements IGui {
         return null;
     }
 
-    public static void scrollTextLightRail(GraphicsHolder graphicsHolder, int rows, float availableWidth, float availableHeight, int imageWidth, int imageHeight) {
-        final float scale = availableHeight / imageHeight * rows;
-        final int delayTime = 3000;
-        final int slideTime = 8;
-        final int totalTime = delayTime + (int) Math.floor(availableWidth / scale) * slideTime;
-        final int totalStep = (int) (System.currentTimeMillis() % (totalTime * rows));
-        final int step = totalStep % totalTime;
-        final int row = totalStep / totalTime;
-        final float xOffset = (availableWidth - imageWidth * scale) / 2;
-        final float x = xOffset - Math.max(0, step - delayTime) * scale / slideTime;
-        IDrawing.drawTexture(graphicsHolder, Math.max(x, 0), 0, imageWidth * scale + Math.min(x, 0), availableHeight, Math.max(-x, 0) / imageWidth / scale, (float) row / rows, 1, (float) (row + 1) / rows, Direction.UP, ARGB_WHITE, GraphicsHolder.getDefaultLight());
-    }
+
 
     private static void setup(ObjectArrayList<Int2ObjectAVLTreeMap<StationPosition>> stationPositions, ObjectArrayList<LongArrayList> stationsIdLists, int[] colorIndices, float[] bounds, boolean passed, boolean reverse) {
         final int passedMultiplier = passed ? -1 : 1;
@@ -987,67 +665,6 @@ public class SPBRouteMapGenerator implements IGui {
         }
     }
 
-    private static void drawRotatedText(NativeImage nativeImage, String text, int x, int y, int textColor, boolean isEnglish) {
-        if (text == null || text.isEmpty()) return;
-
-        // Для простоты используем стандартный метод drawString с поворотом
-        // В MTR нет встроенного поворота текста, поэтому нужно создать временное изображение с повёрнутым текстом
-
-        // Получаем пиксели текста через DynamicTextureCache
-        int[] dimensions = new int[2];
-        byte[] pixels = DynamicTextureCache.instance.getTextPixels(text, dimensions, fontSizeBig, fontSizeSmall);
-
-        if (pixels == null) return;
-
-        int textWidth = dimensions[0];
-        int textHeight = dimensions[1];
-
-        // Создаём временное изображение для текста
-        NativeImage textImage = new NativeImage(NativeImageFormat.getAbgrMapped(), textWidth, textHeight, false);
-        for (int i = 0; i < textWidth * textHeight; i++) {
-            int alpha = pixels[i] & 0xFF;
-            if (alpha > 0) {
-                int color = (alpha << 24) | (textColor & RGB_WHITE);
-                int px = i % textWidth;
-                int py = i / textWidth;
-                textImage.setPixelColor(px, py, color);
-            }
-        }
-
-        // Применяем поворот (простой алгоритм — можно улучшить)
-        // Для диагонали используем сдвиг строк
-        int angleX = isEnglish ? 5 : -5; // направление диагонали
-        for (int i = 0; i < textWidth; i++) {
-            for (int j = 0; j < textHeight; j++) {
-                int color = textImage.getColor(i, j);
-                if (color != 0) {
-                    int newX = x + i + (j * angleX / textHeight);
-                    int newY = y + j;
-                    if (newX >= 0 && newX < nativeImage.getWidth() && newY >= 0 && newY < nativeImage.getHeight()) {
-                        blendPixel(nativeImage, newX, newY, color);
-                    }
-                }
-            }
-        }
-
-        textImage.close();
-    }
-
-    private static void drawStationNameCorrected(NativeImage nativeImage, String text, int x, int y, int textColor) {
-        if (text == null || text.isEmpty()) return;
-
-        int[] dimensions = new int[2];
-        // ВАЖНО: передаем большую maxWidth (scale * 4), чтобы текст не сжимался в кашу
-        byte[] pixels = DynamicTextureCache.instance.getTextPixels(text, dimensions, scale * 4, fontSizeBig, fontSizeBig, fontSizeSmall, 0, HorizontalAlignment.CENTER);
-
-        if (pixels == null) return;
-
-        // Используем уже готовую функцию drawString, она работает стабильнее твоего цикла
-        // Она правильно смешивает альфа-канал и не создает глитчей
-        drawString(nativeImage, pixels, x, y, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.TOP, 0, textColor, false);
-    }
-
-
     private static String transliterate(String text) {
         char[] rus = {'а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ','ъ','ы','ь','э','ю','я'};
         String[] eng = {"a","b","v","g","d","e","yo","zh","z","i","y","k","l","m","n","o","p","r","s","t","u","f","kh","ts","ch","sh","sch","","y","","e","yu","ya"};
@@ -1100,6 +717,45 @@ public class SPBRouteMapGenerator implements IGui {
             }
         }
     }
+    /**
+     * Рисует шеврон (галочку) в указанных координатах.
+     * @param isRight true - вправо (>), false - влево (<)
+     */
+    private static void drawArrow(NativeImage image, int x, int y, int color, boolean isRight) {
+        int size = 10;
+        int thickness = 8;
+        int shaftLength = 25;
+
+        // Рисуем наконечник
+        for (int i = 0; i < size; i++) {
+            for (int t = 0; t < thickness; t++) {
+                if (isRight) {
+                    // Острие вправо
+                    drawPixelSafe(image, x - i, y - i + t, color);
+                    drawPixelSafe(image, x - i, y + i + t, color);
+                } else {
+                    // Острие влево
+                    drawPixelSafe(image, x + i, y - i + t, color);
+                    drawPixelSafe(image, x + i, y + i + t, color);
+                }
+            }
+        }
+
+        // Рисуем древко (палочку)
+        for (int i = 0; i < shaftLength; i++) {
+            for (int t = 0; t < thickness; t++) {
+                if (isRight) {
+                    drawPixelSafe(image, x - i, y + t, color);
+                } else {
+                    drawPixelSafe(image, x + i, y + t, color);
+                }
+            }
+        }
+    }
+
+
+
+
 
 
 

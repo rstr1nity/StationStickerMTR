@@ -22,7 +22,7 @@ import org.mtr.mod.client.IDrawing;
 public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity> {
 
     private static final float SCHEME_WIDTH = 4.0f;
-    private static final float SCHEME_HEIGHT = 2.0f;
+    private static final float SCHEME_HEIGHT = 1.5f;
     private static final float SCHEME_Z_OFFSET = 0.005f;
 
     public LineSchemeRenderer(BlockEntityRendererProvider.Context context) {
