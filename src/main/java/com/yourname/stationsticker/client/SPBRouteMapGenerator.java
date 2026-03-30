@@ -194,7 +194,9 @@ public class SPBRouteMapGenerator implements IGui {
                         // Берём цвет из маршрута (первый маршрут для упрощения)
                         stationLineColor = routeDetails.get(0).left().getColor();
                     }
-                    drawStation(nativeImage, x, y, heightScale, lines, currentStation, stationLineColor, interchangeColors);
+                    // Добавляем currentStation седьмым аргументом
+                    drawStation(nativeImage, x, y, heightScale, lines, passed, currentStation, stationLineColor, interchangeColors);
+
 
 
 
@@ -260,14 +262,14 @@ public class SPBRouteMapGenerator implements IGui {
                 }
 
                 int imgWidth = nativeImage.getWidth();
-                int topPadding = 20; // Отступ сверху
+                int topPadding = 30; // Отступ сверху
                 int sidePadding = 40; // Отступ от краев
 
 
                 drawArrow(nativeImage, sidePadding, topPadding, arrowColor, false);
 
 
-                drawArrow(nativeImage, imgWidth - sidePadding, topPadding, arrowColor, false);
+                drawArrow(nativeImage, imgWidth - 2*sidePadding, topPadding, arrowColor, false);
 
                 return nativeImage;
             } else {
@@ -429,11 +431,12 @@ public class SPBRouteMapGenerator implements IGui {
     /**
      * Отрисовывает кружок станции. Если есть пересадки, кружок делится на равные сектора (доли).
      */
-    private static void drawStation(NativeImage nativeImage, int x, int y, float heightScale, int lines, boolean passed, int lineColor, IntArrayList interchangeColors) {
-        // Собираем все уникальные цвета (цвет основной линии + цвета пересадок)
+    // Добавили boolean isCurrentStation перед int lineColor
+    private static void drawStation(NativeImage nativeImage, int x, int y, float heightScale, int lines, boolean passed, boolean isCurrentStation, int lineColor, IntArrayList interchangeColors) {
         IntArrayList allColors = new IntArrayList();
         allColors.add(lineColor);
-        if (interchangeColors != null && !passed) {
+        // Если станция пройдена и она НЕ текущая, то мы не собираем цвета пересадок (она будет серой)
+        if (interchangeColors != null && !(passed && !isCurrentStation)) {
             for (int i = 0; i < interchangeColors.size(); i++) {
                 int c = interchangeColors.getInt(i);
                 if (allColors.indexOf(c) == -1 && c != lineColor) {
@@ -443,55 +446,56 @@ public class SPBRouteMapGenerator implements IGui {
         }
         int numSegments = allColors.size();
 
-        for (int offsetX = -lineSize; offsetX < lineSize; offsetX++) {
-            for (int offsetY = -lineSize; offsetY < lineSize; offsetY++) {
+        double radius = lineSize;
+
+        for (int offsetX = -lineSize - 1; offsetX <= lineSize + 1; offsetX++) {
+            for (int offsetY = -lineSize - 1; offsetY <= lineSize + 1; offsetY++) {
                 final int extraOffsetY = offsetY > 0 ? (int) (lines * lineSpacing * heightScale) : 0;
                 final int repeatDraw = offsetY == 0 ? (int) (lines * lineSpacing * heightScale) : 0;
 
                 double distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-                double radius = lineSize;
 
-                if (distance <= radius) {
+                if (distance <= radius + 0.5) {
+                    float alphaMultiplier = 1.0f;
+                    if (distance > radius - 0.5) {
+                        alphaMultiplier = (float) (radius + 0.5 - distance);
+                    }
+
                     int color;
 
-                    // Маленькая белая точка в центре (радиус 3 пикселя)
-                    boolean isCenter = distance <= 3;
-
-                    if (isCenter) {
-                        color = ARGB_WHITE;
-                    } else if (passed) {
-                        // Пройденные станции — серый градиент
-                        float t = (float) ((distance - 3) / (radius - 3));
-                        t = Math.min(1.0f, Math.max(0.0f, t));
-                        int gray = (int) (255 - t * 150);
-                        color = (255 << 24) | (gray << 16) | (gray << 8) | gray;
-                    } else {
-                        // Вычисляем к какому сегменту относится пиксель
+                    // Если станция текущая, делаем ей белый центр
+                    if (distance <= 3 && isCurrentStation) {
+                        float dotAlpha = distance > 2.5 ? (float)(3.5 - distance) : 1.0f;
+                        color = ((int)(255 * dotAlpha) << 24) | 0x00FFFFFF;
+                    }
+                    // Для остальных станций (или если не текущая, но расстояние <= 3)
+                    // Если вы хотите, чтобы у всех станций был белый центр, уберите && isCurrentStation выше
+                    else {
                         int segmentColor = lineColor;
-                        if (numSegments > 1) {
-                            double angle = Math.toDegrees(Math.atan2(offsetY, offsetX));
-                            if (angle < 0) angle += 360;
-                            // Сдвигаем на 90 градусов, чтобы деление начиналось сверху
-                            angle = (angle + 90) % 360;
 
+                        // Логика сегментов пересадок
+                        if (numSegments > 1 && !(passed && !isCurrentStation)) {
+                            double angle = (Math.toDegrees(Math.atan2(offsetY, offsetX)) + 450) % 360;
                             int segmentIndex = (int) (angle / (360.0 / numSegments));
                             if (segmentIndex >= numSegments) segmentIndex = numSegments - 1;
                             segmentColor = allColors.getInt(segmentIndex);
                         }
 
-                        // Будущие станции — градиент от белого к цвету нужного сегмента
-                        float t = (float) ((distance - 3) / (radius - 3));
-                        t = Math.min(1.0f, Math.max(0.0f, t));
+                        // Если станция пройдена и НЕ текущая, она серая
+                        if (passed && !isCurrentStation) segmentColor = ARGB_LIGHT_GRAY;
 
-                        int lineR = (segmentColor >> 16) & 0xFF;
-                        int lineG = (segmentColor >> 8) & 0xFF;
-                        int lineB = segmentColor & 0xFF;
+                        float t = Math.min(1.0f, Math.max(0.0f, (float) ((distance - 3) / (radius - 3))));
+                        int r2 = (segmentColor >> 16) & 0xFF;
+                        int g2 = (segmentColor >> 8) & 0xFF;
+                        int b2 = segmentColor & 0xFF;
 
-                        int r = (int) (255 * (1 - t) + lineR * t);
-                        int g = (int) (255 * (1 - t) + lineG * t);
-                        int b = (int) (255 * (1 - t) + lineB * t);
+                        int finalR = (int) (255 * (1 - t) + r2 * t);
+                        int finalG = (int) (255 * (1 - t) + g2 * t);
+                        int finalB = (int) (255 * (1 - t) + b2 * t);
 
-                        color = (255 << 24) | (r << 16) | (g << 8) | b;
+                        int finalA = (int) (255 * alphaMultiplier);
+
+                        color = (finalA << 24) | (finalR << 16) | (finalG << 8) | finalB;
                     }
 
                     for (int i = 0; i <= repeatDraw; i++) {
@@ -501,6 +505,8 @@ public class SPBRouteMapGenerator implements IGui {
             }
         }
     }
+
+
 
 
 
@@ -694,37 +700,62 @@ public class SPBRouteMapGenerator implements IGui {
         double cos = Math.cos(angleRad);
         double sin = Math.sin(angleRad);
 
-        // Точка вращения внутри текста
-        int pivotX = (int) (textWidth * alignX);
-        int pivotY = (int) (textHeight * alignY);
+        // Точка вращения внутри текста (теперь дробная для точности)
+        double pivotX = textWidth * alignX;
+        double pivotY = textHeight * alignY;
 
         // Размер области для поиска пикселей (с запасом)
-        int size = Math.max(textWidth, textHeight) * 2;
+        int size = (int) (Math.max(textWidth, textHeight) * 1.5);
 
         for (int dx = -size; dx <= size; dx++) {
             for (int dy = -size; dy <= size; dy++) {
-                // Обратное вращение
-                int srcX = (int) Math.round(dx * cos + dy * sin) + pivotX;
-                int srcY = (int) Math.round(dy * cos - dx * sin) + pivotY;
+                // Обратное вращение: получаем точную ДРОБНУЮ координату исходного пикселя шрифта
+                double srcX = dx * cos + dy * sin + pivotX;
+                double srcY = dy * cos - dx * sin + pivotY;
 
-                if (srcX >= 0 && srcX < textWidth && srcY >= 0 && srcY < textHeight) {
-                    int i = srcY * textWidth + srcX;
-                    int alpha = pixels[i] & 0xFF;
-                    if (alpha > 30) {
-                        blendPixel(nativeImage, anchorX + dx, anchorY + dy, (alpha << 24) | (textColor & RGB_WHITE));
+                // Проверяем, попадает ли точка в границы исходного шрифта
+                if (srcX >= 0 && srcX < textWidth - 1 && srcY >= 0 && srcY < textHeight - 1) {
+                    // --- БИЛИНЕЙНАЯ ИНТЕРПОЛЯЦИЯ ДЛЯ СГЛАЖИВАНИЯ ---
+
+                    // Целая часть координат
+                    int x1 = (int) srcX;
+                    int y1 = (int) srcY;
+                    int x2 = x1 + 1;
+                    int y2 = y1 + 1;
+
+                    // Дробная часть (веса для смешивания)
+                    double fx = srcX - x1;
+                    double fy = srcY - y1;
+
+                    // Получаем альфа-канал из 4-х соседних пикселей
+                    double alpha11 = pixels[y1 * textWidth + x1] & 0xFF; // верхний левый
+                    double alpha21 = pixels[y1 * textWidth + x2] & 0xFF; // верхний правый
+                    double alpha12 = pixels[y2 * textWidth + x1] & 0xFF; // нижний левый
+                    double alpha22 = pixels[y2 * textWidth + x2] & 0xFF; // нижний правый
+
+                    // Смешиваем их с учетом весов
+                    double interpolatedAlpha =
+                            alpha11 * (1 - fx) * (1 - fy) +
+                                    alpha21 * fx * (1 - fy) +
+                                    alpha12 * (1 - fx) * fy +
+                                    alpha22 * fx * fy;
+
+                    int finalAlpha = (int) interpolatedAlpha;
+
+                    // Порог видимости оставляем низким, чтобы сохранить мягкие края
+                    if (finalAlpha > 10) {
+                        blendPixel(nativeImage, anchorX + dx, anchorY + dy, (finalAlpha << 24) | (textColor & RGB_WHITE));
                     }
                 }
             }
         }
     }
-    /**
-     * Рисует шеврон (галочку) в указанных координатах.
-     * @param isRight true - вправо (>), false - влево (<)
-     */
+
+
     private static void drawArrow(NativeImage image, int x, int y, int color, boolean isRight) {
-        int size = 10;
-        int thickness = 8;
-        int shaftLength = 25;
+        int size = 20;
+        int thickness = 10;
+        int shaftLength = 50;
 
         // Рисуем наконечник
         for (int i = 0; i < size; i++) {
