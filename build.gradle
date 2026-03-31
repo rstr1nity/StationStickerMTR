@@ -67,7 +67,7 @@ jar {
 }
 task copyToMods(type: Copy) {
     from 'build/libs'
-    into 'C:/Users/aleks/AppData/Roaming/.minecraft/versions/проверка мода/mods'
+    into 'C:/Users/aleks/AppData/Roaming/.minecraft/versions/проверка мода 1.20.1/mods'
     include '*.jar'
 }
 

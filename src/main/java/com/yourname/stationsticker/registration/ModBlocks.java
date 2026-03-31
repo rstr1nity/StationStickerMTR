@@ -1,6 +1,7 @@
 package com.yourname.stationsticker.registration;
 
 import com.yourname.stationsticker.StationStickerMod;
+import com.yourname.stationsticker.block.LineSchemeBlock;
 import com.yourname.stationsticker.block.StationStickerBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -22,6 +23,9 @@ public class ModBlocks {
     public static final RegistryObject<StationStickerBlock> STATION_STICKER =
             registerBlock("station_sticker",
                     () -> new StationStickerBlock());
+    public static final RegistryObject<LineSchemeBlock> LINE_SCHEME =
+            registerBlock("line_scheme",
+                    () -> new LineSchemeBlock());
 
     // В 1.20.1 вкладка создается, но предметы добавляются в неё отдельно
     public static final CreativeModeTab STICKER_TAB = CreativeModeTab.builder()

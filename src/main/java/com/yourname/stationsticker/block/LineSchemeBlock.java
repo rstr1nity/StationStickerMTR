@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -29,12 +28,14 @@ public class LineSchemeBlock extends BaseEntityBlock {
     protected static final VoxelShape EAST_AABB = Block.box(0, 0, 0, 2, 16, 16);
 
     public LineSchemeBlock() {
-        super(Properties.of(Material.METAL)
+        super(Properties.of()
                 .strength(1.0f)
                 .sound(SoundType.METAL)
                 .noOcclusion()
-                .noCollission());
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+                .noCollission()); // Важно!
+        this.registerDefaultState(
+                this.stateDefinition.any()
+                        .setValue(FACING, Direction.NORTH));
     }
 
     @Override
