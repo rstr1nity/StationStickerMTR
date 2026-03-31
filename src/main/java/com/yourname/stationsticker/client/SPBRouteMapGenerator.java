@@ -208,7 +208,7 @@ public class SPBRouteMapGenerator implements IGui {
                     boolean isEnglishOnly = stationName.matches("[A-Za-z0-9\\s\\-]+");
 
                     int nameX = x; // Привязка строго по центру кружка
-                    int textColor = passed ? ARGB_LIGHT_GRAY : (currentStation ? stationLineColor : ARGB_BLACK);
+                    int textColor = passed ? ARGB_LIGHT_GRAY : (currentStation ? darkenColor(stationLineColor, 0.75f) : ARGB_BLACK);
                     float angle = -55f;
 
 // Учет высоты пересадочного узла (если кружков несколько)
@@ -222,7 +222,7 @@ public class SPBRouteMapGenerator implements IGui {
 
                         // anchorX = x (центр), anchorY = y - verticalOffset (самый верх кружка)
                         // Pivot: 0.0f (начало слова), 1.0f (низ слова)
-                        drawRotatedString(nativeImage, engPix, engDims, x+3, y - verticalOffset, angle, textColor, 0.0f, 1.0f);
+                        drawRotatedString(nativeImage, engPix, engDims, x+22, y - verticalOffset, angle, textColor, 0.0f, 1.0f);
 
                     } else {
                         // --- РУССКОЕ (Сверху) + ТРАНСЛИТ (Снизу) ---
@@ -243,7 +243,7 @@ public class SPBRouteMapGenerator implements IGui {
                             // Заканчивается у нижней точки кружка (с учетом высоты пересадки)
                             // anchorX = x (центр), anchorY = y + высота + verticalOffset (самый низ кружка)
                             // Pivot: 1.0f (КОНЕЦ слова), 0.0f (ВЕРХ слова)
-                            drawRotatedString(nativeImage, transPix, transDims, x-19, y + totalLinesHeight + verticalOffset, angle, textColor, 1.0f, 0.0f);
+                            drawRotatedString(nativeImage, transPix, transDims, x-20, y + totalLinesHeight + verticalOffset, angle, textColor, 1.0f, 0.0f);
                         }
                     }
 
@@ -676,17 +676,32 @@ public class SPBRouteMapGenerator implements IGui {
         String[] eng = {"a","b","v","g","d","e","yo","zh","z","i","y","k","l","m","n","o","p","r","s","t","u","f","kh","ts","ch","sh","sch","","y","","e","yu","ya"};
 
         StringBuilder result = new StringBuilder();
-        for (char c : text.toLowerCase().toCharArray()) {
+
+        for (char c : text.toCharArray()) {
+
+            boolean upper = Character.isUpperCase(c);
+            char lower = Character.toLowerCase(c);
+
             boolean found = false;
+
             for (int i = 0; i < rus.length; i++) {
-                if (c == rus[i]) {
-                    result.append(eng[i]);
+                if (lower == rus[i]) {
+
+                    String r = eng[i];
+
+                    if (upper) {
+                        r = Character.toUpperCase(r.charAt(0)) + r.substring(1);
+                    }
+
+                    result.append(r);
                     found = true;
                     break;
                 }
             }
+
             if (!found) result.append(c);
         }
+
         return result.toString();
     }
 
@@ -784,6 +799,18 @@ public class SPBRouteMapGenerator implements IGui {
         }
     }
 
+    private static int darkenColor(int color, float factor) {
+        int a = (color >> 24) & 0xFF;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+
+        r = (int)(r * factor);
+        g = (int)(g * factor);
+        b = (int)(b * factor);
+
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
 
 
 
