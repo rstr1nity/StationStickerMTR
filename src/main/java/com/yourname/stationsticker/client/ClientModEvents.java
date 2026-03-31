@@ -40,6 +40,10 @@ public class ClientModEvents {
                 ModBlockEntities.STATION_STICKER.get(),
                 StationStickerRenderer::new
         );
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.LINE_SCHEME.get(),
+                LineSchemeRenderer::new
+        );
     }
 
 

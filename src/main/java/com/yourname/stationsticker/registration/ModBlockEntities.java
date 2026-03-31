@@ -1,6 +1,7 @@
 package com.yourname.stationsticker.registration;
 
 import com.yourname.stationsticker.StationStickerMod;
+import com.yourname.stationsticker.block.entity.LineSchemeEntity;
 import com.yourname.stationsticker.block.entity.StationStickerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.DeferredRegister;
@@ -18,4 +19,12 @@ public class ModBlockEntities {
                             StationStickerBlockEntity::new,
                             ModBlocks.STATION_STICKER.get()
                     ).build(null));
+
+    public static final RegistryObject<BlockEntityType<LineSchemeEntity>> LINE_SCHEME =
+            BLOCK_ENTITIES.register("line_scheme",
+                    () -> BlockEntityType.Builder.of(
+                            LineSchemeEntity::new,
+                            ModBlocks.LINE_SCHEME.get()
+                    ).build(null));
+
 }
