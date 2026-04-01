@@ -1,5 +1,7 @@
 {
   "block.stationsticker.station_sticker": "Станционный стикер",
   "item.stationsticker.station_sticker": "Станционный стикер",
-  "itemGroup.stationsticker": "Станционный стикер"
+  "block.stationsticker.line_scheme": "Схема линии",
+  "item.stationsticker.line_scheme": "Схема линии",
+  "itemGroup.stationsticker_tab": "Станционный стикер"
 }
