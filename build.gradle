@@ -118,7 +118,7 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle'
 
 group = 'com.yourname.stationsticker'
-version = '1.0.2'
+version = '1.1.0+1.19.2'
 archivesBaseName = 'StationStickerMTR'
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)

@@ -4,7 +4,7 @@ license="All rights reserved"
 
 [[mods]]
 modId="stationsticker"
-version="1.0.2"
+version="1.1.0"
 displayName="Station Sticker"
 description='''
 Adds customizable station name stickers that automatically display the station name and line color.

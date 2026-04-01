@@ -1,5 +1,7 @@
 {
   "block.stationsticker.station_sticker": "Station Sticker",
   "item.stationsticker.station_sticker": "Station Sticker",
-  "itemGroup.stationsticker": "Station Stickers"
+  "block.stationsticker.line_scheme": "Line Scheme",
+  "item.stationsticker.line_scheme": "Line Scheme",
+  "itemGroup.stationsticker_tab": "Station Stickers"
 }
