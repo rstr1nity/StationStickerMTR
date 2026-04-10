@@ -266,10 +266,10 @@ public class SPBRouteMapGenerator implements IGui {
                 int sidePadding = 40; // Отступ от краев
 
 
-                drawArrow(nativeImage, sidePadding, topPadding, arrowColor, false);
-
-
-                drawArrow(nativeImage, imgWidth - 2*sidePadding, topPadding, arrowColor, false);
+                // flip=false: поезд едет справа налево → левая стрелка влево, правая вправо (назад)
+                // flip=true:  поезд едет слева направо → левая стрелка вправо (назад), правая влево
+                drawArrow(nativeImage, sidePadding, topPadding, arrowColor, flip);           // левая стрелка
+                drawArrow(nativeImage, imgWidth - 2*sidePadding, topPadding, arrowColor, flip); // правая стрелка
 
                 return nativeImage;
             } else {

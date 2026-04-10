@@ -77,14 +77,8 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
 
         long platformId = platform.getId();
 
-        //  !!!!!!!!!! УБИРАЕМ ВСЮ ЛОГИКУ С ВЕРСИЯМИ И REFRESH !!!!!!!!!!!
-
-        // Просто запрашиваем текстуру у кэша каждый кадр.
-        // Кэш сам решит, нужно ли ее пересоздавать.
-        // ПРИМЕЧАНИЕ: Я предполагаю, что getRouteMap возвращает объект,
-        // у которого есть поле .identifier, как в MTR.
-        // Если у вас не так, адаптируйте под свой код.
-        var texture = SPBDynamicTextureCache.instance.getRouteMap(platformId, false, false, SCHEME_WIDTH / SCHEME_HEIGHT, false);
+        boolean flip = entity.isFlipped();
+        var texture = SPBDynamicTextureCache.instance.getRouteMap(platformId, false, flip, SCHEME_WIDTH / SCHEME_HEIGHT, false);
         if (texture == null) return;
 
         StoredMatrixTransformations transformations = new StoredMatrixTransformations(
