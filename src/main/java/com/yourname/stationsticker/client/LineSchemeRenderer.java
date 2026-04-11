@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.mtr.core.data.Platform;
@@ -18,6 +19,9 @@ import org.mtr.mod.render.MainRenderer;
 import org.mtr.mod.render.QueuedRenderLayer;
 import org.mtr.mod.render.StoredMatrixTransformations;
 import org.mtr.mod.client.IDrawing;
+import org.mtr.mapping.holder.Identifier;
+
+
 
 public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity> {
 
@@ -77,14 +81,8 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
 
         long platformId = platform.getId();
 
-        //  !!!!!!!!!! УБИРАЕМ ВСЮ ЛОГИКУ С ВЕРСИЯМИ И REFRESH !!!!!!!!!!!
-
-        // Просто запрашиваем текстуру у кэша каждый кадр.
-        // Кэш сам решит, нужно ли ее пересоздавать.
-        // ПРИМЕЧАНИЕ: Я предполагаю, что getRouteMap возвращает объект,
-        // у которого есть поле .identifier, как в MTR.
-        // Если у вас не так, адаптируйте под свой код.
-        var texture = SPBDynamicTextureCache.instance.getRouteMap(platformId, false, false, SCHEME_WIDTH / SCHEME_HEIGHT, false);
+        boolean flip = entity.isFlipped();
+        var texture = SPBDynamicTextureCache.instance.getRouteMap(platformId, false, flip, SCHEME_WIDTH / SCHEME_HEIGHT, false);
         if (texture == null) return;
 
         StoredMatrixTransformations transformations = new StoredMatrixTransformations(
@@ -95,7 +93,7 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
         transformations.add(graphicsHolder -> {
             graphicsHolder.rotateZDegrees(180);
             graphicsHolder.rotateYDegrees(-getRotationAngle(facing));
-            graphicsHolder.translate(0, 0, 0.5 - SCHEME_Z_OFFSET);
+            graphicsHolder.translate(0, 0, 0.5 - 0.081f);
         });
 
         MainRenderer.scheduleRender(texture.identifier, false, QueuedRenderLayer.EXTERIOR,
@@ -108,9 +106,90 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
                             org.mtr.mapping.holder.Direction.convert(facing),
                             0xFFFFFFFF,
                             packedLight);
+
                     graphicsHolder.pop();
                 }
         );
+
+        // --- ОТРИСОВКА ПОЛНОЦЕННОГО 3D-КОРПУСА ---
+        MainRenderer.scheduleRender(new Identifier("mtr", "textures/block/white.png"), false, QueuedRenderLayer.EXTERIOR,
+                (graphicsHolder, offset) -> {
+                    StoredMatrixTransformations frameTransformations = new StoredMatrixTransformations(
+                            pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5
+                    );
+                    frameTransformations.add(gh -> {
+                        gh.rotateZDegrees(180);
+                        gh.rotateYDegrees(-getRotationAngle(facing));
+                        gh.translate(0, 0, 0.5); // Прижимаем корпус к стене
+                    });
+                    frameTransformations.transform(graphicsHolder, offset);
+
+                    float W = SCHEME_WIDTH;
+                    float H = SCHEME_HEIGHT;
+                    float border = 0.05f;      // Толщина рамки (спереди)
+                    float totalDepth = 0.1f;   // Насколько весь стенд выпирает от стены
+                    float screenDepth = 0.08f; // Глубина, на которой лежит экран (он утоплен)
+
+                    int frameColor = 0xFF505050; // Серый цвет корпуса
+                    int backColor = 0xFF101010;  // Черный фон-подложка под экраном
+
+                    // 1. Черный фон для экрана
+                    graphicsHolder.push();
+                    graphicsHolder.translate(0, 0, -screenDepth);
+                    IDrawing.drawTexture(graphicsHolder, -W/2, -H/2, W, H, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, backColor, packedLight);
+                    graphicsHolder.pop();
+
+                    // 2. Передние рамки (выступают вперед)
+                    graphicsHolder.push();
+                    graphicsHolder.translate(0, 0, -totalDepth);
+                    IDrawing.drawTexture(graphicsHolder, -W/2, -H/2, border, H, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight); // Левая
+                    IDrawing.drawTexture(graphicsHolder, W/2 - border, -H/2, border, H, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight); // Правая
+                    IDrawing.drawTexture(graphicsHolder, -W/2 + border, -H/2, W - border*2, border, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight); // Верхняя
+                    IDrawing.drawTexture(graphicsHolder, -W/2 + border, H/2 - border, W - border*2, border, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight); // Нижняя
+                    graphicsHolder.pop();
+
+                    // 3. Внешние боковые стенки (придают объем сбоку, сверху и снизу)
+                    // Левая стенка
+                    graphicsHolder.push();
+                    graphicsHolder.translate(-W/2, 0, 0);
+                    graphicsHolder.rotateYDegrees(90);
+                    IDrawing.drawTexture(graphicsHolder, 0, -H/2, totalDepth, H, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight);
+                    graphicsHolder.pop();
+
+                    // Правая стенка
+                    graphicsHolder.push();
+                    graphicsHolder.translate(W/2, 0, 0);
+                    graphicsHolder.rotateYDegrees(-90);
+                    IDrawing.drawTexture(graphicsHolder, -totalDepth, -H/2, totalDepth, H, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight);
+                    graphicsHolder.pop();
+
+                    // Верхняя стенка
+                    graphicsHolder.push();
+                    graphicsHolder.translate(0, -H/2, 0);
+                    graphicsHolder.rotateXDegrees(-90);
+                    IDrawing.drawTexture(graphicsHolder, -W/2, 0, W, totalDepth, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight);
+                    graphicsHolder.pop();
+
+                    // Нижняя стенка
+                    graphicsHolder.push();
+                    graphicsHolder.translate(0, H/2, 0);
+                    graphicsHolder.rotateXDegrees(90);
+                    IDrawing.drawTexture(graphicsHolder, -W/2, -totalDepth, W, totalDepth, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight);
+                    graphicsHolder.pop();
+
+
+                    graphicsHolder.push();
+                    // Поворачиваем ее на 180 градусов, чтобы она "смотрела" назад
+                    graphicsHolder.rotateYDegrees(180);
+                    // Рисуем плоскость, которая закрывает всю заднюю часть стенда
+                    // frameColor или backColor - на ваш выбор
+                    IDrawing.drawTexture(graphicsHolder, -W/2, -H/2, W, H, 0, 0, 1, 1, org.mtr.mapping.holder.Direction.UP, frameColor, packedLight);
+                    graphicsHolder.pop();
+
+                    graphicsHolder.pop();
+                }
+        );
+
     }
 
     @Override

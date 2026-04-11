@@ -69,16 +69,23 @@ public class SPBDynamicTextureCache implements IGui {
     // ================== ИЗМЕНЕНИЯ ЗДЕСЬ ==================
 
     public DynamicResource getRouteMap(long platformId, boolean vertical, boolean flip, float aspectRatio, boolean transparentWhite) {
-        // 1. Генерируем "версию" данных, которая уникальна для текущего состояния схемы
+
+        // --- ЭТА СТРОКА РЕШАЕТ ПРОБЛЕМУ ---
+        // Отправляем фейковый запрос в оригинальный кэш MTR.
+        // Это заставляет MTR загрузить свои шрифты ДО того, как наш SPBRouteMapGenerator попытается ими воспользоваться.
+        org.mtr.mod.client.DynamicTextureCache.instance.getPixelatedText("", 0, 10, 1, false);
+
+        // 1. Генерируем "версию" данных
         final long dataVersion = generateDataVersion(platformId);
 
-        // 2. Включаем эту версию в ключ. Если данные изменятся, ключ тоже изменится.
+        // 2. Включаем эту версию в ключ
         String key = String.format("spb_route_map_v3_%s_%s_%s_%s_%s_%s", platformId, dataVersion, vertical, flip, aspectRatio, transparentWhite);
 
-        // 3. Остальной код остается прежним. getResource сам создаст новую текстуру для нового ключа.
+        // 3. Вызываем ваш генератор
         return getResource(key, () -> SPBRouteMapGenerator.generateRouteMap(platformId, vertical, flip, aspectRatio, transparentWhite),
                 transparentWhite ? DefaultRenderingColor.TRANSPARENT : DefaultRenderingColor.WHITE);
     }
+
 
     /**
      * Создает уникальный хэш (версию) для всех данных, которые влияют на вид схемы.

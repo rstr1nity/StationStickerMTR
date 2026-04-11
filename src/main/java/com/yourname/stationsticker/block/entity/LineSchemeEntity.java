@@ -26,11 +26,29 @@ public class LineSchemeEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag nbt) {
         super.saveAdditional(nbt);
         nbt.putLong("platformId", platformId);
+        nbt.putBoolean("flip", flip);
     }
 
     @Override
     public void load(CompoundTag nbt) {
         super.load(nbt);
         platformId = nbt.getLong("platformId");
+        this.flip = nbt.getBoolean("flip");
+    }
+
+    private boolean flip = false; // Состояние отражения
+
+    // Метод для переключения (будет вызываться при клике)
+    public void toggleFlip() {
+        this.flip = !this.flip;
+        setChanged(); // Помечаем, что данные изменились
+        if (level != null) {
+            // Отправляем пакет обновления на клиент, чтобы рендер сразу обновился
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public boolean isFlipped() {
+        return flip;
     }
 }
