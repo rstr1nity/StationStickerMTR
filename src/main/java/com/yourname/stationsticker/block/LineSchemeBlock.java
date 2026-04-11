@@ -22,17 +22,17 @@ public class LineSchemeBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     // Тонкий хитбокс (как наклейка)
-    protected static final VoxelShape NORTH_AABB = Block.box(0, 0, 14, 16, 16, 16);
-    protected static final VoxelShape SOUTH_AABB = Block.box(0, 0, 0, 16, 16, 2);
-    protected static final VoxelShape WEST_AABB = Block.box(14, 0, 0, 16, 16, 16);
-    protected static final VoxelShape EAST_AABB = Block.box(0, 0, 0, 2, 16, 16);
+    protected static final VoxelShape NORTH_AABB = Block.box(-24.0D, -8.0D, 14.4D, 40.0D, 24.0D, 16.0D);
+    protected static final VoxelShape SOUTH_AABB = Block.box(-24.0D, -8.0D, 0.0D, 40.0D, 24.0D, 1.6D);
+    protected static final VoxelShape WEST_AABB = Block.box(14.4D, -8.0D, -24.0D, 16.0D, 24.0D, 40.0D);
+    protected static final VoxelShape EAST_AABB = Block.box(0.0D, -8.0D, -24.0D, 1.6D, 24.0D, 40.0D);
 
     public LineSchemeBlock() {
         super(Properties.of()
                 .strength(1.0f)
                 .sound(SoundType.METAL)
-                .noOcclusion()
-                .noCollission()); // Важно!
+                .noOcclusion());
+
         this.registerDefaultState(
                 this.stateDefinition.any()
                         .setValue(FACING, Direction.NORTH));
