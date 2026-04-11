@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "   ",
+    "DSD",
+    "   "
+  ],
+  "key": {
+    "S": {
+      "tag": "minecraft:signs"
+    },
+    "D": {
+      "tag": "forge:dyes"
+    }
+  },
+  "result": {
+    "item": "stationsticker:line_scheme",
+    "count": 4
+  }
+}

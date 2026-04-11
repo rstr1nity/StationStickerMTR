@@ -25,11 +25,12 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
 
 public class LineSchemeBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-
+    public static final IntegerProperty ARROW_DIRECTION = IntegerProperty.create("arrow_direction", 0, 3);
     // Тонкий хитбокс (как наклейка)
     // Хитбокс размером 4х2 блока (64х32 пикселя). Толщина 1.6 пикселя (0.1 блока).
     protected static final VoxelShape NORTH_AABB = Block.box(-24.0D, -8.0D, 14.4D, 40.0D, 24.0D, 16.0D);
@@ -60,13 +61,16 @@ public class LineSchemeBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, ARROW_DIRECTION);
     }
 
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        return this.defaultBlockState()
+                .setValue(FACING, context.getHorizontalDirection().getOpposite())
+                .setValue(ARROW_DIRECTION, 0);
+
     }
 
     @Nullable
@@ -79,5 +83,22 @@ public class LineSchemeBlock extends BaseEntityBlock {
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        ItemStack stack = player.getItemInHand(hand);
+
+        // Проверяем, что в руке кисточка MTR
+        if (stack.is(org.mtr.mod.Items.BRUSH.get().data)) {
+            if (!level.isClientSide) {
+                // Переключаем состояние (0 -> 1 -> 2 -> 3 -> 0)
+                level.setBlock(pos, state.cycle(ARROW_DIRECTION), 3);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+
+        return super.use(state, level, pos, player, hand, hit);
+    }
+
 
 }
