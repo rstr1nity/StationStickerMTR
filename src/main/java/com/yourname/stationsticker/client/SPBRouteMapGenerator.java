@@ -266,10 +266,16 @@ public class SPBRouteMapGenerator implements IGui {
                 int sidePadding = 40; // Отступ от краев
 
 
-                // flip=false: поезд едет справа налево → левая стрелка влево, правая вправо (назад)
-                // flip=true:  поезд едет слева направо → левая стрелка вправо (назад), правая влево
-                drawArrow(nativeImage, sidePadding, topPadding, arrowColor, flip);           // левая стрелка
-                drawArrow(nativeImage, imgWidth - 2*sidePadding, topPadding, arrowColor, flip); // правая стрелка
+                if (flip) {
+                    // Если flip = true: рисуем "левую" стрелку справа, а "правую" слева
+                    // (или просто меняем логику их расположения)
+                    drawArrow(nativeImage, imgWidth - sidePadding, topPadding, arrowColor, true); // Стрелка на правой стороне
+                    drawArrow(nativeImage, 2* sidePadding, topPadding, arrowColor, true);               // Стрелка на левой стороне
+                } else {
+                    // Если flip = false: стандартное расположение
+                    drawArrow(nativeImage, sidePadding, topPadding, arrowColor, false);              // Стрелка на левой стороне
+                    drawArrow(nativeImage, imgWidth - 2 * sidePadding, topPadding, arrowColor, false); // Стрелка на правой стороне
+                }
 
                 return nativeImage;
             } else {

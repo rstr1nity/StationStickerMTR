@@ -81,7 +81,8 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
 
         long platformId = platform.getId();
 
-        boolean flip = entity.isFlipped();
+        int arrowDir = state.getValue(LineSchemeBlock.ARROW_DIRECTION);
+        boolean flip = (arrowDir == 2);
         var texture = SPBDynamicTextureCache.instance.getRouteMap(platformId, false, flip, SCHEME_WIDTH / SCHEME_HEIGHT, false);
         if (texture == null) return;
 
@@ -189,6 +190,48 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
                     graphicsHolder.pop();
                 }
         );
+
+        // --- ОТРИСОВКА ПАСХАЛКИ (На задней стенке) ---
+        // Укажите ваш MOD_ID и путь к картинке
+        Identifier easterEggTexture = new Identifier("stationsticker", "textures/block/sticker.png");
+
+        MainRenderer.scheduleRender(easterEggTexture, false, QueuedRenderLayer.EXTERIOR,
+                (graphicsHolder, offset) -> {
+                    StoredMatrixTransformations eggTransformations = new StoredMatrixTransformations(
+                            pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5
+                    );
+                    eggTransformations.add(gh -> {
+                        gh.rotateZDegrees(180);
+                        gh.rotateYDegrees(-getRotationAngle(facing));
+                        gh.translate(0, 0, 0.5); // Идем к задней стенке корпуса
+                        gh.rotateYDegrees(180);  // Разворачиваемся, чтобы смотреть назад
+                        gh.translate(0, 0, -0.001f); // Выдвигаем на 1 миллиметр, чтобы не мерцало с серой стеной
+                    });
+
+                    eggTransformations.transform(graphicsHolder, offset);
+
+                    // Размеры вашей картинки (1.0f = 1 блок)
+                    float eggWidth = 1.0f;
+                    float eggHeight = 1.0f;
+
+                    // Позиция картинки на задней стенке.
+                    // 0 и 0 - это ровно по центру таблички.
+                    // Меняйте эти числа, чтобы сдвинуть картинку (например, offsetX = 1.0f сдвинет вправо)
+                    float offsetX = 0.0f;
+                    float offsetY = 0.0f;
+
+                    // Отрисовка (используем ARGB_WHITE, чтобы картинка сохранила свои оригинальные цвета)
+                    int whiteColor = 0xFFFFFFFF;
+                    IDrawing.drawTexture(graphicsHolder,
+                            -eggWidth / 2 + offsetX, -eggHeight / 2 + offsetY,
+                            eggWidth, eggHeight,
+                            0, 0, 1, 1,
+                            org.mtr.mapping.holder.Direction.UP, whiteColor, packedLight);
+
+                    graphicsHolder.pop();
+                }
+        );
+
 
     }
 
