@@ -14,14 +14,17 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-// Невидимая вторая клетка табло прибытия: чтобы табло выделялось и ломалось по всей ширине
-public class ArrivalDisplayPartBlock extends Block {
+// Невидимая клетка широкого экрана (WideDisplayBlock): чтобы экран выделялся и ломался по всей ширине
+public class DisplayPartBlock extends Block {
+    // Сколько клеток до основного блока
+    public static final IntegerProperty OFFSET = IntegerProperty.create("offset", 1, WideDisplayBlock.MAX_WIDTH - 1);
 
-    public ArrivalDisplayPartBlock() {
+    public DisplayPartBlock() {
         super(Properties.of()
                 .strength(1.0f)
                 .sound(SoundType.METAL)
@@ -30,28 +33,31 @@ public class ArrivalDisplayPartBlock extends Block {
                 .pushReaction(PushReaction.BLOCK));
 
         this.registerDefaultState(this.stateDefinition.any()
-                .setValue(ArrivalDisplayBlock.FACING, Direction.NORTH)
-                .setValue(ArrivalDisplayBlock.ATTACHMENT, DisplayAttachment.WALL));
+                .setValue(WideDisplayBlock.FACING, Direction.NORTH)
+                .setValue(WideDisplayBlock.ATTACHMENT, DisplayAttachment.WALL)
+                .setValue(OFFSET, 1));
     }
 
-    public static BlockState partState(Direction facing, DisplayAttachment attachment) {
-        return ModBlocks.ARRIVAL_DISPLAY_PART.get().defaultBlockState()
-                .setValue(ArrivalDisplayBlock.FACING, facing)
-                .setValue(ArrivalDisplayBlock.ATTACHMENT, attachment);
+    public static BlockState partState(Direction facing, DisplayAttachment attachment, int offset) {
+        return ModBlocks.DISPLAY_PART.get().defaultBlockState()
+                .setValue(WideDisplayBlock.FACING, facing)
+                .setValue(WideDisplayBlock.ATTACHMENT, attachment)
+                .setValue(OFFSET, offset);
     }
 
     public static BlockPos getMainPos(BlockState state, BlockPos pos) {
-        return pos.relative(ArrivalDisplayBlock.partDirection(state.getValue(ArrivalDisplayBlock.FACING)).getOpposite());
+        Direction facing = state.getValue(WideDisplayBlock.FACING);
+        return pos.relative(WideDisplayBlock.partDirection(facing).getOpposite(), state.getValue(OFFSET));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(ArrivalDisplayBlock.FACING, ArrivalDisplayBlock.ATTACHMENT);
+        builder.add(WideDisplayBlock.FACING, WideDisplayBlock.ATTACHMENT, OFFSET);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return ArrivalDisplayBlock.shapeFor(state.getValue(ArrivalDisplayBlock.FACING), state.getValue(ArrivalDisplayBlock.ATTACHMENT));
+        return WideDisplayBlock.shapeFor(state.getValue(WideDisplayBlock.FACING), state.getValue(WideDisplayBlock.ATTACHMENT));
     }
 
     @Override
@@ -59,12 +65,12 @@ public class ArrivalDisplayPartBlock extends Block {
         return RenderShape.INVISIBLE;
     }
 
-    // Игрок ломает часть - ломается всё табло (в творческом режиме без выпадения)
+    // Игрок ломает часть - ломается весь экран (в творческом режиме без выпадения)
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         BlockPos mainPos = getMainPos(state, pos);
         BlockState mainState = level.getBlockState(mainPos);
-        if (!level.isClientSide && mainState.getBlock() instanceof ArrivalDisplayBlock) {
+        if (!level.isClientSide && mainState.getBlock() instanceof WideDisplayBlock) {
             if (player.isCreative()) {
                 level.setBlock(mainPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
                 level.levelEvent(player, LevelEvent.PARTICLES_DESTROY_BLOCK, mainPos, Block.getId(mainState));
@@ -75,20 +81,22 @@ public class ArrivalDisplayPartBlock extends Block {
         super.playerWillDestroy(level, pos, state, player);
     }
 
-    // Часть убрана не игроком (взрыв и т.п.) - ломаем табло целиком
+    // Часть убрана не игроком (взрыв и т.п.) - ломаем экран целиком
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             BlockPos mainPos = getMainPos(state, pos);
-            if (level.getBlockState(mainPos).getBlock() instanceof ArrivalDisplayBlock) {
+            if (level.getBlockState(mainPos).getBlock() instanceof WideDisplayBlock) {
                 level.destroyBlock(mainPos, true);
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    // Колесо мыши в творческом режиме даёт предмет основного блока
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
-        return new ItemStack(ModBlocks.ARRIVAL_DISPLAY.get());
+        BlockState mainState = level.getBlockState(getMainPos(state, pos));
+        return mainState.getBlock() instanceof WideDisplayBlock ? new ItemStack(mainState.getBlock()) : ItemStack.EMPTY;
     }
 }

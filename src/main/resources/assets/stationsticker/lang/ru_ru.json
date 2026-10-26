@@ -6,7 +6,7 @@
   "block.stationsticker.line_scheme_part": "Схема линии",
   "block.stationsticker.arrival_display": "Табло прибытия",
   "item.stationsticker.arrival_display": "Табло прибытия",
-  "block.stationsticker.arrival_display_part": "Табло прибытия",
+  "block.stationsticker.display_part": "Экран",
   "display.stationsticker.arrival.direction": "Направление",
   "display.stationsticker.arrival.no_trains": "Нет данных о поездах",
   "display.stationsticker.arrival.arriving": "Поезд прибывает",

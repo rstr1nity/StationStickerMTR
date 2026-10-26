@@ -6,7 +6,7 @@
   "block.stationsticker.line_scheme_part": "Line Scheme",
   "block.stationsticker.arrival_display": "Arrival Display",
   "item.stationsticker.arrival_display": "Arrival Display",
-  "block.stationsticker.arrival_display_part": "Arrival Display",
+  "block.stationsticker.display_part": "Display",
   "display.stationsticker.arrival.direction": "Direction",
   "display.stationsticker.arrival.no_trains": "No train information",
   "display.stationsticker.arrival.arriving": "Train arriving",
