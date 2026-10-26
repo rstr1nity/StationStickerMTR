@@ -1,6 +1,6 @@
-package com.yourname.stationsticker.block;
+package com.tr1nity.stationsticker.block;
 
-import com.yourname.stationsticker.block.entity.StationStickerBlockEntity;
+import com.tr1nity.stationsticker.block.entity.StationStickerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;

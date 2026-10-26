@@ -1,9 +1,9 @@
-package com.yourname.stationsticker.client;
+package com.tr1nity.stationsticker.client;
 
-import com.yourname.stationsticker.block.LineSchemeBlock;
-import com.yourname.stationsticker.block.entity.LineSchemeEntity;
+import com.tr1nity.stationsticker.block.LineSchemeBlock;
+import com.tr1nity.stationsticker.block.entity.LineSchemeEntity;
 // Убедитесь, что импортируете ваш класс кэша
-// import com.yourname.stationsticker.client.SPBDynamicTextureCache;
+// import com.tr1nity.stationsticker.client.SPBDynamicTextureCache;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;

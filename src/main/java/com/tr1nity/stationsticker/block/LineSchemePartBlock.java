@@ -1,6 +1,6 @@
-package com.yourname.stationsticker.block;
+package com.tr1nity.stationsticker.block;
 
-import com.yourname.stationsticker.registration.ModBlocks;
+import com.tr1nity.stationsticker.registration.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;

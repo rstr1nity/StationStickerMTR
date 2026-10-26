@@ -1,6 +1,6 @@
-package com.yourname.stationsticker.block.entity;
+package com.tr1nity.stationsticker.block.entity;
 
-import com.yourname.stationsticker.registration.ModBlockEntities;
+import com.tr1nity.stationsticker.registration.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;

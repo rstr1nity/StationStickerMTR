@@ -1,6 +1,6 @@
-package com.yourname.stationsticker.registration;
+package com.tr1nity.stationsticker.registration;
 
-import com.yourname.stationsticker.StationStickerMod;
+import com.tr1nity.stationsticker.StationStickerMod;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;

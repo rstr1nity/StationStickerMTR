@@ -1,8 +1,8 @@
-package com.yourname.stationsticker.client;
+package com.tr1nity.stationsticker.client;
 
-import com.yourname.stationsticker.StationStickerMod;
-import com.yourname.stationsticker.registration.ModBlockEntities;
-import com.yourname.stationsticker.registration.ModBlocks;
+import com.tr1nity.stationsticker.StationStickerMod;
+import com.tr1nity.stationsticker.registration.ModBlockEntities;
+import com.tr1nity.stationsticker.registration.ModBlocks;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraftforge.api.distmarker.Dist;

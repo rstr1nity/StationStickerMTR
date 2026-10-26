@@ -1,4 +1,4 @@
-package com.yourname.stationsticker.client;
+package com.tr1nity.stationsticker.client;
 
 import org.mtr.core.data.Platform;
 import org.mtr.core.data.SimplifiedRoute;

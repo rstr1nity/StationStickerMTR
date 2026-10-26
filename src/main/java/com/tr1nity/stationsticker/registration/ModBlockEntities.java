@@ -1,8 +1,8 @@
-package com.yourname.stationsticker.registration;
+package com.tr1nity.stationsticker.registration;
 
-import com.yourname.stationsticker.StationStickerMod;
-import com.yourname.stationsticker.block.entity.LineSchemeEntity;
-import com.yourname.stationsticker.block.entity.StationStickerBlockEntity;
+import com.tr1nity.stationsticker.StationStickerMod;
+import com.tr1nity.stationsticker.block.entity.LineSchemeEntity;
+import com.tr1nity.stationsticker.block.entity.StationStickerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
