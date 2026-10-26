@@ -205,7 +205,8 @@ public class SPBRouteMapGenerator implements IGui {
                     // --- Внутри цикла stationPositionsGrouped.forEach ---
 
                     String stationName = key.split("\\|\\|")[0];
-                    boolean isEnglishOnly = stationName.matches("[A-Za-z0-9\\s\\-]+");
+                    // Без кириллицы транслит не нужен: иначе имя вроде "St. Petersburg" рисуется дважды
+                    boolean isEnglishOnly = !stationName.matches("(?s).*\\p{IsCyrillic}.*");
 
                     int nameX = x; // Привязка строго по центру кружка
                     int textColor = passed ? ARGB_LIGHT_GRAY : (currentStation ? darkenColor(stationLineColor, 0.75f) : ARGB_BLACK);
