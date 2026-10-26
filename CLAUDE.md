@@ -49,4 +49,4 @@
 
 ## Что не проверено
 
-Файлы `client/SPBRouteMapGenerator.java`, `block/entity/LineSchemeEntity.java` и `block/entity/StationStickerBlockEntity.java` в ревью не читались.
+Рендереры (`StationStickerRenderer`, `LineSchemeRenderer`) просмотрены только по структуре. Остальные файлы прочитаны, находки в `REVIEW.md`.
