@@ -56,7 +56,10 @@ public final class ArrivalBoard {
                     circleCenterY - GLYPH_HEIGHT * numberScale / 2, numberScale, TEXT_COLOR, true);
         }
         float stationScale = 1.5f;
-        canvas.ledText(StationNames.forCurrentLanguage(arrival.getDestination()), radius * 2 + 4,
+        String destination = arrival.getIsTerminating()
+                ? I18n.get(KEY + "terminates")
+                : StationNames.forCurrentLanguage(arrival.getDestination());
+        canvas.ledText(destination, radius * 2 + 4,
                 circleCenterY - GLYPH_HEIGHT * stationScale / 2, stationScale, TEXT_COLOR, false);
 
         long seconds = Math.max(0, (arrival.getArrival() - currentMillis()) / 1000);
@@ -78,18 +81,22 @@ public final class ArrivalBoard {
         return x + canvas.ledTextWidth(unit, UNIT_SCALE);
     }
 
-    // Ближайший поезд, который ещё не ушёл; конечные (поезд дальше не идёт) пропускаем
+    // Ближайший поезд, который ещё не ушёл. Поезда, идущие дальше, важнее тех, что здесь заканчивают маршрут;
+    // но на конечной у платформы прибытия других нет, и тогда показываем их («Поезд дальше не идёт»)
     @Nullable
     public static ArrivalResponse nextArrival(long platformId) {
         long now = currentMillis();
         ArrivalResponse next = null;
+        ArrivalResponse nextTerminating = null;
         for (ArrivalResponse arrival : ArrivalsCacheClient.INSTANCE.requestArrivals(LongArrayList.of(platformId))) {
-            if (arrival.getIsTerminating() || arrival.getDeparture() < now) continue;
-            if (next == null || arrival.getArrival() < next.getArrival()) {
+            if (arrival.getDeparture() < now) continue;
+            if (arrival.getIsTerminating()) {
+                if (nextTerminating == null || arrival.getArrival() < nextTerminating.getArrival()) nextTerminating = arrival;
+            } else if (next == null || arrival.getArrival() < next.getArrival()) {
                 next = arrival;
             }
         }
-        return next;
+        return next != null ? next : nextTerminating;
     }
 
     // Время сервера MTR, как в RenderPIDS

@@ -33,6 +33,7 @@
   "display.stationsticker.arrival.direction": "Направление",
   "display.stationsticker.arrival.no_trains": "Нет данных о поездах",
   "display.stationsticker.arrival.arriving": "Поезд прибывает",
+  "display.stationsticker.arrival.terminates": "Поезд дальше не идёт",
   "display.stationsticker.arrival.arrives_in": "Поезд прибывает через",
   "display.stationsticker.arrival.min": "мин",
   "display.stationsticker.arrival.sec": "сек",

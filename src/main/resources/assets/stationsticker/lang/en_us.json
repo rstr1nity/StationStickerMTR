@@ -33,6 +33,7 @@
   "display.stationsticker.arrival.direction": "Direction",
   "display.stationsticker.arrival.no_trains": "No train information",
   "display.stationsticker.arrival.arriving": "Train arriving",
+  "display.stationsticker.arrival.terminates": "Terminates here",
   "display.stationsticker.arrival.arrives_in": "Next train in",
   "display.stationsticker.arrival.min": "min",
   "display.stationsticker.arrival.sec": "sec",
