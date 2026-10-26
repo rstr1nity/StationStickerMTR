@@ -1,6 +1,6 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
-license="All rights reserved"
+license="MIT"
 
 [[mods]]
 modId="${mod_id}"
@@ -13,7 +13,6 @@ Adds customizable station name stickers that automatically display the station n
 authors="Tr1nity"
 logoFile="logo.png"
 credits="Thanks to the MTR team and kykko"
-license="MIT"
 
 [[dependencies.stationsticker]]
 modId="forge"
