@@ -38,7 +38,8 @@ public class LineSchemeBlock extends BaseEntityBlock {
         super(Properties.of()
                 .strength(1.0f)
                 .sound(SoundType.METAL)
-                .noOcclusion());
+                .noOcclusion()
+                .noCollission()); // форма выходит за клетку блока, столкновения с ней работали через раз
 
         this.registerDefaultState(
                 this.stateDefinition.any()
