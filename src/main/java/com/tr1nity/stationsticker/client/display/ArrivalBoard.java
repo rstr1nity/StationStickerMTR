@@ -65,7 +65,7 @@ public final class ArrivalBoard {
                     circleCenterY - GLYPH_HEIGHT * numberScale / 2, numberScale, TEXT_COLOR, true);
         }
         float stationScale = 1.5f;
-        canvas.ledText(StationNames.forCurrentLanguage(arrival.getDestination()), radius * 2 + 4,
+        canvas.ledText(StationNames.primary(arrival.getDestination()), radius * 2 + 4,
                 circleCenterY - GLYPH_HEIGHT * stationScale / 2, stationScale, TEXT_COLOR, false);
 
         long seconds = Math.max(0, (arrival.getArrival() - currentMillis()) / 1000);

@@ -98,7 +98,7 @@ public class NavSignScreen extends Screen {
 
     private static Component describe(Transfers.Transfer transfer) {
         String number = transfer.routeNumber().isEmpty() ? "" : "(" + transfer.routeNumber() + ") ";
-        return Component.literal(number + StationNames.forCurrentLanguage(transfer.stationName())
+        return Component.literal(number + StationNames.primary(transfer.stationName())
                 + " — " + StationNames.forCurrentLanguage(transfer.routeName()));
     }
 

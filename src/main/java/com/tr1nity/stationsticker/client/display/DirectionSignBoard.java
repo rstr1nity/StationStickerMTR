@@ -128,10 +128,10 @@ public final class DirectionSignBoard {
         float textEdge = rightSide ? circleX - LINE_RADIUS - GAP : circleX + LINE_RADIUS + GAP;
         float maxWidth = rightSide ? textEdge - x0 : x1 - textEdge;
         if (rightSide) {
-            canvas.textRight(StationNames.forCurrentLanguage(terminal), textEdge, 0, NAME_SCALE, TEXT_COLOR, maxWidth);
+            canvas.textRight(StationNames.primary(terminal), textEdge, 0, NAME_SCALE, TEXT_COLOR, maxWidth);
             canvas.textRight(StationNames.secondary(terminal), textEdge, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, maxWidth);
         } else {
-            canvas.text(StationNames.forCurrentLanguage(terminal), textEdge, 0, NAME_SCALE, TEXT_COLOR, maxWidth);
+            canvas.text(StationNames.primary(terminal), textEdge, 0, NAME_SCALE, TEXT_COLOR, maxWidth);
             canvas.text(StationNames.secondary(terminal), textEdge, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, maxWidth);
         }
 
@@ -153,7 +153,7 @@ public final class DirectionSignBoard {
             if (color != lineColor && !colors.contains((int) color)) colors.add(color);
         });
         float dotsWidth = colors.size() * (DOT_RADIUS * 2 + 0.8f);
-        String name = StationNames.forCurrentLanguage(stop.getStationName());
+        String name = StationNames.primary(stop.getStationName());
         float nameWidth = Math.min(canvas.textWidth(name, LIST_NAME_SCALE), width - dotsWidth - 1);
         canvas.text(name, x, y, LIST_NAME_SCALE, TEXT_COLOR, width - dotsWidth - 1);
         canvas.text(StationNames.secondary(stop.getStationName()), x, y + 6.5f, LIST_SECONDARY_SCALE, SECONDARY_COLOR, width);

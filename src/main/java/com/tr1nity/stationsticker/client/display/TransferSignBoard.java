@@ -75,7 +75,7 @@ public final class TransferSignBoard {
         float maxWidth = canvas.width - cursor;
         String header = I18n.get(KEY + "transfer_to") + " ";
         String line = StationNames.forCurrentLanguage(transfer.routeName());
-        String name = StationNames.forCurrentLanguage(transfer.stationName());
+        String name = StationNames.primary(transfer.stationName());
         String secondary = StationNames.secondary(transfer.stationName());
         float headerWidth = canvas.textWidth(header, HEADER_SCALE);
         if (!mirrored) {
