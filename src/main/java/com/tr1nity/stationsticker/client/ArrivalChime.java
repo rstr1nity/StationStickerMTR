@@ -12,11 +12,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.mtr.core.data.Platform;
 import org.mtr.core.operation.ArrivalResponse;
 
-// Сигнал табло прибытия: один раз на каждый поезд, когда до прибытия по расписанию остаётся CHIME_BEFORE_MILLIS.
+// Сигнал табло прибытия: один раз на поезд, когда до прибытия по расписанию остаётся CHIME_BEFORE_MILLIS.
 // Отдельного события «поезд въехал на станцию» MTR клиенту не даёт, поэтому ориентируемся на расписание.
 public final class ArrivalChime {
 
     public static final long CHIME_BEFORE_MILLIS = 5000;
+    // После сигнала табло молчит столько: MTR уточняет время прибытия на лету, и без паузы
+    // один и тот же поезд выглядел бы «новым» и сигнал повторялся 2-3 раза
+    private static final long COOLDOWN_MILLIS = 20000;
     // Если поезд уже стоит дольше этого (табло только загрузилось), сигнал не играем
     private static final long LATE_MILLIS = 1000;
     private static final float VOLUME = 1.5f;     // больше 1 - слышно дальше 16 блоков
@@ -28,11 +31,13 @@ public final class ArrivalChime {
         Platform platform = PlatformLocator.findPlatformAt(pos);
         if (platform == null) return;
         ArrivalResponse arrival = ArrivalBoard.nextArrival(platform.getId());
-        if (arrival == null || arrival.getArrival() == entity.chimedArrival) return;
+        if (arrival == null) return;
 
-        long remaining = arrival.getArrival() - ArrivalBoard.currentMillis();
+        long now = ArrivalBoard.currentMillis();
+        long remaining = arrival.getArrival() - now;
         if (remaining > CHIME_BEFORE_MILLIS || remaining < -LATE_MILLIS) return;
-        entity.chimedArrival = arrival.getArrival();
+        if (now - entity.lastChimeMillis < COOLDOWN_MILLIS) return;
+        entity.lastChimeMillis = now;
 
         // Звук из середины табло
         Direction toPart = WideDisplayBlock.partDirection(state.getValue(WideDisplayBlock.FACING));

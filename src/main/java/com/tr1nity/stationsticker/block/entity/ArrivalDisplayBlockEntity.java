@@ -12,8 +12,8 @@ import net.minecraft.world.phys.AABB;
 // Данных нет: платформа определяется по позиции блока, включённость звука - в блокстейте
 public class ArrivalDisplayBlockEntity extends BlockEntity {
 
-    // Для какого поезда (время прибытия по расписанию) сигнал уже прозвучал; только на клиенте
-    public long chimedArrival;
+    // Когда (время MTR, мс) прозвучал последний сигнал; только на клиенте
+    public long lastChimeMillis;
 
     public ArrivalDisplayBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ARRIVAL_DISPLAY.get(), pos, state);
