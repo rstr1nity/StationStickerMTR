@@ -1,7 +1,7 @@
 package com.tr1nity.stationsticker.block;
 
 import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
-import com.tr1nity.stationsticker.client.NavSignClient;
+import com.tr1nity.stationsticker.client.ClientScreens;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 public class NavSignBlock extends WideDisplayBlock {
 
     @Override
-    public int width() {
+    public int width(BlockState state) {
         return 3;
     }
 
@@ -35,7 +35,7 @@ public class NavSignBlock extends WideDisplayBlock {
             return InteractionResult.PASS;
         }
         if (level.isClientSide) {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> NavSignClient.openSettings(pos));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientScreens.openNavSign(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

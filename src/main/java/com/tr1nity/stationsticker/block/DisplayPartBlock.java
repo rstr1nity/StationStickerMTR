@@ -95,12 +95,14 @@ public class DisplayPartBlock extends Block {
         super.playerWillDestroy(level, pos, state, player);
     }
 
-    // Часть убрана не игроком (взрыв и т.п.) - ломаем экран целиком
+    // Часть убрана не игроком (взрыв и т.п.) - ломаем экран целиком.
+    // Если экран уже стал уже (указатель направлений сузили), эта клетка ему не принадлежит - не трогаем
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             BlockPos mainPos = getMainPos(state, pos);
-            if (level.getBlockState(mainPos).getBlock() instanceof WideDisplayBlock) {
+            BlockState mainState = level.getBlockState(mainPos);
+            if (mainState.getBlock() instanceof WideDisplayBlock display && state.getValue(OFFSET) < display.width(mainState)) {
                 level.destroyBlock(mainPos, true);
             }
         }

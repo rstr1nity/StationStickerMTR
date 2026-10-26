@@ -27,7 +27,7 @@ public class ArrivalDisplayBlock extends WideDisplayBlock {
     }
 
     @Override
-    public int width() {
+    public int width(BlockState state) {
         return 2;
     }
 

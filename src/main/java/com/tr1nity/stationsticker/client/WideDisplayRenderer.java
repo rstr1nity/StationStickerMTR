@@ -57,7 +57,7 @@ public abstract class WideDisplayRenderer<T extends BlockEntity> implements Bloc
         float bottom = WideDisplayBlock.bodyBottom(attachment) / 16f - 0.5f;
         float top = WideDisplayBlock.bodyTop(attachment) / 16f - 0.5f;
         float left = -0.5f;
-        float right = left + block.width();
+        float right = left + block.width(state);
         float back;
         float front;
         if (attachment == DisplayAttachment.WALL) {

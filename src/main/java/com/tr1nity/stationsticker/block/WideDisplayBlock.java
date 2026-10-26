@@ -28,7 +28,7 @@ public abstract class WideDisplayBlock extends BaseEntityBlock {
     // Куда смотрит лицевая сторона экрана
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<DisplayAttachment> ATTACHMENT = EnumProperty.create("attachment", DisplayAttachment.class);
-    public static final int MAX_WIDTH = 4;
+    public static final int MAX_WIDTH = 8;
 
     // Форма одной клетки: [facing][attachment]
     private static final VoxelShape[][] SHAPES = new VoxelShape[4][DisplayAttachment.values().length];
@@ -53,8 +53,8 @@ public abstract class WideDisplayBlock extends BaseEntityBlock {
                 .setValue(ATTACHMENT, DisplayAttachment.WALL));
     }
 
-    // Ширина экрана в клетках, от 1 до MAX_WIDTH
-    public abstract int width();
+    // Ширина экрана в клетках, от 1 до MAX_WIDTH; может зависеть от состояния (указатель направлений)
+    public abstract int width(BlockState state);
 
     // Направление от основного блока к частям: вправо, если смотреть на экран
     public static Direction partDirection(Direction facing) {
@@ -121,19 +121,21 @@ public abstract class WideDisplayBlock extends BaseEntityBlock {
         }
 
         // Как кровать: не ставится, если хоть одна клетка экрана занята
+        BlockState state = this.defaultBlockState()
+                .setValue(FACING, facing)
+                .setValue(ATTACHMENT, attachment);
         Level level = context.getLevel();
-        for (int offset = 1; offset < width(); offset++) {
+        for (int offset = 1; offset < width(state); offset++) {
             BlockPos partPos = context.getClickedPos().relative(partDirection(facing), offset);
-            if (level.isOutsideBuildHeight(partPos)
-                    || !level.getWorldBorder().isWithinBounds(partPos)
-                    || !level.getBlockState(partPos).canBeReplaced(context)) {
+            if (!canPlacePart(level, partPos) || !level.getBlockState(partPos).canBeReplaced(context)) {
                 return null;
             }
         }
+        return state;
+    }
 
-        return this.defaultBlockState()
-                .setValue(FACING, facing)
-                .setValue(ATTACHMENT, attachment);
+    protected static boolean canPlacePart(Level level, BlockPos partPos) {
+        return !level.isOutsideBuildHeight(partPos) && level.getWorldBorder().isWithinBounds(partPos);
     }
 
     @Override
@@ -142,7 +144,7 @@ public abstract class WideDisplayBlock extends BaseEntityBlock {
         if (level.isClientSide) return;
 
         Direction facing = state.getValue(FACING);
-        for (int offset = 1; offset < width(); offset++) {
+        for (int offset = 1; offset < width(state); offset++) {
             level.setBlock(pos.relative(partDirection(facing), offset),
                     DisplayPartBlock.partState(facing, state.getValue(ATTACHMENT), offset), Block.UPDATE_ALL);
         }
@@ -153,7 +155,7 @@ public abstract class WideDisplayBlock extends BaseEntityBlock {
         if (!state.is(newState.getBlock())) {
             // Убираем свои части без выпадения предметов
             Direction facing = state.getValue(FACING);
-            for (int offset = 1; offset < width(); offset++) {
+            for (int offset = 1; offset < width(state); offset++) {
                 BlockPos partPos = pos.relative(partDirection(facing), offset);
                 BlockState partState = level.getBlockState(partPos);
                 if (partState.getBlock() instanceof DisplayPartBlock

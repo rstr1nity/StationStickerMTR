@@ -30,6 +30,6 @@ public class DirectionSignRenderer extends WideDisplayRenderer<DirectionSignBloc
         if (!(state.getBlock() instanceof WideDisplayBlock block)) return;
         Direction partAxis = WideDisplayBlock.partDirection(state.getValue(WideDisplayBlock.FACING));
         Direction rightAxis = back ? partAxis.getOpposite() : partAxis;
-        DirectionSignBoard.render(canvas, entity.getBlockPos(), partAxis, block.width(), rightAxis);
+        DirectionSignBoard.render(canvas, entity.getBlockPos(), partAxis, block.width(state), rightAxis);
     }
 }
