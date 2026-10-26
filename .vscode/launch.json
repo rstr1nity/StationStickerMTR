@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Сначала в терминале: ./gradlew runClient --debug-jvm (игра ждёт отладчик на порту 5005)
+      "type": "java",
+      "name": "Подключиться к Minecraft (hot swap)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "projectName": "StationStickerMTR"
+    }
+  ]
+}
