@@ -17,6 +17,9 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +42,10 @@ public class LineSchemeBlock extends BaseEntityBlock {
     protected static final VoxelShape EAST_AABB = Block.box(0.0D, -8.0D, -24.0D, 1.6D, 24.0D, 40.0D);
 
 
+    // Схема перекрывает 5 клеток по горизонтали и 3 по вертикали, в остальные ставятся LineSchemePartBlock
+    public static final int HALF_WIDTH = 2;
+    public static final int HALF_HEIGHT = 1;
+
     public LineSchemeBlock() {
         super(Properties.of(Material.METAL)
                 .strength(1.0f)
@@ -48,16 +55,31 @@ public class LineSchemeBlock extends BaseEntityBlock {
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
+    // Поршень оторвал бы схему от частей
     @Override
-    public VoxelShape getShape(BlockState state, net.minecraft.world.level.BlockGetter level,
-                               BlockPos pos, CollisionContext context) {
-        return switch (state.getValue(FACING)) {
+    public PushReaction getPistonPushReaction(BlockState state) {
+        return PushReaction.BLOCK;
+    }
+
+    public static VoxelShape shapeFor(Direction facing) {
+        return switch (facing) {
             case NORTH -> NORTH_AABB;
             case SOUTH -> SOUTH_AABB;
             case WEST -> WEST_AABB;
             case EAST -> EAST_AABB;
             default -> NORTH_AABB;
         };
+    }
+
+    // Смещение клетки части: h - вдоль стены, v - по вертикали
+    public static BlockPos partOffset(Direction facing, int h, int v) {
+        return facing.getAxis() == Direction.Axis.Z ? new BlockPos(h, v, 0) : new BlockPos(0, v, h);
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, net.minecraft.world.level.BlockGetter level,
+                               BlockPos pos, CollisionContext context) {
+        return shapeFor(state.getValue(FACING));
     }
 
     @Override
@@ -68,10 +90,62 @@ public class LineSchemeBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
-                .setValue(ARROW_DIRECTION, 0);
+        Direction facing = context.getHorizontalDirection().getOpposite();
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
 
+        // Как кровать: не ставится, если хоть одна клетка схемы занята
+        for (int h = -HALF_WIDTH; h <= HALF_WIDTH; h++) {
+            for (int v = -HALF_HEIGHT; v <= HALF_HEIGHT; v++) {
+                if (h == 0 && v == 0) continue;
+                BlockPos partPos = pos.offset(partOffset(facing, h, v));
+                if (level.isOutsideBuildHeight(partPos)
+                        || !level.getWorldBorder().isWithinBounds(partPos)
+                        || !level.getBlockState(partPos).canBeReplaced(context)) {
+                    return null;
+                }
+            }
+        }
+
+        return this.defaultBlockState()
+                .setValue(FACING, facing)
+                .setValue(ARROW_DIRECTION, 0);
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.isClientSide) return;
+
+        Direction facing = state.getValue(FACING);
+        for (int h = -HALF_WIDTH; h <= HALF_WIDTH; h++) {
+            for (int v = -HALF_HEIGHT; v <= HALF_HEIGHT; v++) {
+                if (h == 0 && v == 0) continue;
+                level.setBlock(pos.offset(partOffset(facing, h, v)),
+                        LineSchemePartBlock.partState(facing, h, v), Block.UPDATE_ALL);
+            }
+        }
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            // Убираем свои части без выпадения предметов
+            Direction facing = state.getValue(FACING);
+            for (int h = -HALF_WIDTH; h <= HALF_WIDTH; h++) {
+                for (int v = -HALF_HEIGHT; v <= HALF_HEIGHT; v++) {
+                    if (h == 0 && v == 0) continue;
+                    BlockPos partPos = pos.offset(partOffset(facing, h, v));
+                    BlockState partState = level.getBlockState(partPos);
+                    if (partState.getBlock() instanceof LineSchemePartBlock
+                            && LineSchemePartBlock.getMainPos(partState, partPos).equals(pos)) {
+                        level.setBlock(partPos, Blocks.AIR.defaultBlockState(),
+                                Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
+                    }
+                }
+            }
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     @Nullable

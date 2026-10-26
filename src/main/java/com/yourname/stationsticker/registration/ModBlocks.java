@@ -11,6 +11,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import com.yourname.stationsticker.block.LineSchemeBlock;
+import com.yourname.stationsticker.block.LineSchemePartBlock;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
@@ -35,6 +36,10 @@ public class ModBlocks {
 
     public static final RegistryObject<LineSchemeBlock> LINE_SCHEME =
             registerBlock("line_scheme", () -> new LineSchemeBlock());
+
+    // Без предмета: ставится только самой схемой линии
+    public static final RegistryObject<LineSchemePartBlock> LINE_SCHEME_PART =
+            BLOCKS.register("line_scheme_part", LineSchemePartBlock::new);
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name,
                                                                      java.util.function.Supplier<T> block) {
