@@ -89,11 +89,12 @@ jar {
         ])
     }
 }
-// Копирование jar в игру, только если mods_dir задан в ~/.gradle/gradle.properties
-if (project.hasProperty('mods_dir')) {
+// Копирование jar в игру, только если mods_dir_<версия MC> задан в ~/.gradle/gradle.properties
+def modsDirProperty = "mods_dir_${minecraft_version}"
+if (project.hasProperty(modsDirProperty)) {
     task copyToMods(type: Copy) {
         from jar
-        into mods_dir
+        into project.property(modsDirProperty)
     }
 
     build.finalizedBy copyToMods
