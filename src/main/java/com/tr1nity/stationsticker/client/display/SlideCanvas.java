@@ -25,13 +25,54 @@ public final class SlideCanvas {
     public final float width;
     public final float height;
     private final float alpha;
+    // Сколько экрана есть за краями холста (поля): фон слайда может заходить туда, текст - нет
+    public final float bleed;
 
     public SlideCanvas(PoseStack poseStack, MultiBufferSource bufferSource, float width, float height, float alpha) {
+        this(poseStack, bufferSource, width, height, alpha, 0);
+    }
+
+    public SlideCanvas(PoseStack poseStack, MultiBufferSource bufferSource, float width, float height, float alpha, float bleed) {
         this.poseStack = poseStack;
         this.bufferSource = bufferSource;
         this.width = width;
         this.height = height;
         this.alpha = alpha;
+        this.bleed = bleed;
+    }
+
+    // Рисует со сдвигом по y и дополнительной прозрачностью (переходы слайдов)
+    public void drawShifted(float shiftY, float extraAlpha, java.util.function.Consumer<SlideCanvas> drawer) {
+        poseStack.pushPose();
+        poseStack.translate(0, shiftY, 0);
+        drawer.accept(new SlideCanvas(poseStack, bufferSource, width, height, alpha * extraAlpha, bleed));
+        poseStack.popPose();
+    }
+
+    // Вертикальный градиент (фон слайда) - глубже всего остального
+    public void gradientRect(float x, float y, float w, float h, int top, int bottom) {
+        int topAlpha = Math.round(((top >>> 24) & 0xFF) * alpha);
+        int bottomAlpha = Math.round(((bottom >>> 24) & 0xFF) * alpha);
+        if (topAlpha == 0 && bottomAlpha == 0) return;
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
+        Matrix4f pose = poseStack.last().pose();
+        float z = -0.2f;
+        int tr = (top >> 16) & 0xFF, tg = (top >> 8) & 0xFF, tb = top & 0xFF;
+        int br = (bottom >> 16) & 0xFF, bg = (bottom >> 8) & 0xFF, bb = bottom & 0xFF;
+        vertex(consumer, pose, x, y, z, tr, tg, tb, topAlpha);
+        vertex(consumer, pose, x + w, y, z, tr, tg, tb, topAlpha);
+        vertex(consumer, pose, x + w, y + h, z, br, bg, bb, bottomAlpha);
+        vertex(consumer, pose, x, y + h, z, br, bg, bb, bottomAlpha);
+
+        vertex(consumer, pose, x, y + h, z, br, bg, bb, bottomAlpha);
+        vertex(consumer, pose, x + w, y + h, z, br, bg, bb, bottomAlpha);
+        vertex(consumer, pose, x + w, y, z, tr, tg, tb, topAlpha);
+        vertex(consumer, pose, x, y, z, tr, tg, tb, topAlpha);
+    }
+
+    // Полупрозрачная заливка поверх всего (вспышка молнии)
+    public void overlayRect(float x, float y, float w, float h, int color) {
+        rect(x, y, w, h, color, 0.1f);
     }
 
     public float textWidth(String text, float scale) {

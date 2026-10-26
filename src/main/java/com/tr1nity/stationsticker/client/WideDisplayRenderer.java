@@ -120,11 +120,12 @@ public abstract class WideDisplayRenderer<T extends BlockEntity> implements Bloc
         float textScale = Math.min(TEXT_SCALE, (screenTop - screenBottom - 2 * TEXT_MARGIN) / designHeight(entity));
 
         poseStack.pushPose();
-        poseStack.translate(screenLeft + TEXT_MARGIN, screenTop - TEXT_MARGIN, z + 0.002f);
+        // Холст на 0.004 над экраном: фон слайда (глубина -0.2 в единицах холста) остаётся перед экраном
+        poseStack.translate(screenLeft + TEXT_MARGIN, screenTop - TEXT_MARGIN, z + 0.004f);
         poseStack.scale(textScale, -textScale, textScale);
         float canvasWidth = (screenRight - screenLeft - 2 * TEXT_MARGIN) / textScale;
         float canvasHeight = (screenTop - screenBottom - 2 * TEXT_MARGIN) / textScale;
-        drawContent(entity, new SlideCanvas(poseStack, bufferSource, canvasWidth, canvasHeight, 1), back);
+        drawContent(entity, new SlideCanvas(poseStack, bufferSource, canvasWidth, canvasHeight, 1, TEXT_MARGIN / textScale), back);
         poseStack.popPose();
     }
 
