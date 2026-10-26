@@ -2,11 +2,13 @@ package com.tr1nity.stationsticker.client.display;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
@@ -36,14 +38,26 @@ public final class SlideCanvas {
         return Minecraft.getInstance().font.width(text) * scale;
     }
 
+    public float boldTextWidth(String text, float scale) {
+        return Minecraft.getInstance().font.width(bold(text)) * scale;
+    }
+
     // Текст от x до правого края холста; уменьшается, если не помещается
     public void text(String text, float x, float y, float scale, int color) {
-        drawFitted(text, x, y, scale, color, width - x, false);
+        drawFitted(Component.literal(text), x, y, scale, color, width - x, false);
+    }
+
+    public void boldText(String text, float x, float y, float scale, int color) {
+        drawFitted(bold(text), x, y, scale, color, width - x, false);
     }
 
     // Текст, прижатый правым краем к x
     public void textRight(String text, float x, float y, float scale, int color) {
-        drawFitted(text, x, y, scale, color, x, true);
+        drawFitted(Component.literal(text), x, y, scale, color, x, true);
+    }
+
+    private static Component bold(String text) {
+        return Component.literal(text).withStyle(ChatFormatting.BOLD);
     }
 
     // Закрашенный круг; чуть глубже текста, чтобы цифра на нём была видна
@@ -82,12 +96,12 @@ public final class SlideCanvas {
         consumer.vertex(pose, x, y, z).color(r, g, b, a).uv(0, 0).uv2(LightTexture.FULL_BRIGHT).endVertex();
     }
 
-    private void drawFitted(String text, float x, float y, float scale, int color, float maxWidth, boolean alignRight) {
-        if (text.isEmpty()) return;
+    private void drawFitted(Component text, float x, float y, float scale, int color, float maxWidth, boolean alignRight) {
+        if (text.getString().isEmpty()) return;
         int textAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
         if (textAlpha < MIN_FONT_ALPHA) return;
 
-        float textWidth = textWidth(text, scale);
+        float textWidth = Minecraft.getInstance().font.width(text) * scale;
         if (textWidth > maxWidth && maxWidth > 0) {
             scale *= maxWidth / textWidth;
             textWidth = maxWidth;
