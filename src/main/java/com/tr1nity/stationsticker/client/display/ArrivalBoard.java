@@ -13,13 +13,13 @@ import javax.annotation.Nullable;
 //   01 мин 26 сек
 public final class ArrivalBoard {
 
-    // Раскладка в пикселях шрифта (y верха строки). Акцент на цифрах таймера, как на табло в метро.
+    // Раскладка в шагах точки LED-шрифта (y верха строки). Акцент на цифрах таймера, как на табло в метро.
     private static final float STATION_Y = 11;
     private static final float CAPTION_Y = 25;
     private static final float TIMER_Y = 36;
     private static final float DIGIT_SCALE = 3.5f;
     private static final float UNIT_SCALE = 1.3f;
-    private static final float GLYPH_HEIGHT = 7;     // высота цифр шрифта Minecraft от верха до базовой линии
+    private static final float GLYPH_HEIGHT = LedFont.CAP_HEIGHT;   // высота заглавных и цифр до базовой линии
     private static final float TIMER_BASELINE = TIMER_Y + GLYPH_HEIGHT * DIGIT_SCALE;
 
     // Высота раскладки: под неё рендерер подбирает масштаб
@@ -32,44 +32,46 @@ public final class ArrivalBoard {
     }
 
     public static void render(SlideCanvas canvas, long platformId, long dayTime) {
-        canvas.text("Направление", 0, 0, 1, TEXT_DIM_COLOR);
-        canvas.textRight(formatDayTime(dayTime), canvas.width, 0, 1, TEXT_DIM_COLOR);
+        canvas.ledText("Направление", 0, 0, 1, TEXT_DIM_COLOR, false);
+        canvas.ledTextRight(formatDayTime(dayTime), canvas.width, 0, 1, TEXT_DIM_COLOR);
 
         ArrivalResponse arrival = platformId == 0 ? null : nextArrival(platformId);
         if (arrival == null) {
-            canvas.text("Нет данных о поездах", 0, CAPTION_Y, 1, TEXT_DIM_COLOR);
+            canvas.ledText("Нет данных о поездах", 0, CAPTION_Y, 1, TEXT_DIM_COLOR, false);
             return;
         }
 
         // Кружок линии с номером и конечная станция
         float radius = 6;
-        canvas.circle(radius, STATION_Y + radius, radius, 0xFF000000 | arrival.getRouteColor());
+        float circleCenterY = STATION_Y + radius;
+        canvas.circle(radius, circleCenterY, radius, 0xFF000000 | arrival.getRouteColor());
         String number = arrival.getRouteNumber();
         if (!number.isEmpty()) {
-            float numberScale = 0.9f;
-            canvas.boldText(number, radius - canvas.boldTextWidth(number, numberScale) / 2,
-                    STATION_Y + radius - GLYPH_HEIGHT * numberScale / 2, numberScale, TEXT_COLOR);
+            float numberScale = Math.min(1.1f, radius * 1.5f / canvas.ledTextWidth(number, 1));
+            canvas.ledText(number, radius - canvas.ledTextWidth(number, numberScale) / 2,
+                    circleCenterY - GLYPH_HEIGHT * numberScale / 2, numberScale, TEXT_COLOR, true);
         }
-        canvas.text(firstLanguage(arrival.getDestination()), radius * 2 + 4, STATION_Y + 1, 1.5f, TEXT_COLOR);
+        float stationScale = 1.5f;
+        canvas.ledText(firstLanguage(arrival.getDestination()), radius * 2 + 4,
+                circleCenterY - GLYPH_HEIGHT * stationScale / 2, stationScale, TEXT_COLOR, false);
 
         long seconds = Math.max(0, (arrival.getArrival() - currentMillis()) / 1000);
         if (seconds == 0) {
-            canvas.boldText("Поезд прибывает", 0, TIMER_Y, 2, TEXT_COLOR);
+            canvas.ledText("Поезд прибывает", 0, TIMER_Y, 2, TEXT_COLOR, true);
             return;
         }
-        canvas.boldText("Поезд прибывает через", 0, CAPTION_Y, 1, TEXT_DIM_COLOR);
+        canvas.ledText("Поезд прибывает через", 0, CAPTION_Y, 1, TEXT_DIM_COLOR, true);
 
-        // Крупные цифры, мелкие подписи по базовой линии цифр.
-        // Цифры не жирные: жирный шрифт Minecraft - глиф со сдвигом на пиксель, при увеличении дырки в «0» и «8» слипаются.
+        // Крупные цифры, мелкие подписи по базовой линии цифр
         float x = timerPart(canvas, 0, String.format("%02d", seconds / 60), "мин");
         timerPart(canvas, x + 6, String.format("%02d", seconds % 60), "сек");
     }
 
     private static float timerPart(SlideCanvas canvas, float x, String digits, String unit) {
-        canvas.text(digits, x, TIMER_Y, DIGIT_SCALE, TEXT_COLOR);
-        x += canvas.textWidth(digits, DIGIT_SCALE) + 1.5f;
-        canvas.text(unit, x, TIMER_BASELINE - GLYPH_HEIGHT * UNIT_SCALE, UNIT_SCALE, TEXT_COLOR);
-        return x + canvas.textWidth(unit, UNIT_SCALE);
+        canvas.ledText(digits, x, TIMER_Y, DIGIT_SCALE, TEXT_COLOR, true);
+        x += canvas.ledTextWidth(digits, DIGIT_SCALE) + 2;
+        canvas.ledText(unit, x, TIMER_BASELINE - GLYPH_HEIGHT * UNIT_SCALE, UNIT_SCALE, TEXT_COLOR, false);
+        return x + canvas.ledTextWidth(unit, UNIT_SCALE);
     }
 
     // Ближайший поезд, который ещё не ушёл; конечные (поезд дальше не идёт) пропускаем

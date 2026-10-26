@@ -60,6 +60,42 @@ public final class SlideCanvas {
         return Component.literal(text).withStyle(ChatFormatting.BOLD);
     }
 
+    // Текст точечным шрифтом табло от x до правого края холста; уменьшается, если не помещается
+    public void ledText(String text, float x, float y, float scale, int color, boolean bold) {
+        LedFont.draw(this, text, x, y, scale, color, bold, width - x);
+    }
+
+    // Точечный текст, прижатый правым краем к x
+    public void ledTextRight(String text, float x, float y, float scale, int color) {
+        float textWidth = Math.min(LedFont.width(text, scale), x);
+        LedFont.draw(this, text, x - textWidth, y, scale, color, false, x);
+    }
+
+    public float ledTextWidth(String text, float scale) {
+        return LedFont.width(text, scale);
+    }
+
+    // Закрашенный прямоугольник на уровне текста
+    public void rect(float x, float y, float w, float h, int color) {
+        int rectAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
+        if (rectAlpha == 0) return;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
+        Matrix4f pose = poseStack.last().pose();
+        // y вниз меняет направление обхода - рисуем обе стороны
+        vertex(consumer, pose, x, y, 0, r, g, b, rectAlpha);
+        vertex(consumer, pose, x + w, y, 0, r, g, b, rectAlpha);
+        vertex(consumer, pose, x + w, y + h, 0, r, g, b, rectAlpha);
+        vertex(consumer, pose, x, y + h, 0, r, g, b, rectAlpha);
+
+        vertex(consumer, pose, x, y + h, 0, r, g, b, rectAlpha);
+        vertex(consumer, pose, x + w, y + h, 0, r, g, b, rectAlpha);
+        vertex(consumer, pose, x + w, y, 0, r, g, b, rectAlpha);
+        vertex(consumer, pose, x, y, 0, r, g, b, rectAlpha);
+    }
+
     // Закрашенный круг; чуть глубже текста, чтобы цифра на нём была видна
     public void circle(float centerX, float centerY, float radius, int color) {
         int circleAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
