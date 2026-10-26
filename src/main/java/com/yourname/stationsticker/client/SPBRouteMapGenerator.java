@@ -11,37 +11,24 @@ import org.mtr.libraries.it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.mtr.libraries.it.unimi.dsi.fastutil.objects.ObjectIntImmutablePair;
 import org.mtr.libraries.it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import org.mtr.mapping.holder.*;
-import org.mtr.mapping.mapper.GraphicsHolder;
-import org.mtr.mapping.mapper.ResourceManagerHelper;
 import org.mtr.mod.Init;
 import org.mtr.mod.client.DynamicTextureCache;
-import org.mtr.mod.client.IDrawing;
 import org.mtr.mod.client.MinecraftClientData;
 import org.mtr.mod.config.Config;
 import org.mtr.mod.data.IGui;
-import org.mtr.mod.generated.lang.TranslationProvider;
 
-import java.util.Locale;
 import java.util.function.BiConsumer;
 
 public class SPBRouteMapGenerator implements IGui {
 
-    private static final float TEXT_SPACING_FROM_CIRCLE = 1.05f; // Объяви этот константой выше в классе
+    private static final float TEXT_SPACING_FROM_CIRCLE = 1.05f;
     private static int scale;
     private static int lineSize;
     private static int lineSpacing;
     private static int fontSizeBig;
     private static int fontSizeSmall;
 
-    public static final int PIXEL_SCALE = 4;
     private static final int MIN_VERTICAL_SIZE = 5;
-    private static final String LOGO_RESOURCE = "textures/block/sign/logo.png";
-    private static final String EXIT_RESOURCE = "textures/block/sign/exit_letter_blank.png";
-    private static final String ARROW_RESOURCE = "textures/block/sign/arrow.png";
-    private static final String CIRCLE_RESOURCE = "textures/block/sign/circle.png";
-    private static final String TEMP_CIRCULAR_MARKER_CLOCKWISE = String.format("temp_circular_marker_%s_clockwise", Init.randomString());
-    private static final String TEMP_CIRCULAR_MARKER_ANTICLOCKWISE = String.format("temp_circular_marker_%s_anticlockwise", Init.randomString());
-    private static final int PIXEL_RESOLUTION = 24;
 
     public static void setConstants() {
         scale = (int) Math.pow(2, Config.getClient().getDynamicTextureResolution() + 5);
@@ -162,29 +149,24 @@ public class SPBRouteMapGenerator implements IGui {
 
                         if (!stationPosition.isCommon || stationPositionsGrouped.getOrDefault(key, new ObjectOpenHashSet<>()).stream().noneMatch(stationPosition2 -> stationPosition2.stationPosition.x == stationPosition.x)) {
                             final IntArrayList interchangeColors = new IntArrayList();
-                            final ObjectArrayList<String> interchangeNames = new ObjectArrayList<>();
                             simplifiedRoutePlatform.forEach((color, interchangeRouteNamesForColor) -> {
                                 if (!colors.contains(color)) {
                                     interchangeColors.add(color);
-                                    interchangeRouteNamesForColor.forEach(interchangeNames::add);
                                 }
                             });
-                            Data.put(stationPositionsGrouped, key, new StationPositionGrouped(stationPosition, stationIndex - currentIndex, interchangeColors, interchangeNames), ObjectOpenHashSet::new);
+                            Data.put(stationPositionsGrouped, key, new StationPositionGrouped(stationPosition, stationIndex - currentIndex, interchangeColors), ObjectOpenHashSet::new);
                         }
                     }
                 }
 
-                final int maxStringWidth = (int) (scale * 0.9 * ((vertical ? heightScale : widthScale) / 2 + extraPadding / routeCount));
                 stationPositionsGrouped.forEach((key, stationPositionGroupedSet) -> stationPositionGroupedSet.forEach(stationPositionGrouped -> {
                     final int x = Math.round((stationPositionGrouped.stationPosition.x + xOffset) * scale * widthScale);
                     final int y = Math.round((stationPositionGrouped.stationPosition.y + yOffset) * scale * heightScale);
                     final int lines = stationPositionGrouped.stationPosition.isCommon ? colorIndices[colorIndices.length - 1] : 0;
-                    final boolean textBelow = vertical || (stationPositionGrouped.stationPosition.isCommon ? Math.round(stationPositionGrouped.stationPosition.x * 2) % 2 == 0 : y >= yOffset * scale);
                     final boolean currentStation = stationPositionGrouped.stationOffset == 0;
                     final boolean passed = stationPositionGrouped.stationOffset < 0;
 
                     final IntArrayList interchangeColors = stationPositionGrouped.interchangeColors;
-
 
                     // Получаем цвет линии для этой станции
                     int stationLineColor;
@@ -194,25 +176,16 @@ public class SPBRouteMapGenerator implements IGui {
                         // Берём цвет из маршрута (первый маршрут для упрощения)
                         stationLineColor = routeDetails.get(0).left().getColor();
                     }
-                    // Добавляем currentStation седьмым аргументом
                     drawStation(nativeImage, x, y, heightScale, lines, passed, currentStation, stationLineColor, interchangeColors);
-
-
-
-
-
-
-                    // --- Внутри цикла stationPositionsGrouped.forEach ---
 
                     String stationName = key.split("\\|\\|")[0];
                     // Без кириллицы транслит не нужен: иначе имя вроде "St. Petersburg" рисуется дважды
                     boolean isEnglishOnly = !stationName.matches("(?s).*\\p{IsCyrillic}.*");
 
-                    int nameX = x; // Привязка строго по центру кружка
                     int textColor = passed ? ARGB_LIGHT_GRAY : (currentStation ? darkenColor(stationLineColor, 0.75f) : ARGB_BLACK);
                     float angle = -55f;
 
-// Учет высоты пересадочного узла (если кружков несколько)
+                    // Учет высоты пересадочного узла (если кружков несколько)
                     int totalLinesHeight = (int) Math.round(lines * lineSpacing * heightScale);
                     int verticalOffset = (int) (lineSize * TEXT_SPACING_FROM_CIRCLE);
 
@@ -247,9 +220,6 @@ public class SPBRouteMapGenerator implements IGui {
                             drawRotatedString(nativeImage, transPix, transDims, x-20, y + totalLinesHeight + verticalOffset, angle, textColor, 1.0f, 0.0f);
                         }
                     }
-
-
-
                 }));
 
                 if (transparentWhite) {
@@ -265,7 +235,6 @@ public class SPBRouteMapGenerator implements IGui {
                 int imgWidth = nativeImage.getWidth();
                 int topPadding = 30; // Отступ сверху
                 int sidePadding = 40; // Отступ от краев
-
 
                 if (flip) {
                     // Если flip = true: рисуем "левую" стрелку справа, а "правую" слева
@@ -290,8 +259,6 @@ public class SPBRouteMapGenerator implements IGui {
 
         return null;
     }
-
-
 
     private static void setup(ObjectArrayList<Int2ObjectAVLTreeMap<StationPosition>> stationPositions, ObjectArrayList<LongArrayList> stationsIdLists, int[] colorIndices, float[] bounds, boolean passed, boolean reverse) {
         final int passedMultiplier = passed ? -1 : 1;
@@ -380,12 +347,6 @@ public class SPBRouteMapGenerator implements IGui {
         return colors;
     }
 
-    private static String getStationName(long platformId) {
-        final Platform platform = MinecraftClientData.getInstance().platformIdMap.get(platformId);
-        final Station station = platform == null ? null : platform.area;
-        return station == null ? "" : station.getName();
-    }
-
     private static void drawLine(NativeImage nativeImage, StationPosition stationPosition1, StationPosition stationPosition2, float widthScale, float heightScale, float xOffset, float yOffset, int color) {
         final int x1 = Math.round((stationPosition1.x + xOffset) * scale * widthScale);
         final int x2 = Math.round((stationPosition2.x + xOffset) * scale * widthScale);
@@ -436,10 +397,6 @@ public class SPBRouteMapGenerator implements IGui {
     /**
      * Отрисовывает кружок станции. Если есть пересадки, кружок делится на равные сектора (доли).
      */
-    /**
-     * Отрисовывает кружок станции. Если есть пересадки, кружок делится на равные сектора (доли).
-     */
-    // Добавили boolean isCurrentStation перед int lineColor
     private static void drawStation(NativeImage nativeImage, int x, int y, float heightScale, int lines, boolean passed, boolean isCurrentStation, int lineColor, IntArrayList interchangeColors) {
         IntArrayList allColors = new IntArrayList();
         allColors.add(lineColor);
@@ -514,104 +471,6 @@ public class SPBRouteMapGenerator implements IGui {
         }
     }
 
-
-
-
-
-
-    private static void drawString(NativeImage nativeImage, byte[] pixels, int x, int y, int[] textDimensions, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment, int backgroundColor, int textColor, boolean rotate90) {
-        if (((backgroundColor >> 24) & 0xFF) > 0) {
-            for (int drawX = 0; drawX < textDimensions[rotate90 ? 1 : 0]; drawX++) {
-                for (int drawY = 0; drawY < textDimensions[rotate90 ? 0 : 1]; drawY++) {
-                    drawPixelSafe(nativeImage, (int) horizontalAlignment.getOffset(drawX + x, textDimensions[rotate90 ? 1 : 0]), (int) verticalAlignment.getOffset(drawY + y, textDimensions[rotate90 ? 0 : 1]), backgroundColor);
-                }
-            }
-        }
-        int drawX = 0;
-        int drawY = rotate90 ? textDimensions[0] - 1 : 0;
-        for (int i = 0; i < textDimensions[0] * textDimensions[1]; i++) {
-            blendPixel(nativeImage, (int) horizontalAlignment.getOffset(x + drawX, textDimensions[rotate90 ? 1 : 0]), (int) verticalAlignment.getOffset(y + drawY, textDimensions[rotate90 ? 0 : 1]), ((pixels[i] & 0xFF) << 24) + (textColor & RGB_WHITE));
-            if (rotate90) {
-                drawY--;
-                if (drawY < 0) {
-                    drawY = textDimensions[0] - 1;
-                    drawX++;
-                }
-            } else {
-                drawX++;
-                if (drawX == textDimensions[0]) {
-                    drawX = 0;
-                    drawY++;
-                }
-            }
-        }
-    }
-
-    private static void drawStringPixelated(NativeImage nativeImage, byte[] pixels, int[] textDimensions, int textColor, boolean fullPixel) {
-        final int yOffset = (textDimensions[1] * (fullPixel ? 1 : PIXEL_SCALE) - nativeImage.getHeight()) / 2;
-        int drawX = 0;
-        int drawY = 0;
-        for (int i = 0; i < textDimensions[0] * textDimensions[1]; i++) {
-            if ((pixels[i] & 0xFF) > 0x7F) {
-                if (fullPixel) {
-                    drawPixelSafe(nativeImage, drawX, drawY - yOffset, textColor);
-                } else {
-                    for (int j = 0; j < 3; j++) {
-                        for (int k = 0; k < 3; k++) {
-                            drawPixelSafe(nativeImage, drawX * PIXEL_SCALE + j, drawY * PIXEL_SCALE + k - yOffset, textColor);
-                        }
-                    }
-                }
-            }
-            drawX++;
-            if (drawX == textDimensions[0]) {
-                drawX = 0;
-                drawY++;
-            }
-        }
-    }
-
-    private static void drawResource(NativeImage nativeImage, String resource, int x, int y, int width, int height, boolean flipX, float v1, float v2, int color, boolean useActualColor) {
-        ResourceManagerHelper.readResource(new Identifier(Init.MOD_ID, resource), inputStream -> {
-            try {
-                final NativeImage nativeImageResource = NativeImage.read(NativeImageFormat.getAbgrMapped(), inputStream);
-                final int resourceWidth = nativeImageResource.getWidth();
-                final int resourceHeight = nativeImageResource.getHeight();
-                for (int drawX = 0; drawX < width; drawX++) {
-                    for (int drawY = Math.round(v1 * height); drawY < Math.round(v2 * height); drawY++) {
-                        final float pixelX = (float) drawX / width * resourceWidth;
-                        final float pixelY = (float) drawY / height * resourceHeight;
-                        final int floorX = (int) pixelX;
-                        final int floorY = (int) pixelY;
-                        final int ceilX = floorX + 1;
-                        final int ceilY = floorY + 1;
-                        final float percentX1 = ceilX - pixelX;
-                        final float percentY1 = ceilY - pixelY;
-                        final float percentX2 = pixelX - floorX;
-                        final float percentY2 = pixelY - floorY;
-                        final int pixel1 = nativeImageResource.getColor(MathHelper.clamp(floorX, 0, resourceWidth - 1), MathHelper.clamp(floorY, 0, resourceHeight - 1));
-                        final int pixel2 = nativeImageResource.getColor(MathHelper.clamp(ceilX, 0, resourceWidth - 1), MathHelper.clamp(floorY, 0, resourceHeight - 1));
-                        final int pixel3 = nativeImageResource.getColor(MathHelper.clamp(floorX, 0, resourceWidth - 1), MathHelper.clamp(ceilY, 0, resourceHeight - 1));
-                        final int pixel4 = nativeImageResource.getColor(MathHelper.clamp(ceilX, 0, resourceWidth - 1), MathHelper.clamp(ceilY, 0, resourceHeight - 1));
-                        final int newColor;
-                        if (useActualColor) {
-                            newColor = invertColor(pixel1);
-                        } else {
-                            final float luminance1 = ((pixel1 >> 24) & 0xFF) * percentX1 * percentY1;
-                            final float luminance2 = ((pixel2 >> 24) & 0xFF) * percentX2 * percentY1;
-                            final float luminance3 = ((pixel3 >> 24) & 0xFF) * percentX1 * percentY2;
-                            final float luminance4 = ((pixel4 >> 24) & 0xFF) * percentX2 * percentY2;
-                            newColor = (color & RGB_WHITE) + ((int) (luminance1 + luminance2 + luminance3 + luminance4) << 24);
-                        }
-                        blendPixel(nativeImage, (flipX ? width - drawX - 1 : drawX) + x, drawY + y, newColor);
-                    }
-                }
-            } catch (Exception e) {
-                Init.LOGGER.error("", e);
-            }
-        });
-    }
-
     private static void blendPixel(NativeImage nativeImage, int x, int y, int color) {
         if (Utilities.isBetween(x, 0, nativeImage.getWidth() - 1) && Utilities.isBetween(y, 0, nativeImage.getHeight() - 1)) {
             final float percent = (float) ((color >> 24) & 0xFF) / 0xFF;
@@ -669,13 +528,11 @@ public class SPBRouteMapGenerator implements IGui {
         private final StationPosition stationPosition;
         private final int stationOffset;
         private final IntArrayList interchangeColors;
-        private final ObjectArrayList<String> interchangeNames;
 
-        private StationPositionGrouped(StationPosition stationPosition, int stationOffset, IntArrayList interchangeColors, ObjectArrayList<String> interchangeNames) {
+        private StationPositionGrouped(StationPosition stationPosition, int stationOffset, IntArrayList interchangeColors) {
             this.stationPosition = stationPosition;
             this.stationOffset = stationOffset;
             this.interchangeColors = interchangeColors;
-            this.interchangeNames = interchangeNames;
         }
     }
 
@@ -712,7 +569,6 @@ public class SPBRouteMapGenerator implements IGui {
 
         return result.toString();
     }
-
 
     private static void drawRotatedString(NativeImage nativeImage, byte[] pixels, int[] dimensions, int anchorX, int anchorY, float angleDegrees, int textColor, float alignX, float alignY) {
         if (pixels == null) return;
@@ -774,7 +630,6 @@ public class SPBRouteMapGenerator implements IGui {
         }
     }
 
-
     private static void drawArrow(NativeImage image, int x, int y, int color, boolean isRight) {
         int size = 20;
         int thickness = 10;
@@ -819,12 +674,5 @@ public class SPBRouteMapGenerator implements IGui {
 
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
-
-
-
-
-
-
-
 
 }
