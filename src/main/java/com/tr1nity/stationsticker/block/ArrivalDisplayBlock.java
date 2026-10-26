@@ -61,7 +61,6 @@ public class ArrivalDisplayBlock extends BaseEntityBlock {
     // Высота корпуса экрана в пикселях клетки, общая для формы и рендера
     public static float bodyBottom(DisplayAttachment attachment) {
         return switch (attachment) {
-            case FLOOR -> 4;
             case WALL -> 2;
             case CEILING -> 1;
         };
@@ -69,7 +68,6 @@ public class ArrivalDisplayBlock extends BaseEntityBlock {
 
     public static float bodyTop(DisplayAttachment attachment) {
         return switch (attachment) {
-            case FLOOR -> 15;
             case WALL -> 14;
             case CEILING -> 12;
         };
@@ -110,8 +108,7 @@ public class ArrivalDisplayBlock extends BaseEntityBlock {
         DisplayAttachment attachment;
         Direction facing;
         if (clickedFace == Direction.UP) {
-            attachment = DisplayAttachment.FLOOR;
-            facing = context.getHorizontalDirection().getOpposite();
+            return null; // на пол не ставится
         } else if (clickedFace == Direction.DOWN) {
             attachment = DisplayAttachment.CEILING;
             facing = context.getHorizontalDirection().getOpposite();

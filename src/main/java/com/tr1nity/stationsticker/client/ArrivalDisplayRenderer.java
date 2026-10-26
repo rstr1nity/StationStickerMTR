@@ -75,21 +75,18 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
         // Корпус
         drawBox(consumer, pose, left, bottom, back, right, top, front, BODY_COLOR, BODY_SIDE_COLOR, packedLight);
 
-        // Подвес к потолку или стойка на полу (в клетке основного блока и части)
-        float rod = 1 / 32f;
+        // Подвес к потолку (в клетке основного блока и части)
         if (attachment == DisplayAttachment.CEILING) {
+            float rod = 1 / 32f;
             for (float x : new float[]{left + 0.3f, right - 0.3f}) {
                 drawBox(consumer, pose, x - rod, top, -rod, x + rod, 0.5f, rod, BODY_SIDE_COLOR, BODY_SIDE_COLOR, packedLight);
             }
-        } else if (attachment == DisplayAttachment.FLOOR) {
-            float center = (left + right) / 2;
-            drawBox(consumer, pose, center - 2 * rod, -0.5f, -2 * rod, center + 2 * rod, bottom, 2 * rod, BODY_SIDE_COLOR, BODY_SIDE_COLOR, packedLight);
         }
 
         Platform platform = PlatformLocator.findPlatformAt(entity.getBlockPos());
         drawScreen(poseStack, bufferSource, platform, left, bottom, right, top, front);
-        if (attachment != DisplayAttachment.WALL) {
-            // У подвесного и напольного табло экран с обеих сторон
+        if (attachment == DisplayAttachment.CEILING) {
+            // У подвесного табло экран с обеих сторон
             poseStack.pushPose();
             poseStack.translate((left + right) / 2, 0, 0);
             poseStack.mulPose(Axis.YP.rotationDegrees(180));
