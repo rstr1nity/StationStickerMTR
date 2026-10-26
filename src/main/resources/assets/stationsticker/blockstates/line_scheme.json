@@ -1,5 +1,5 @@
 {
   "variants": {
-    "": { "model": "stationsticker:block/station_sticker" }
+    "": { "model": "stationsticker:block/line_scheme" }
   }
 }
