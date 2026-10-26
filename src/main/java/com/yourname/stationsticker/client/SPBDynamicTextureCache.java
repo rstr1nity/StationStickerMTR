@@ -136,6 +136,8 @@ public class SPBDynamicTextureCache implements IGui {
             return defaultRenderingColor.dynamicResource;
         }
 
+        // До постановки задачи: генератор в рабочем потоке читает scale и размеры линий
+        SPBRouteMapGenerator.setConstants();
         MainRenderer.WORKER_THREAD.scheduleDynamicTextures(() -> {
             final NativeImage nativeImage = supplier.get();
 
@@ -171,7 +173,6 @@ public class SPBDynamicTextureCache implements IGui {
                 generatingResources.remove(key);
             });
         });
-        SPBRouteMapGenerator.setConstants();
         generatingResources.add(key);
 
         if (dynamicResource == null) {
