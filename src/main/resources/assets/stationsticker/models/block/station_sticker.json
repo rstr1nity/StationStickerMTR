@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "all": "stationsticker:block/station_sticker"
+    "particle": "stationsticker:block/station_sticker"
   }
 }
