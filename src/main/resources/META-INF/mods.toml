@@ -30,7 +30,7 @@ side="BOTH"
 
 [[dependencies.stationsticker]]
 modId="mtr"
-mandatory=false  # ИЗМЕНЕНО С true НА false!
+mandatory=true
 versionRange="${mtr_version_range}"
 ordering="AFTER"
 side="BOTH"
