@@ -14,12 +14,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import org.jetbrains.annotations.Nullable;
 
-// Навигационная табличка 3x1 с настройкой по шаблону (клик кисточкой MTR открывает окно)
-public class NavSignBlock extends WideDisplayBlock {
+// Навигационная табличка с настройкой по шаблону и шириной (клик кисточкой MTR открывает окно)
+public class NavSignBlock extends ResizableDisplayBlock {
 
-    @Override
-    public int width(BlockState state) {
-        return 3;
+    public NavSignBlock() {
+        super(3);
     }
 
     @Nullable

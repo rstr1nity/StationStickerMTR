@@ -1,6 +1,7 @@
 package com.tr1nity.stationsticker.client;
 
 import com.tr1nity.stationsticker.block.DirectionSignBlock;
+import com.tr1nity.stationsticker.block.ResizableDisplayBlock;
 import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -21,7 +22,7 @@ public final class ClientScreens {
     public static void openDirectionSign(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.level.getBlockState(pos).getBlock() instanceof DirectionSignBlock) {
-            minecraft.setScreen(new DirectionSignScreen(pos, minecraft.level.getBlockState(pos).getValue(DirectionSignBlock.WIDTH)));
+            minecraft.setScreen(new DirectionSignScreen(pos, minecraft.level.getBlockState(pos).getValue(ResizableDisplayBlock.WIDTH)));
         }
     }
 }

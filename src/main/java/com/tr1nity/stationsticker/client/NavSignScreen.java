@@ -4,10 +4,12 @@ import com.tr1nity.stationsticker.block.NavSignOptions.Arrow;
 import com.tr1nity.stationsticker.block.NavSignOptions.Pictogram;
 import com.tr1nity.stationsticker.block.NavSignOptions.Template;
 import com.tr1nity.stationsticker.block.NavSignSettings;
+import com.tr1nity.stationsticker.block.ResizableDisplayBlock;
 import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
 import com.tr1nity.stationsticker.client.display.Exits;
 import com.tr1nity.stationsticker.client.display.StationNames;
 import com.tr1nity.stationsticker.client.display.Transfers;
+import com.tr1nity.stationsticker.network.DisplayWidthPacket;
 import com.tr1nity.stationsticker.network.ModNetwork;
 import com.tr1nity.stationsticker.network.NavSignSettingsPacket;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,12 +36,15 @@ public class NavSignScreen extends Screen {
     private final List<Transfers.Transfer> transfers;
     private final List<String> exitNames = new ArrayList<>();
     private NavSignSettings settings;
+    private int signWidth;
 
     public NavSignScreen(NavSignBlockEntity sign) {
         super(Component.translatable(KEY + "title"));
         this.sign = sign;
         this.transfers = Transfers.optionsAt(sign.getBlockPos());
         this.settings = sign.getSettings();
+        this.signWidth = sign.getBlockState().hasProperty(ResizableDisplayBlock.WIDTH)
+                ? sign.getBlockState().getValue(ResizableDisplayBlock.WIDTH) : 3;
         exitNames.add("");
         for (StationExit exit : Exits.at(sign.getBlockPos())) exitNames.add(exit.getName());
 
@@ -76,7 +81,9 @@ public class NavSignScreen extends Screen {
                     rebuildWidgets();
                 }));
 
-        int row = 1;
+        addRenderableWidget(new WidthSlider(x, y + ROW, BUTTON_WIDTH, BUTTON_HEIGHT, signWidth, value -> signWidth = value));
+
+        int row = 2;
         if (settings.template() == Template.TRANSFER) {
             if (transfers.isEmpty()) {
                 addDisabled(x, y + ROW * row++, Component.translatable(KEY + "no_transfers"));
@@ -141,6 +148,7 @@ public class NavSignScreen extends Screen {
 
     private void save() {
         ModNetwork.CHANNEL.sendToServer(new NavSignSettingsPacket(sign.getBlockPos(), settings));
+        ModNetwork.CHANNEL.sendToServer(new DisplayWidthPacket(sign.getBlockPos(), signWidth));
         onClose();
     }
 
