@@ -11,15 +11,20 @@ buildscript {
 
 apply plugin: 'net.minecraftforge.gradle'
 
-group = 'com.yourname.stationsticker'
-version = '1.1.0+1.20.1'
+group = mod_group_id
+version = "${mod_version}+${minecraft_version}"
 archivesBaseName = 'StationStickerMTR'
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
 }
 
+// Исходники в UTF-8, иначе на Windows javac читает их как windows-1251
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 minecraft {
-    mappings channel: 'official', version: '1.20.1'
+    mappings channel: mapping_channel, version: mapping_version
 
     runs {
         client {
@@ -38,8 +43,10 @@ minecraft {
 repositories {
     maven { url = 'https://maven.minecraftforge.net' }
 
-    flatDir {
-        dirs 'libs'
+    // MTR берётся с Modrinth, jar в репозитории не нужен
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
     }
 
     mavenCentral()
@@ -47,9 +54,26 @@ repositories {
 
 dependencies {
     // Forge
-    minecraft 'net.minecraftforge:forge:1.20.1-47.3.0'
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    implementation fg.deobf(files('libs/MTR-forge-4.0.3+1.20.1.jar'))
+    implementation fg.deobf("maven.modrinth:minecraft-transit-railway:${mtr_maven_version}")
+}
+
+// Подстановка версий из gradle.properties в mods.toml и pack.mcmeta
+processResources {
+    def props = [
+            mod_id                 : mod_id,
+            mod_version            : mod_version,
+            minecraft_version_range: minecraft_version_range,
+            forge_version_range    : forge_version_range,
+            loader_version_range   : loader_version_range,
+            mtr_version_range      : mtr_version_range
+    ]
+    inputs.properties props
+    filteringCharset = 'UTF-8'
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand props
+    }
 }
 
 jar {
@@ -65,10 +89,12 @@ jar {
         ])
     }
 }
-task copyToMods(type: Copy) {
-    from 'build/libs'
-    into 'C:/Users/aleks/AppData/Roaming/.minecraft/versions/проверка мода 1.20.1/mods'
-    include '*.jar'
-}
+// Копирование jar в игру, только если mods_dir задан в ~/.gradle/gradle.properties
+if (project.hasProperty('mods_dir')) {
+    task copyToMods(type: Copy) {
+        from jar
+        into mods_dir
+    }
 
-build.finalizedBy copyToMods
+    build.finalizedBy copyToMods
+}
