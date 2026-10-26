@@ -175,6 +175,30 @@ public final class SlideCanvas {
                 (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, lineAlpha);
     }
 
+    // Картинка целиком в прямоугольник (например, значок таблички MTR); flipX - зеркально по горизонтали
+    public void texture(ResourceLocation texture, float x, float y, float w, float h, boolean flipX) {
+        int textureAlpha = Math.round(255 * alpha);
+        if (textureAlpha == 0) return;
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(texture));
+        Matrix4f pose = poseStack.last().pose();
+        float u0 = flipX ? 1 : 0;
+        float u1 = flipX ? 0 : 1;
+        texturedVertex(consumer, pose, x, y, u0, 0, textureAlpha);
+        texturedVertex(consumer, pose, x + w, y, u1, 0, textureAlpha);
+        texturedVertex(consumer, pose, x + w, y + h, u1, 1, textureAlpha);
+        texturedVertex(consumer, pose, x, y + h, u0, 1, textureAlpha);
+
+        texturedVertex(consumer, pose, x, y + h, u0, 1, textureAlpha);
+        texturedVertex(consumer, pose, x + w, y + h, u1, 1, textureAlpha);
+        texturedVertex(consumer, pose, x + w, y, u1, 0, textureAlpha);
+        texturedVertex(consumer, pose, x, y, u0, 0, textureAlpha);
+    }
+
+    // Чуть выше прямоугольников и кругов, чтобы картинка лежала поверх своего фона
+    private static void texturedVertex(VertexConsumer consumer, Matrix4f pose, float x, float y, float u, float v, int a) {
+        consumer.vertex(pose, x, y, 0.05f).color(255, 255, 255, a).uv(u, v).uv2(LightTexture.FULL_BRIGHT).endVertex();
+    }
+
     // Четырёхугольник с обеих сторон (обход зависит от направления осей)
     private static void quad(VertexConsumer consumer, Matrix4f pose, float ax, float ay, float bx, float by,
                              float cx, float cy, float dx, float dy, int r, int g, int b, int a) {
