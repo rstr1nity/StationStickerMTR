@@ -17,20 +17,20 @@
 ## B. Мусор и плейсхолдеры
 
 8. Пакет `com.yourname.stationsticker` и `group = 'com.yourname...'` переименовать до публичного релиза (меняется везде: java, `mods.toml`, `mixins.json`, импорты).
-9. `src/main/resources/stationsticker.mixins.json` пустой, не подключён, ссылается на несуществующие `refmap` и пакет `mixin`. Удалить.
+9. ✅ `src/main/resources/stationsticker.mixins.json` пустой, не подключён, ссылается на несуществующие `refmap` и пакет `mixin`. Удалить.
 10. ✅ `README.txt`, `CREDITS.txt`, `LICENSE.txt`, `changelog.txt` (47 КБ) взяты из Forge MDK. `LICENSE.txt` - лицензия Forge, а в `mods.toml` указано `license="All rights reserved"` и отдельно `license="MIT"`. Определиться с лицензией, положить свой LICENSE и написать README про аддон.
-11. `client/ClientModEvents.java`: в начале файла закомментированный старый вариант класса, удалить. Убрать оставшиеся комментарии вида `// ← ДОБАВИТЬ ЭТОТ ИМПОРТ`, `// ИЗМЕНЕНО С true НА false!`.
+11. ✅ (в 1.19.2 то же было в `StationStickerMod.java`) `client/ClientModEvents.java`: в начале файла закомментированный старый вариант класса, удалить. Убрать оставшиеся комментарии вида `// ← ДОБАВИТЬ ЭТОТ ИМПОРТ`, `// ИЗМЕНЕНО С true НА false!`.
 12. ✅ `build.gradle`: задача `copyToMods` прибита к `C:/Users/aleks/AppData/Roaming/.minecraft/versions/проверка мода 1.20.1/mods` и вызывается через `build.finalizedBy`. На другой машине и в CI сборка упадёт. Вынести путь в локальное свойство (`gradle.properties` в `~/.gradle`) и сделать задачу необязательной.
 13. ✅ (без чистки истории) `libs/MTR-forge-4.0.3+1.20.1.jar` (85 МБ) не исключён в `.gitignore`. Проверить `git ls-files libs`; если в индексе, убрать (`git rm --cached`) и добавить `libs/` в `.gitignore`. Если jar уже в истории, GitHub отклонит push из-за лимита 100 МБ на файл. Описать в README, куда класть jar. Проверить, что лицензия MTR допускает распространение.
 14. ✅ Версия в `mods.toml` захардкожена (`1.1.0`), в `build.gradle` стоит `1.1.0+1.20.1`. Использовать `${file.jarVersion}` или expand.
-15. Ресурсы:
-    - рецепт `line_scheme.json`: пустые ряды `"   "` заменить на один ряд `"DSD"`;
-    - текстуры названы непоследовательно: `line-scheme-item.png` и `station-sticker-item.png` (дефисы) против snake_case в остальном;
-    - `textures/block/sticker.png` (115 КБ) выглядит неиспользуемым, проверить и удалить;
-    - `logo.png` 1,7 МБ - уменьшить;
-    - `ru_ru.json`: название вкладки «Станционные стикеры» вместо единственного числа;
+15. ✅ Ресурсы:
+    - ✅ рецепт `line_scheme.json`: пустые ряды `"   "` заменить на один ряд `"DSD"`;
+    - ✅ (решено не трогать) текстуры названы непоследовательно: `line-scheme-item.png` и `station-sticker-item.png` (дефисы) против snake_case в остальном;
+    - ✅ (не удалять) `textures/block/sticker.png` (115 КБ) используется: пасхалка на задней стенке схемы в `LineSchemeRenderer`;
+    - ✅ (решено не трогать) `logo.png` 1,7 МБ - уменьшить;
+    - ✅ `ru_ru.json`: название вкладки «Станционные стикеры» вместо единственного числа;
     - ✅ блокстейт `line_scheme.json` ссылается на модель `station_sticker`, сделать свою;
-    - текстура `station-sticker-item.png` 669x373: для предмета нужен квадрат со стороной степени двойки (16, 32, 64), иначе отключаются mipmap.
+    - ✅ (решено не трогать) текстура `station-sticker-item.png` 669x373: для предмета нужен квадрат со стороной степени двойки (16, 32, 64), иначе отключаются mipmap.
 
 ## D. Найдено при проверке в игре
 
