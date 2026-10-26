@@ -6,7 +6,7 @@
       "type": "java",
       "name": "Запустить Minecraft (hot swap)",
       "request": "attach",
-      "hostName": "localhost",
+      "hostName": "127.0.0.1",
       "port": 5005,
       "projectName": "StationStickerMTR",
       "preLaunchTask": "runClient --debug-jvm"
@@ -16,7 +16,7 @@
       "type": "java",
       "name": "Подключиться к Minecraft (hot swap)",
       "request": "attach",
-      "hostName": "localhost",
+      "hostName": "127.0.0.1",
       "port": 5005,
       "projectName": "StationStickerMTR"
     }
