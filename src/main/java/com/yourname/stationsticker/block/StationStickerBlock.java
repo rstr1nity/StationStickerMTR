@@ -23,7 +23,6 @@ import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -124,20 +123,5 @@ public class StationStickerBlock extends BaseEntityBlock {
                 }
             }
         }
-    }
-
-    @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!level.isClientSide && blockEntity instanceof StationStickerBlockEntity sticker) {
-            ItemStack stack = new ItemStack(this);
-            if (sticker.getPlatformId() != 0) {
-                CompoundTag tag = new CompoundTag();
-                tag.putLong("platformId", sticker.getPlatformId());
-                stack.addTagElement("BlockEntityTag", tag);
-            }
-            popResource(level, pos, stack);
-        }
-        super.playerWillDestroy(level, pos, state, player);
     }
 }
