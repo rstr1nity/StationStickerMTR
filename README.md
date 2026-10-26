@@ -36,8 +36,8 @@ mods_dir_1.20.1=C:/Users/<user>/AppData/Roaming/.minecraft/mods
 
 Нужно расширение Extension Pack for Java.
 
-1. В терминале: `./gradlew runClient --debug-jvm`. Игра стартует на паузе и ждёт отладчик.
-2. В VS Code: Run and Debug → «Подключиться к Minecraft (hot swap)» → F5.
+1. В VS Code: Run and Debug → «Запустить Minecraft (hot swap)» → F5. VS Code сам запустит `./gradlew runClient --debug-jvm` и подключится, когда игра откроет порт 5005.
+2. Если игра уже запущена вручную через `./gradlew runClient --debug-jvm`, выбрать «Подключиться к Minecraft (hot swap)».
 3. После правки внутри метода и сохранения (Ctrl+S) класс подменяется в запущенной игре.
 
 Подменяются только изменения внутри существующих методов. Новые методы, поля, классы и блоки требуют перезапуска.
