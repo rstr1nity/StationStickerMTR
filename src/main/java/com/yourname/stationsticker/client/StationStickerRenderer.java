@@ -56,10 +56,9 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
 
         Station station = findStationAt(pos);
 
-        if (station == null) return;
-
-        String stationName = station.getName();
-        int stationColor = station.getColor();
+        // Вне станции MTR - белая полоска без названия, чтобы стикер не был невидимым
+        String stationName = station == null ? "" : station.getName();
+        int stationColor = station == null ? 0xFFFFFF : station.getColor();
 
         renderSticker(entity, poseStack, bufferSource, facing,
                 stationName, stationColor, packedLight,
