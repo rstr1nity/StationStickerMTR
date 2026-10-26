@@ -8,13 +8,13 @@ import net.minecraft.client.resources.language.I18n;
 //   <-  [человек на лестнице]  (2)  Переход на Замоскворецкую линию
 //                                   Тверская
 //                                   Tverskaya
-// При стрелке вправо или вверх порядок зеркальный: текст слева, стрелка у правого края.
+// При стрелке вправо или вверх порядок зеркальный: текст первым, стрелка последней. Вся группа по центру.
 public final class TransferSignBoard {
 
     public static final float DESIGN_HEIGHT = 40;
 
     private static final float CENTER_Y = DESIGN_HEIGHT / 2;
-    private static final float ARROW_SCALE = 2.2f;
+    private static final float ARROW_SIZE = 20;      // длинная сторона стрелки
     private static final float PICTOGRAM_HEIGHT = 24;
     private static final float CIRCLE_RADIUS = 9;
     private static final float GAP = 4;
@@ -48,58 +48,56 @@ public final class TransferSignBoard {
         boolean mirrored = arrow == Arrow.RIGHT || arrow == Arrow.UP;
 
         String[] arrowBitmap = arrowBitmap(arrow);
+        float arrowScale = ARROW_SIZE / Math.max(arrowBitmap.length, arrowBitmap[0].length());
+        float arrowWidth = arrowBitmap[0].length() * arrowScale;
         String[] pictogram = switch (sign.getPictogram()) {
             case NONE -> null;
             case PERSON -> Pictograms.PERSON;
             case STAIRS -> Pictograms.STAIRS;
         };
-
-        // Элементы от края со стрелкой к тексту: стрелка, пиктограмма, кружок
-        float arrowWidth = arrowBitmap[0].length() * ARROW_SCALE;
         float pictogramScale = pictogram == null ? 0 : PICTOGRAM_HEIGHT / pictogram.length;
-        float pictogramWidth = pictogram == null ? 0 : pictogram[0].length() * pictogramScale;
-        float cursor = 0;
-        drawAt(canvas, mirrored, cursor, arrowWidth, x ->
-                Pictograms.draw(canvas, arrowBitmap, x, CENTER_Y - arrowBitmap.length * ARROW_SCALE / 2, ARROW_SCALE, TEXT_COLOR, false));
-        cursor += arrowWidth + GAP;
-        if (pictogram != null) {
-            // Человек идёт в сторону стрелки
-            drawAt(canvas, mirrored, cursor, pictogramWidth, x ->
-                    Pictograms.draw(canvas, pictogram, x, CENTER_Y - PICTOGRAM_HEIGHT / 2, pictogramScale, TEXT_COLOR, !mirrored));
-            cursor += pictogramWidth + GAP;
-        }
-        drawAt(canvas, mirrored, cursor, CIRCLE_RADIUS * 2, x -> drawLineCircle(canvas, x + CIRCLE_RADIUS, transfer));
-        cursor += CIRCLE_RADIUS * 2 + GAP;
+        float pictogramWidth = pictogram == null ? 0 : pictogram[0].length() * pictogramScale + GAP;
 
-        // Текст: «Переход на <линию>» (название линии её цветом), станция крупно, второе название мелко
-        float maxWidth = canvas.width - cursor;
-        String header = I18n.get(KEY + "transfer_to") + " ";
-        String line = StationNames.forCurrentLanguage(transfer.routeName());
-        String name = StationNames.primary(transfer.stationName());
-        String secondary = StationNames.secondary(transfer.stationName());
-        float headerWidth = canvas.textWidth(header, HEADER_SCALE);
-        if (!mirrored) {
-            canvas.text(header, cursor, HEADER_Y, HEADER_SCALE, TEXT_COLOR, maxWidth);
-            canvas.text(line, cursor + headerWidth, HEADER_Y, HEADER_SCALE, 0xFF000000 | transfer.color(), maxWidth - headerWidth);
-            canvas.text(name, cursor, NAME_Y, NAME_SCALE, TEXT_COLOR, maxWidth);
-            canvas.text(secondary, cursor, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, maxWidth);
+        // Текст: «Переход на <линию>» (название линии её цветом), станция крупно, латиница мелко
+        Text text = new Text(I18n.get(KEY + "transfer_to") + " ", StationNames.forCurrentLanguage(transfer.routeName()),
+                StationNames.primary(transfer.stationName()), StationNames.secondary(transfer.stationName()));
+        float fixedWidth = arrowWidth + GAP + pictogramWidth + CIRCLE_RADIUS * 2 + GAP;
+        float textWidth = Math.min(text.width(canvas), canvas.width - fixedWidth);
+
+        // Вся группа по центру таблички; человек идёт в сторону стрелки
+        float x = (canvas.width - fixedWidth - textWidth) / 2;
+        if (mirrored) {
+            drawText(canvas, x, textWidth, text, transfer.color());
+            x += textWidth + GAP;
+            drawLineCircle(canvas, x + CIRCLE_RADIUS, transfer);
+            x += CIRCLE_RADIUS * 2 + GAP;
+            if (pictogram != null) Pictograms.draw(canvas, pictogram, x, CENTER_Y - PICTOGRAM_HEIGHT / 2, pictogramScale, TEXT_COLOR, false);
+            x += pictogramWidth;
+            Pictograms.draw(canvas, arrowBitmap, x, CENTER_Y - arrowBitmap.length * arrowScale / 2, arrowScale, TEXT_COLOR, false);
         } else {
-            float right = canvas.width - cursor;
-            float lineWidth = Math.min(canvas.textWidth(line, HEADER_SCALE), maxWidth - headerWidth);
-            canvas.textRight(line, right, HEADER_Y, HEADER_SCALE, 0xFF000000 | transfer.color(), maxWidth - headerWidth);
-            canvas.textRight(header, right - lineWidth, HEADER_Y, HEADER_SCALE, TEXT_COLOR, headerWidth);
-            canvas.textRight(name, right, NAME_Y, NAME_SCALE, TEXT_COLOR, maxWidth);
-            canvas.textRight(secondary, right, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, maxWidth);
+            Pictograms.draw(canvas, arrowBitmap, x, CENTER_Y - arrowBitmap.length * arrowScale / 2, arrowScale, TEXT_COLOR, false);
+            x += arrowWidth + GAP;
+            if (pictogram != null) Pictograms.draw(canvas, pictogram, x, CENTER_Y - PICTOGRAM_HEIGHT / 2, pictogramScale, TEXT_COLOR, true);
+            x += pictogramWidth;
+            drawLineCircle(canvas, x + CIRCLE_RADIUS, transfer);
+            x += CIRCLE_RADIUS * 2 + GAP;
+            drawText(canvas, x, textWidth, text, transfer.color());
         }
     }
 
-    private interface Drawer {
-        void draw(float x);
+    private record Text(String header, String line, String name, String secondary) {
+        float width(SlideCanvas canvas) {
+            float headerWidth = canvas.textWidth(header, HEADER_SCALE) + canvas.textWidth(line, HEADER_SCALE);
+            return Math.max(headerWidth, Math.max(canvas.textWidth(name, NAME_SCALE), canvas.textWidth(secondary, SECONDARY_SCALE)));
+        }
     }
 
-    // Элемент шириной width на расстоянии offset от края со стрелкой (левого или правого)
-    private static void drawAt(SlideCanvas canvas, boolean fromRight, float offset, float width, Drawer drawer) {
-        drawer.draw(fromRight ? canvas.width - offset - width : offset);
+    private static void drawText(SlideCanvas canvas, float x, float width, Text text, int lineColor) {
+        float headerWidth = canvas.textWidth(text.header, HEADER_SCALE);
+        canvas.text(text.header, x, HEADER_Y, HEADER_SCALE, TEXT_COLOR, width);
+        canvas.text(text.line, x + headerWidth, HEADER_Y, HEADER_SCALE, 0xFF000000 | lineColor, width - headerWidth);
+        canvas.text(text.name, x, NAME_Y, NAME_SCALE, TEXT_COLOR, width);
+        canvas.text(text.secondary, x, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, width);
     }
 
     private static void drawLineCircle(SlideCanvas canvas, float centerX, Transfers.Transfer transfer) {

@@ -20,18 +20,22 @@ public final class Pictograms {
             ".##.......#",
             "##........."};
 
-    // Человек и лестница вверх по ходу движения (ступени 3x3), 22x18
+    // Человек и лестница вверх по ходу движения (ступени 3x3), 20x18
     public static final String[] STAIRS = withStairs(PERSON);
 
-    // Стрелка влево 8x7; остальные направления получаются поворотом
+    // Стрелка влево линией в 2 клетки с наконечником «V», как на табличках метро, 13x10;
+    // остальные направления получаются поворотом
     public static final String[] ARROW_LEFT = {
-            "...#....",
-            "..##....",
-            ".#######",
-            "########",
-            ".#######",
-            "..##....",
-            "...#...."};
+            "....##.......",
+            "...##........",
+            "..##.........",
+            ".##..........",
+            "#############",
+            "#############",
+            ".##..........",
+            "..##.........",
+            "...##........",
+            "....##......."};
 
     private Pictograms() {
     }
@@ -85,14 +89,14 @@ public final class Pictograms {
 
     // Лестница справа от человека: ступени шириной и высотой 3 клетки от низа вверх вправо
     private static String[] withStairs(String[] person) {
-        int width = 22;
+        int width = 20;
         int height = 18;
         char[][] grid = new char[height][width];
         for (char[] row : grid) java.util.Arrays.fill(row, '.');
         for (int y = 0; y < person.length; y++) {
             for (int x = 0; x < person[y].length(); x++) grid[y][x] = person[y].charAt(x);
         }
-        int x = 11;
+        int x = 9;
         int y = height - 1;
         while (x < width && y >= 0) {
             for (int i = 0; i < 3 && x + i < width; i++) grid[y][x + i] = '#';

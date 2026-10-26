@@ -27,7 +27,7 @@ public final class DirectionSignBoard {
 
     public static final float DESIGN_HEIGHT = 44;
 
-    private static final float ARROW_SCALE = 1.6f;
+    private static final float ARROW_SCALE = 1.0f;     // стрелка 13x10 клеток - по высоте заголовка
     private static final float LINE_RADIUS = 6;
     private static final float NAME_SCALE = 1.4f;
     private static final float SECONDARY_Y = 11;
