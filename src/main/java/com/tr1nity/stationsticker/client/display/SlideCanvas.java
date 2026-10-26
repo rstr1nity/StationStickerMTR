@@ -1,10 +1,14 @@
 package com.tr1nity.stationsticker.client.display;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
+import org.joml.Matrix4f;
 
 // Холст экрана в пикселях шрифта: начало в левом верхнем углу, y вниз.
 // Прозрачность задаётся переходом и применяется ко всему, что рисует слайд.
@@ -12,6 +16,7 @@ public final class SlideCanvas {
 
     // Font считает цвет с альфой меньше 4 непрозрачным, такой текст не рисуем
     private static final int MIN_FONT_ALPHA = 4;
+    private static final ResourceLocation WHITE = new ResourceLocation("minecraft", "textures/misc/white.png");
 
     private final PoseStack poseStack;
     private final MultiBufferSource bufferSource;
@@ -19,7 +24,7 @@ public final class SlideCanvas {
     public final float height;
     private final float alpha;
 
-    SlideCanvas(PoseStack poseStack, MultiBufferSource bufferSource, float width, float height, float alpha) {
+    public SlideCanvas(PoseStack poseStack, MultiBufferSource bufferSource, float width, float height, float alpha) {
         this.poseStack = poseStack;
         this.bufferSource = bufferSource;
         this.width = width;
@@ -39,6 +44,42 @@ public final class SlideCanvas {
     // Текст, прижатый правым краем к x
     public void textRight(String text, float x, float y, float scale, int color) {
         drawFitted(text, x, y, scale, color, x, true);
+    }
+
+    // Закрашенный круг; чуть глубже текста, чтобы цифра на нём была видна
+    public void circle(float centerX, float centerY, float radius, int color) {
+        int circleAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
+        if (circleAlpha == 0) return;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
+        Matrix4f pose = poseStack.last().pose();
+        float z = -0.1f;
+        int segments = 24;
+        for (int i = 0; i < segments; i++) {
+            double a0 = Math.PI * 2 * i / segments;
+            double a1 = Math.PI * 2 * (i + 1) / segments;
+            float x0 = centerX + (float) Math.cos(a0) * radius;
+            float y0 = centerY + (float) Math.sin(a0) * radius;
+            float x1 = centerX + (float) Math.cos(a1) * radius;
+            float y1 = centerY + (float) Math.sin(a1) * radius;
+            // Сектор как вырожденный четырёхугольник; y вниз, поэтому обход меняет направление - рисуем обе стороны
+            vertex(consumer, pose, centerX, centerY, z, r, g, b, circleAlpha);
+            vertex(consumer, pose, x0, y0, z, r, g, b, circleAlpha);
+            vertex(consumer, pose, x1, y1, z, r, g, b, circleAlpha);
+            vertex(consumer, pose, x1, y1, z, r, g, b, circleAlpha);
+
+            vertex(consumer, pose, centerX, centerY, z, r, g, b, circleAlpha);
+            vertex(consumer, pose, x1, y1, z, r, g, b, circleAlpha);
+            vertex(consumer, pose, x0, y0, z, r, g, b, circleAlpha);
+            vertex(consumer, pose, x0, y0, z, r, g, b, circleAlpha);
+        }
+    }
+
+    private static void vertex(VertexConsumer consumer, Matrix4f pose, float x, float y, float z, int r, int g, int b, int a) {
+        consumer.vertex(pose, x, y, z).color(r, g, b, a).uv(0, 0).uv2(LightTexture.FULL_BRIGHT).endVertex();
     }
 
     private void drawFitted(String text, float x, float y, float scale, int color, float maxWidth, boolean alignRight) {

@@ -6,10 +6,8 @@ import com.mojang.math.Axis;
 import com.tr1nity.stationsticker.block.ArrivalDisplayBlock;
 import com.tr1nity.stationsticker.block.DisplayAttachment;
 import com.tr1nity.stationsticker.block.entity.ArrivalDisplayBlockEntity;
-import com.tr1nity.stationsticker.client.display.DisplaySlide;
-import com.tr1nity.stationsticker.client.display.SlideShow;
-import com.tr1nity.stationsticker.client.display.TestSlides;
-import net.minecraft.client.Minecraft;
+import com.tr1nity.stationsticker.client.display.ArrivalBoard;
+import com.tr1nity.stationsticker.client.display.SlideCanvas;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -21,7 +19,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 import org.mtr.core.data.Platform;
 
-import java.util.List;
 
 // Локальные координаты: начало в центре клетки основного блока, +Z - лицевая сторона экрана,
 // +X - вправо, если смотреть на экран (в сторону части). Табло занимает по X от -0.5 до 1.5.
@@ -85,31 +82,25 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
             }
         }
 
-        List<DisplaySlide> slides = createSlides(PlatformLocator.findPlatformAt(entity.getBlockPos()));
-        double time = entity.getLevel() == null ? 0 : entity.getLevel().getGameTime() + partialTick;
+        Platform platform = PlatformLocator.findPlatformAt(entity.getBlockPos());
+        long platformId = platform == null ? 0 : platform.getId();
+        long dayTime = entity.getLevel() == null ? 0 : entity.getLevel().getDayTime();
 
-        drawScreen(poseStack, bufferSource, slides, time, left, bottom, right, top, front);
+        drawScreen(poseStack, bufferSource, platformId, dayTime, left, bottom, right, top, front);
         if (attachment == DisplayAttachment.CEILING) {
             // У подвесного табло экран с обеих сторон
             poseStack.pushPose();
             poseStack.translate((left + right) / 2, 0, 0);
             poseStack.mulPose(Axis.YP.rotationDegrees(180));
             poseStack.translate(-(left + right) / 2, 0, 0);
-            drawScreen(poseStack, bufferSource, slides, time, left, bottom, right, top, front);
+            drawScreen(poseStack, bufferSource, platformId, dayTime, left, bottom, right, top, front);
             poseStack.popPose();
         }
 
         poseStack.popPose();
     }
 
-    // Временные слайды: станция и платформа (проверка поиска платформы), дата и время
-    private static List<DisplaySlide> createSlides(Platform platform) {
-        String stationName = platform == null || platform.area == null ? "" : firstLanguage(platform.area.getName());
-        String platformName = platform == null ? "Нет платформы" : "Платформа " + firstLanguage(platform.getName());
-        return List.of(TestSlides.station(platformName, stationName), TestSlides.clock());
-    }
-
-    private void drawScreen(PoseStack poseStack, MultiBufferSource bufferSource, List<DisplaySlide> slides, double time,
+    private void drawScreen(PoseStack poseStack, MultiBufferSource bufferSource, long platformId, long dayTime,
                             float left, float bottom, float right, float top, float front) {
         float z = front + 0.002f;
         float screenLeft = left + BEZEL;
@@ -121,25 +112,16 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
         drawQuad(consumer, poseStack.last().pose(), screenLeft, screenBottom, screenRight, screenTop, z,
                 SCREEN_COLOR, LightTexture.FULL_BRIGHT);
 
-        // Холст слайдов рассчитан на две строки: мелкую (1x) и крупную (2x) с отступом 11 пикселей шрифта.
-        // Если экран ниже, масштаб уменьшается, чтобы текст не заходил на рамку.
-        int lineHeight = Minecraft.getInstance().font.lineHeight;
-        float textHeight = 11 + lineHeight * 2;
-        float textScale = Math.min(TEXT_SCALE, (screenTop - screenBottom - 2 * TEXT_MARGIN) / textHeight);
+        // Масштаб такой, чтобы раскладка табло помещалась по высоте экрана и не заходила на рамку
+        float textScale = Math.min(TEXT_SCALE, (screenTop - screenBottom - 2 * TEXT_MARGIN) / ArrivalBoard.DESIGN_HEIGHT);
 
         poseStack.pushPose();
         poseStack.translate(screenLeft + TEXT_MARGIN, screenTop - TEXT_MARGIN, z + 0.002f);
         poseStack.scale(textScale, -textScale, textScale);
         float canvasWidth = (screenRight - screenLeft - 2 * TEXT_MARGIN) / textScale;
         float canvasHeight = (screenTop - screenBottom - 2 * TEXT_MARGIN) / textScale;
-        SlideShow.render(slides, time, poseStack, bufferSource, canvasWidth, canvasHeight);
+        ArrivalBoard.render(new SlideCanvas(poseStack, bufferSource, canvasWidth, canvasHeight, 1), platformId, dayTime);
         poseStack.popPose();
-    }
-
-    // Названия в MTR хранятся как "Русское|English": берём первую часть
-    private static String firstLanguage(String name) {
-        int separator = name.indexOf('|');
-        return separator < 0 ? name : name.substring(0, separator);
     }
 
     private static void drawBox(VertexConsumer consumer, Matrix4f pose,
