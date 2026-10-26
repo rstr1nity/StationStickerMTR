@@ -138,14 +138,60 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         poseStack.pushPose();
 
         poseStack.translate(0.5, 0.5, 0.501);
+        applyFacingRotation(poseStack, entity.getBlockState(), facing);
 
+        // Полоска цвета станции сверху
+        renderColoredRect(
+                poseStack,
+                bufferSource,
+                -0.5f,
+                -0.15f,
+                1.0f,
+                0.325f,
+                stationColor | 0xFF000000,
+                packedLight,
+                -0.01f
+        );
+
+        // Название по центру каждого отрезка линии (отрезок ~8 блоков)
+        int desiredSpacing = 8;
+        int textCount = Math.max(1, lineLength / desiredSpacing);
+        float lineSign = getLineSign(entity.getBlockState(), facing);
+        for (int k = 0; k < textCount; k++) {
+            // Центр k-го отрезка в блоках от начала линии
+            float center = (2 * k + 1) * lineLength / (2.0f * textCount);
+            int textBlock = Math.min(lineLength - 1, (int) center);
+            if (textBlock != indexInLine) continue;
+
+            poseStack.pushPose();
+            // Сдвиг от центра блока к центру отрезка (полблока, если центр на стыке блоков)
+            poseStack.translate((center - textBlock - 0.5f) * lineSign, 0, 0);
+            poseStack.scale(0.025f, -0.025f, 0.025f);
+            renderText(poseStack, bufferSource, stationName, packedLight);
+            poseStack.popPose();
+        }
+
+        poseStack.popPose();
+    }
+
+    // Знак, с которым локальная ось X стикера идёт вдоль линии (в сторону роста индекса)
+    private float getLineSign(BlockState state, Direction facing) {
+        PoseStack rotation = new PoseStack();
+        applyFacingRotation(rotation, state, facing);
+        Vector3f localX = new Vector3f(1, 0, 0);
+        localX.transform(rotation.last().normal());
+        Direction lineDir = getLineDirection(state, facing);
+        return Math.round(localX.x() * lineDir.getStepX() + localX.z() * lineDir.getStepZ());
+    }
+
+    private void applyFacingRotation(PoseStack poseStack, BlockState state, Direction facing) {
 // ПРАВИЛЬНЫЙ поворот для каждой стороны
         if (facing == Direction.UP) {
             // 1. Наклоняем блок
             poseStack.mulPose(Vector3f.XP.rotationDegrees(-90));
 
             // 2. Получаем горизонтальное направление (куда смотрел игрок)
-            Direction horizontal = entity.getBlockState().getValue(StationStickerBlock.HORIZONTAL_FACING);
+            Direction horizontal = state.getValue(StationStickerBlock.HORIZONTAL_FACING);
 
             // 3. ПРАВИЛЬНЫЙ поворот для каждой стороны:
             switch (horizontal) {
@@ -179,7 +225,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
             poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
 
             // 2. Получаем горизонтальное направление (куда смотрел игрок)
-            Direction horizontal = entity.getBlockState().getValue(StationStickerBlock.HORIZONTAL_FACING);
+            Direction horizontal = state.getValue(StationStickerBlock.HORIZONTAL_FACING);
 
             // 3. ПРАВИЛЬНЫЙ поворот для каждой стороны:
             switch (horizontal) {
@@ -226,36 +272,6 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
             }
             poseStack.translate(0, 0, -0.379f);
         }
-        // Полоска цвета станции сверху
-        renderColoredRect(
-                poseStack,
-                bufferSource,
-                -0.5f,
-                -0.15f,
-                1.0f,
-                0.325f,
-                stationColor | 0xFF000000,
-                packedLight,
-                -0.01f
-        );
-
-
-        poseStack.pushPose();
-
-        if (facing == Direction.UP) {
-            poseStack.scale(0.025f, -0.025f, 0.025f);
-        } else {
-            poseStack.scale(0.025f, -0.025f, 0.025f);
-        }
-        int desiredSpacing = 8;
-        int textCount = Math.max(1, lineLength / desiredSpacing);
-        int spacing = Math.max(1, lineLength / textCount);
-        if (indexInLine % spacing == 0) {
-            renderText(poseStack, bufferSource, stationName, packedLight);
-        }
-
-        poseStack.popPose();
-        poseStack.popPose();
     }
 
 
