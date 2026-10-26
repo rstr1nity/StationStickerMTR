@@ -29,6 +29,8 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
     // Размеры подбираются вживую
     private static final float WIDTH = 2.0f;
     private static final float BEZEL = 1 / 16f;          // рамка корпуса вокруг экрана
+    private static final float BODY_RADIUS = 0.15f;      // скругление углов корпуса (у экрана меньше на рамку)
+    private static final int CORNER_SEGMENTS = 6;
     private static final float DEPTH_WALL = 2 / 16f;     // толщина корпуса на стене
     private static final float DEPTH_HANGING = 2 / 16f;  // толщина корпуса на подвесе и стойке
     private static final float TEXT_SCALE = 0.02f;       // блоков на пиксель шрифта
@@ -71,8 +73,11 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
         Matrix4f pose = poseStack.last().pose();
 
-        // Корпус
-        drawBox(consumer, pose, left, bottom, back, right, top, front, BODY_COLOR, BODY_SIDE_COLOR, packedLight);
+        // Корпус со скруглёнными углами
+        float[][] outline = roundedOutline(left, bottom, right, top, BODY_RADIUS);
+        drawFlatShape(consumer, pose, outline, front, BODY_COLOR, packedLight);
+        drawFlatShape(consumer, pose, outline, back, BODY_COLOR, packedLight);
+        drawShapeSides(consumer, pose, outline, back, front, BODY_SIDE_COLOR, packedLight);
 
         // Подвес к потолку (в клетке основного блока и части)
         if (attachment == DisplayAttachment.CEILING) {
@@ -109,7 +114,8 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
         float screenTop = top - BEZEL;
 
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
-        drawQuad(consumer, poseStack.last().pose(), screenLeft, screenBottom, screenRight, screenTop, z,
+        drawFlatShape(consumer, poseStack.last().pose(),
+                roundedOutline(screenLeft, screenBottom, screenRight, screenTop, BODY_RADIUS - BEZEL), z,
                 SCREEN_COLOR, LightTexture.FULL_BRIGHT);
 
         // Масштаб такой, чтобы раскладка табло помещалась по высоте экрана и не заходила на рамку
@@ -122,6 +128,67 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
         float canvasHeight = (screenTop - screenBottom - 2 * TEXT_MARGIN) / textScale;
         ArrivalBoard.render(new SlideCanvas(poseStack, bufferSource, canvasWidth, canvasHeight, 1), platformId, dayTime);
         poseStack.popPose();
+    }
+
+    // Контур прямоугольника со скруглёнными углами против часовой стрелки
+    private static float[][] roundedOutline(float x0, float y0, float x1, float y1, float radius) {
+        radius = Math.max(0, Math.min(radius, Math.min(x1 - x0, y1 - y0) / 2));
+        float[][] centers = {{x1 - radius, y0 + radius}, {x1 - radius, y1 - radius}, {x0 + radius, y1 - radius}, {x0 + radius, y0 + radius}};
+        float[][] points = new float[4 * (CORNER_SEGMENTS + 1)][];
+        int n = 0;
+        for (int corner = 0; corner < 4; corner++) {
+            // Углы по порядку: правый нижний (от -90°), правый верхний, левый верхний, левый нижний
+            double start = Math.toRadians(-90 + 90 * corner);
+            for (int i = 0; i <= CORNER_SEGMENTS; i++) {
+                double angle = start + Math.toRadians(90.0 * i / CORNER_SEGMENTS);
+                points[n++] = new float[]{
+                        centers[corner][0] + (float) Math.cos(angle) * radius,
+                        centers[corner][1] + (float) Math.sin(angle) * radius};
+            }
+        }
+        return points;
+    }
+
+    // Выпуклая плоская фигура веером от центра; каждый сектор - вырожденный четырёхугольник
+    private static void drawFlatShape(VertexConsumer consumer, Matrix4f pose, float[][] outline, float z, int color, int light) {
+        float cx = 0;
+        float cy = 0;
+        for (float[] p : outline) {
+            cx += p[0];
+            cy += p[1];
+        }
+        cx /= outline.length;
+        cy /= outline.length;
+        for (int i = 0; i < outline.length; i++) {
+            float[] a = outline[i];
+            float[] b = outline[(i + 1) % outline.length];
+            vertex(consumer, pose, cx, cy, z, 0, 0, color, light);
+            vertex(consumer, pose, a[0], a[1], z, 0, 0, color, light);
+            vertex(consumer, pose, b[0], b[1], z, 0, 0, color, light);
+            vertex(consumer, pose, b[0], b[1], z, 0, 0, color, light);
+
+            vertex(consumer, pose, cx, cy, z, 0, 0, color, light);
+            vertex(consumer, pose, b[0], b[1], z, 0, 0, color, light);
+            vertex(consumer, pose, a[0], a[1], z, 0, 0, color, light);
+            vertex(consumer, pose, a[0], a[1], z, 0, 0, color, light);
+        }
+    }
+
+    // Боковая поверхность фигуры между z0 и z1
+    private static void drawShapeSides(VertexConsumer consumer, Matrix4f pose, float[][] outline, float z0, float z1, int color, int light) {
+        for (int i = 0; i < outline.length; i++) {
+            float[] a = outline[i];
+            float[] b = outline[(i + 1) % outline.length];
+            vertex(consumer, pose, a[0], a[1], z0, 0, 0, color, light);
+            vertex(consumer, pose, b[0], b[1], z0, 0, 0, color, light);
+            vertex(consumer, pose, b[0], b[1], z1, 0, 0, color, light);
+            vertex(consumer, pose, a[0], a[1], z1, 0, 0, color, light);
+
+            vertex(consumer, pose, a[0], a[1], z1, 0, 0, color, light);
+            vertex(consumer, pose, b[0], b[1], z1, 0, 0, color, light);
+            vertex(consumer, pose, b[0], b[1], z0, 0, 0, color, light);
+            vertex(consumer, pose, a[0], a[1], z0, 0, 0, color, light);
+        }
     }
 
     private static void drawBox(VertexConsumer consumer, Matrix4f pose,
