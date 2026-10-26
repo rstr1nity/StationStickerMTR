@@ -46,7 +46,6 @@ public final class DirectionSignBoard {
     private static final int DIVIDER_COLOR = 0xFFB8B8B8;
     private static final int NUMBER_COLOR = 0xFFFFFFFF;
     private static final int NO_BOARDING_COLOR = 0xFFE0322A;
-    private static final int SCREEN_COLOR = 0xFFF4F4F2;
     private static final String KEY = "display.stationsticker.arrival.";
 
     // Направление с платформы: маршрут и индекс этой остановки в нём; route == null - поезда здесь только заканчивают маршрут
@@ -171,7 +170,7 @@ public final class DirectionSignBoard {
         float radius = 9;
         float centerY = DESIGN_HEIGHT / 2;
         float iconX = rightSide ? x1 - radius : x0 + radius;
-        Pictograms.noBoarding(canvas, iconX, centerY, radius, NO_BOARDING_COLOR, SCREEN_COLOR);
+        Pictograms.noBoarding(canvas, iconX, centerY, radius, NO_BOARDING_COLOR);
         String text = I18n.get(KEY + "no_boarding");
         String secondary = I18n.get(KEY + "no_boarding_secondary");
         if (rightSide) {

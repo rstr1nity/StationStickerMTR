@@ -137,6 +137,58 @@ public final class SlideCanvas {
         }
     }
 
+    // Кольцо полосой между двумя радиусами на уровне текста. Не круг поверх круга:
+    // две фигуры на одной глубине перемешиваются пятнами (z-fighting)
+    public void ring(float centerX, float centerY, float outerRadius, float innerRadius, int color) {
+        int ringAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
+        if (ringAlpha == 0) return;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
+        Matrix4f pose = poseStack.last().pose();
+        int segments = 32;
+        for (int i = 0; i < segments; i++) {
+            float c0 = (float) Math.cos(Math.PI * 2 * i / segments);
+            float s0 = (float) Math.sin(Math.PI * 2 * i / segments);
+            float c1 = (float) Math.cos(Math.PI * 2 * (i + 1) / segments);
+            float s1 = (float) Math.sin(Math.PI * 2 * (i + 1) / segments);
+            quad(consumer, pose,
+                    centerX + c0 * outerRadius, centerY + s0 * outerRadius,
+                    centerX + c1 * outerRadius, centerY + s1 * outerRadius,
+                    centerX + c1 * innerRadius, centerY + s1 * innerRadius,
+                    centerX + c0 * innerRadius, centerY + s0 * innerRadius, r, g, b, ringAlpha);
+        }
+    }
+
+    // Отрезок заданной толщины одним повёрнутым прямоугольником (без ступенек)
+    public void line(float x0, float y0, float x1, float y1, float thickness, int color) {
+        int lineAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
+        float length = (float) Math.hypot(x1 - x0, y1 - y0);
+        if (lineAlpha == 0 || length == 0) return;
+        float nx = -(y1 - y0) / length * thickness / 2;
+        float ny = (x1 - x0) / length * thickness / 2;
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
+        quad(consumer, poseStack.last().pose(),
+                x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny,
+                (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, lineAlpha);
+    }
+
+    // Четырёхугольник с обеих сторон (обход зависит от направления осей)
+    private static void quad(VertexConsumer consumer, Matrix4f pose, float ax, float ay, float bx, float by,
+                             float cx, float cy, float dx, float dy, int r, int g, int b, int a) {
+        vertex(consumer, pose, ax, ay, 0, r, g, b, a);
+        vertex(consumer, pose, bx, by, 0, r, g, b, a);
+        vertex(consumer, pose, cx, cy, 0, r, g, b, a);
+        vertex(consumer, pose, dx, dy, 0, r, g, b, a);
+
+        vertex(consumer, pose, dx, dy, 0, r, g, b, a);
+        vertex(consumer, pose, cx, cy, 0, r, g, b, a);
+        vertex(consumer, pose, bx, by, 0, r, g, b, a);
+        vertex(consumer, pose, ax, ay, 0, r, g, b, a);
+    }
+
     private static void vertex(VertexConsumer consumer, Matrix4f pose, float x, float y, float z, int r, int g, int b, int a) {
         consumer.vertex(pose, x, y, z).color(r, g, b, a).uv(0, 0).uv2(LightTexture.FULL_BRIGHT).endVertex();
     }

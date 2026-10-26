@@ -48,24 +48,17 @@ public final class Pictograms {
         }
     }
 
-    // «Посадки нет»: кольцо, человек и косая черта; background - цвет экрана внутри кольца
-    public static void noBoarding(SlideCanvas canvas, float centerX, float centerY, float radius, int color, int background) {
+    // «Посадки нет»: кольцо, человек и косая черта
+    public static void noBoarding(SlideCanvas canvas, float centerX, float centerY, float radius, int color) {
         float ring = radius * 0.14f;
-        canvas.circle(centerX, centerY, radius, color);
-        canvas.circle(centerX, centerY, radius - ring, background);
+        canvas.ring(centerX, centerY, radius, radius - ring, color);
 
-        float scale = radius * 1.3f / PERSON.length;
+        float scale = radius * 1.2f / PERSON.length;
         draw(canvas, PERSON, centerX - PERSON[0].length() * scale / 2, centerY - PERSON.length * scale / 2, scale, color, false);
 
         // Черта из верхнего левого края кольца в нижний правый
         float reach = (radius - ring / 2) * 0.7071f;
-        int steps = Math.round(radius * 3);
-        for (int i = 0; i <= steps; i++) {
-            float t = (float) i / steps;
-            float px = centerX - reach + 2 * reach * t;
-            float py = centerY - reach + 2 * reach * t;
-            canvas.rect(px - ring / 2, py - ring / 2, ring, ring, color);
-        }
+        canvas.line(centerX - reach, centerY - reach, centerX + reach, centerY + reach, ring, color);
     }
 
     public static String[] mirror(String[] rows) {

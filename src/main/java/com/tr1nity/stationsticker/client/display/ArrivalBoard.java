@@ -33,7 +33,7 @@ public final class ArrivalBoard {
     private static final int TEXT_COLOR = 0xFFF2F2F2;
     private static final int TEXT_DIM_COLOR = 0xFFB0B0B0;
     private static final int NO_BOARDING_COLOR = 0xFFFF4A3A;
-    // Цвет экрана табло (внутри кольца пиктограммы «Посадки нет»), совпадает с ArrivalDisplayRenderer
+    // Цвет экрана табло (его берёт ArrivalDisplayRenderer)
     public static final int SCREEN_COLOR = 0xFF060608;
 
     private ArrivalBoard() {
@@ -86,7 +86,7 @@ public final class ArrivalBoard {
     private static void drawNoBoarding(SlideCanvas canvas) {
         float radius = DESIGN_HEIGHT * 0.36f;
         float centerY = DESIGN_HEIGHT / 2;
-        Pictograms.noBoarding(canvas, radius, centerY, radius, NO_BOARDING_COLOR, SCREEN_COLOR);
+        Pictograms.noBoarding(canvas, radius, centerY, radius, NO_BOARDING_COLOR);
         float textX = radius * 2 + 8;
         canvas.ledText(I18n.get(KEY + "no_boarding"), textX, centerY - GLYPH_HEIGHT * 2.6f - 3, 2.6f, NO_BOARDING_COLOR, true);
         canvas.ledText(I18n.get(KEY + "no_boarding_secondary"), textX, centerY + 4, 1.8f, NO_BOARDING_COLOR, true);
