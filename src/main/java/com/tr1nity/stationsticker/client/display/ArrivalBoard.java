@@ -48,25 +48,24 @@ public final class ArrivalBoard {
             return;
         }
 
-        // На конечной у платформы прибытия: поезд дальше не идёт
-        if (arrival.getIsTerminating()) {
-            drawNoBoarding(canvas);
-            return;
-        }
-
-        // Кружок линии с номером и конечная станция
         float radius = 6;
         float circleCenterY = STATION_Y + radius;
-        canvas.circle(radius, circleCenterY, radius, 0xFF000000 | arrival.getRouteColor());
-        String number = arrival.getRouteNumber();
-        if (!number.isEmpty()) {
-            float numberScale = Math.min(1.1f, radius * 1.5f / canvas.ledTextWidth(number, 1));
-            canvas.ledText(number, radius - canvas.ledTextWidth(number, numberScale) / 2,
-                    circleCenterY - GLYPH_HEIGHT * numberScale / 2, numberScale, TEXT_COLOR, true);
-        }
         float stationScale = 1.5f;
-        canvas.ledText(StationNames.primary(arrival.getDestination()), radius * 2 + 4,
-                circleCenterY - GLYPH_HEIGHT * stationScale / 2, stationScale, TEXT_COLOR, false);
+        if (arrival.getIsTerminating()) {
+            // На конечной у платформы прибытия поезд дальше не идёт: вместо линии и конечной - «Посадки нет»
+            drawNoBoarding(canvas, radius, circleCenterY, stationScale);
+        } else {
+            // Кружок линии с номером и конечная станция
+            canvas.circle(radius, circleCenterY, radius, 0xFF000000 | arrival.getRouteColor());
+            String number = arrival.getRouteNumber();
+            if (!number.isEmpty()) {
+                float numberScale = Math.min(1.1f, radius * 1.5f / canvas.ledTextWidth(number, 1));
+                canvas.ledText(number, radius - canvas.ledTextWidth(number, numberScale) / 2,
+                        circleCenterY - GLYPH_HEIGHT * numberScale / 2, numberScale, TEXT_COLOR, true);
+            }
+            canvas.ledText(StationNames.primary(arrival.getDestination()), radius * 2 + 4,
+                    circleCenterY - GLYPH_HEIGHT * stationScale / 2, stationScale, TEXT_COLOR, false);
+        }
 
         long seconds = Math.max(0, (arrival.getArrival() - currentMillis()) / 1000);
         if (seconds == 0) {
@@ -80,14 +79,16 @@ public final class ArrivalBoard {
         timerPart(canvas, x + 6, String.format("%02d", seconds % 60), I18n.get(KEY + "sec"));
     }
 
-    // «Посадки нет / No Boarding» красным, как на табло метро: перечёркнутый человек в кольце и надпись
-    private static void drawNoBoarding(SlideCanvas canvas) {
-        float radius = DESIGN_HEIGHT * 0.36f;
-        float centerY = DESIGN_HEIGHT / 2;
+    // «Посадки нет  No Boarding» красным в строке конечной: значок вместо кружка линии, надписи по одной базовой линии
+    private static void drawNoBoarding(SlideCanvas canvas, float radius, float centerY, float scale) {
         Pictograms.noBoarding(canvas, radius, centerY, radius, NO_BOARDING_COLOR);
-        float textX = radius * 2 + 8;
-        canvas.ledText(I18n.get(KEY + "no_boarding"), textX, centerY - GLYPH_HEIGHT * 2.6f - 3, 2.6f, NO_BOARDING_COLOR, true);
-        canvas.ledText(I18n.get(KEY + "no_boarding_secondary"), textX, centerY + 4, 1.8f, NO_BOARDING_COLOR, true);
+        float x = radius * 2 + 4;
+        float baseline = centerY + GLYPH_HEIGHT * scale / 2;
+        String text = I18n.get(KEY + "no_boarding");
+        canvas.ledText(text, x, baseline - GLYPH_HEIGHT * scale, scale, NO_BOARDING_COLOR, true);
+        float secondaryScale = scale * 0.7f;
+        x += canvas.ledTextWidth(text, scale) + 5;
+        canvas.ledText(I18n.get(KEY + "no_boarding_secondary"), x, baseline - GLYPH_HEIGHT * secondaryScale, secondaryScale, NO_BOARDING_COLOR, false);
     }
 
     private static float timerPart(SlideCanvas canvas, float x, String digits, String unit) {
