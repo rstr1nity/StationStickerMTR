@@ -1,10 +1,10 @@
 modLoader="javafml"
-loaderVersion="[40,)"
+loaderVersion="${loader_version_range}"
 license="All rights reserved"
 
 [[mods]]
-modId="stationsticker"
-version="1.1.0"
+modId="${mod_id}"
+version="${mod_version}"
 displayName="Station Sticker"
 description='''
 Adds customizable station name stickers that automatically display the station name and line color.
@@ -18,13 +18,20 @@ license="MIT"
 [[dependencies.stationsticker]]
 modId="forge"
 mandatory=true
-versionRange="[43.4.6,)"
+versionRange="${forge_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.stationsticker]]
+modId="minecraft"
+mandatory=true
+versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
 
 [[dependencies.stationsticker]]
 modId="mtr"
 mandatory=false  # ИЗМЕНЕНО С true НА false!
-versionRange="[4.0.2,)"
+versionRange="${mtr_version_range}"
 ordering="AFTER"
 side="BOTH"
