@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 public class InfoDisplayBlock extends ResizableDisplayBlock {
 
     public InfoDisplayBlock() {
-        super(3);
+        super(2);
     }
 
     @Nullable
