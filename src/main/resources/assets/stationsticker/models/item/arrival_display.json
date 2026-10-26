@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "mtr:block/black"
+    "layer0": "stationsticker:item/arrival_display"
   }
 }
