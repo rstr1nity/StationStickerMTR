@@ -40,6 +40,8 @@ mods_dir_1.20.1=C:/Users/<user>/AppData/Roaming/.minecraft/mods
 - Все версии (MC, Forge, MTR, мод) лежат в `gradle.properties`. В `mods.toml` и `pack.mcmeta` они подставляются при сборке.
 - Релиз: тег `v<версия мода>+<версия MC>`, например `v1.1.0+1.20.1`. Изменения описываются в `CHANGELOG.md`.
 
-## Автор
+## Автор и лицензия
 
 Tr1nity. Спасибо команде MTR и kykko.
+
+Распространяется под лицензией [MIT](LICENSE).
