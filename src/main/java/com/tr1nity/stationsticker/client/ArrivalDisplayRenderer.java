@@ -114,10 +114,15 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
         String stationName = platform == null || platform.area == null ? "" : firstLanguage(platform.area.getName());
         String platformName = platform == null ? "Нет платформы" : "Платформа " + firstLanguage(platform.getName());
 
+        // Две строки: мелкая (1x) и крупная (2x) с отступом 11 пикселей шрифта; уменьшаем, если не влезают по высоте
+        int lineHeight = Minecraft.getInstance().font.lineHeight;
+        float textHeight = 11 + lineHeight * 2;
+        float textScale = Math.min(TEXT_SCALE, (screenTop - screenBottom - 2 * TEXT_MARGIN) / textHeight);
+
         poseStack.pushPose();
         poseStack.translate(screenLeft + TEXT_MARGIN, screenTop - TEXT_MARGIN, z + 0.002f);
-        poseStack.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
-        float maxWidth = (screenRight - screenLeft - 2 * TEXT_MARGIN) / TEXT_SCALE;
+        poseStack.scale(textScale, -textScale, textScale);
+        float maxWidth = (screenRight - screenLeft - 2 * TEXT_MARGIN) / textScale;
         drawText(poseStack, bufferSource, platformName, 0, maxWidth, 1.0f, TEXT_DIM_COLOR);
         drawText(poseStack, bufferSource, stationName, 11, maxWidth, 2.0f, TEXT_COLOR);
         poseStack.popPose();
