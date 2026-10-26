@@ -23,9 +23,11 @@ public final class WeatherSlide implements DisplaySlide {
     }
 
     // Слои по глубине (единицы холста; небо -0.2, текст 0): иначе фигуры на одной глубине мерцают
-    private static final float SKY_OBJECTS_Z = -0.15f;   // солнце, луна, звёзды
+    private static final float STARS_Z = -0.18f;
+    private static final float SKY_OBJECTS_Z = -0.15f;   // солнце, луна
     private static final float CLOUDS_Z = -0.1f;
     private static final float PRECIPITATION_Z = -0.05f;
+    private static final float CLOUD_WIDTH = 19;           // ширина облака при масштабе 1
 
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int TEXT_DIM_COLOR = 0xFFDCE6F2;
@@ -41,6 +43,7 @@ public final class WeatherSlide implements DisplaySlide {
     private final State state;
     private int[] sky;
     private float height;
+    private float bleed;
 
     public WeatherSlide(State state) {
         this.state = state;
@@ -51,6 +54,7 @@ public final class WeatherSlide implements DisplaySlide {
         float w = canvas.width;
         float h = canvas.height;
         height = h;
+        bleed = canvas.bleed;
         float night = nightFactor(state.dayTime);
         boolean bad = state.condition != Condition.CLEAR;
         float overcast = bad ? Math.max(0.6f, state.rainLevel) : 0;
@@ -59,13 +63,18 @@ public final class WeatherSlide implements DisplaySlide {
         sky = mix(sky, mix(OVERCAST_DAY, OVERCAST_NIGHT, night), overcast);
         float flash = state.condition == Condition.THUNDER ? lightningFlash() : 0;
         int[] litSky = mix(sky, new int[]{0xFFFFFFFF, 0xFFFFFFFF}, flash * 0.45f);
-        float b = canvas.bleed * 0.7f;
-        canvas.gradientRect(-b, -b, w + 2 * b, h + 2 * b, litSky[0], litSky[1]);
+        canvas.screenGradient(litSky[0], litSky[1]);
 
         // Солнце или луна; в непогоду блёклые, как за тучами
         float dim = bad ? 0.3f : 1;
         if (night < 0.5f) drawSun(canvas, w, h, dim); else drawMoonAndStars(canvas, w, h, night, dim, bad);
-        drawClouds(canvas, w, h, bad, night);
+        // Текст слева: станция, крупно время, состояние; облака плывут правее него
+        long ticks = state.dayTime % 24000;
+        String clock = String.format("%02d:%02d", (ticks / 1000 + 6) % 24, (ticks % 1000) * 60 / 1000);
+        String condition = I18n.get(KEY + state.condition.name().toLowerCase(Locale.ROOT));
+        float textRight = Math.max(canvas.textWidth(clock, 3),
+                Math.max(canvas.textWidth(state.stationName, 0.9f), canvas.textWidth(condition, 1.2f)));
+        drawClouds(canvas, Math.min(textRight, w * 0.6f) + 6, w, h, bad, night);
         switch (state.condition) {
             case RAIN -> drawRain(canvas, w, h);
             case THUNDER -> {
@@ -77,12 +86,10 @@ public final class WeatherSlide implements DisplaySlide {
             }
         }
 
-        // Текст слева: станция, крупно время, состояние
-        long ticks = state.dayTime % 24000;
-        String clock = String.format("%02d:%02d", (ticks / 1000 + 6) % 24, (ticks % 1000) * 60 / 1000);
-        canvas.text(state.stationName, 0, 0, 0.9f, TEXT_DIM_COLOR, w * 0.6f);
-        canvas.text(clock, 0, 10, 3, TEXT_COLOR, w * 0.6f);
-        canvas.text(I18n.get(KEY + state.condition.name().toLowerCase(Locale.ROOT)), 0, 38, 1.2f, TEXT_COLOR, w * 0.6f);
+        // Тень - чтобы текст читался на светлом небе и на каплях дождя
+        canvas.shadowText(state.stationName, 0, 0, 0.9f, TEXT_DIM_COLOR, w * 0.6f);
+        canvas.shadowText(clock, 0, 10, 3, TEXT_COLOR, w * 0.6f);
+        canvas.shadowText(condition, 0, 38, 1.2f, TEXT_COLOR, w * 0.6f);
     }
 
     private void drawSun(SlideCanvas canvas, float w, float h, float dim) {
@@ -95,25 +102,29 @@ public final class WeatherSlide implements DisplaySlide {
     }
 
     private void drawMoonAndStars(SlideCanvas canvas, float w, float h, float night, float dim, boolean bad) {
+        float x = w * 0.84f;
+        float y = h * 0.3f;
+        float glow = 8.5f;
         if (!bad) {
             for (int i = 0; i < 45; i++) {
                 float sx = hash(i, 1) * w;
                 float sy = hash(i, 2) * h * 0.75f;
+                // За луной звёзд не видно; и рисуем их глубже луны, иначе проступают пятнами
+                if (Math.hypot(sx - x, sy - y) < glow + 1.5f) continue;
                 float twinkle = (float) (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(state.time * (0.05 + hash(i, 3) * 0.1) + i)));
                 float size = 0.5f + hash(i, 4) * 0.5f;
-                canvas.rect(sx, sy, size, size, overSky(0xFFFFFFFF, twinkle * night, sy), SKY_OBJECTS_Z);
+                canvas.rect(sx, sy, size, size, overSky(0xFFFFFFFF, twinkle * night, sy), STARS_Z);
             }
         }
-        float x = w * 0.84f;
-        float y = h * 0.3f;
-        canvas.ring(x, y, 8.5f, 6, overSky(0xFFF4F1DE, 0.2f * dim, y), SKY_OBJECTS_Z);
+        canvas.ring(x, y, glow, 6, overSky(0xFFF4F1DE, 0.2f * dim, y), SKY_OBJECTS_Z);
         canvas.circle(x, y, 6, overSky(0xFFF4F1DE, dim, y), SKY_OBJECTS_Z);
     }
 
-    // Облака из кругов плывут вправо внутри экрана; у краёв растворяются в небе и появляются с другой
-    // стороны. В непогоду их больше, они серее (в грозу и ночью - темнее)
-    private void drawClouds(SlideCanvas canvas, float w, float h, boolean bad, float night) {
-        int count = bad ? 5 : 2;
+    // Облака плывут вправо в полосе от left до правого края (справа от текста, чтобы не сливаться с ним);
+    // у краёв полосы растворяются в небе и появляются с другой стороны. Скорость одна и та же, места
+    // разнесены равномерно - облака не сбиваются в кучу. В непогоду их больше, они серее (в грозу и ночью темнее)
+    private void drawClouds(SlideCanvas canvas, float left, float w, float h, boolean bad, float night) {
+        int count = bad ? 4 : 2;
         int color;
         if (bad) {
             color = state.condition == Condition.THUNDER ? 0xFF5A6270 : 0xFF8A94A2;
@@ -121,20 +132,21 @@ public final class WeatherSlide implements DisplaySlide {
         } else {
             color = mixColor(0xFFF2F6FA, 0xFF2E3A52, night);
         }
+        float speed = 0.06f;
         for (int i = 0; i < count; i++) {
-            float s = (bad ? 1.0f : 0.8f) + hash(i, 8) * 0.6f;
-            float cloudWidth = 18 * s;
-            float span = w - cloudWidth;
-            if (span <= 0) continue;
-            float speed = 0.05f + hash(i, 5) * 0.05f;
-            float x = (float) ((hash(i, 6) * span + state.time * speed) % span);
-            float y = 2 + hash(i, 7) * (h * 0.4f);
-            float fade = Math.min(1, Math.min(x, span - x) / 12);
-            int c = overSky(color, fade, y + 4 * s);
+            float s = (bad ? 1.0f : 0.8f) + hash(i, 8) * 0.4f;
+            float span = w - left - CLOUD_WIDTH * s;
+            if (span < 20) return;
+            float phase = ((float) i / count + (hash(i, 6) - 0.5f) * 0.15f) * span;
+            float x = left + (float) (((phase + state.time * speed) % span + span) % span);
+            float y = 2 + hash(i, 7) * (h * 0.45f);
+            float fade = Math.min(1, Math.min(x - left, left + span - x) / 12);
+            int c = overSky(color, fade, y + 6 * s);
+            // Плоское дно от левого до правого круга: низ обоих кругов на уровне дна (y + 11s)
             canvas.circle(x + 5 * s, y + 6 * s, 5 * s, c, CLOUDS_Z);
             canvas.circle(x + 10 * s, y + 4 * s, 6 * s, c, CLOUDS_Z);
-            canvas.circle(x + 15 * s, y + 6 * s, 3 * s, c, CLOUDS_Z);
-            canvas.rect(x + 5 * s, y + 6 * s, 10 * s, 5 * s, c, CLOUDS_Z);
+            canvas.circle(x + 15 * s, y + 7 * s, 4 * s, c, CLOUDS_Z);
+            canvas.rect(x + 5 * s, y + 7 * s, 10 * s, 4 * s, c, CLOUDS_Z);
         }
     }
 
@@ -186,7 +198,7 @@ public final class WeatherSlide implements DisplaySlide {
 
     // Цвет color с «прозрачностью» alpha поверх неба на высоте y - уже смешанный, непрозрачный
     private int overSky(int color, float alpha, float y) {
-        int skyColor = mixColor(sky[0], sky[1], y / height);
+        int skyColor = mixColor(sky[0], sky[1], (y + bleed) / (height + 2 * bleed));
         return mixColor(skyColor, 0xFF000000 | color, alpha);
     }
 

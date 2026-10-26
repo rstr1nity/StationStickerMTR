@@ -125,12 +125,13 @@ public abstract class WideDisplayRenderer<T extends BlockEntity> implements Bloc
         poseStack.scale(textScale, -textScale, textScale);
         float canvasWidth = (screenRight - screenLeft - 2 * TEXT_MARGIN) / textScale;
         float canvasHeight = (screenTop - screenBottom - 2 * TEXT_MARGIN) / textScale;
-        drawContent(entity, new SlideCanvas(poseStack, bufferSource, canvasWidth, canvasHeight, 1, TEXT_MARGIN / textScale), back);
+        drawContent(entity, new SlideCanvas(poseStack, bufferSource, canvasWidth, canvasHeight, 1,
+                TEXT_MARGIN / textScale, (BODY_RADIUS - BEZEL) / textScale), back);
         poseStack.popPose();
     }
 
     // Контур прямоугольника со скруглёнными углами против часовой стрелки
-    private static float[][] roundedOutline(float x0, float y0, float x1, float y1, float radius) {
+    public static float[][] roundedOutline(float x0, float y0, float x1, float y1, float radius) {
         radius = Math.max(0, Math.min(radius, Math.min(x1 - x0, y1 - y0) / 2));
         float[][] centers = {{x1 - radius, y0 + radius}, {x1 - radius, y1 - radius}, {x0 + radius, y1 - radius}, {x0 + radius, y0 + radius}};
         float[][] points = new float[4 * (CORNER_SEGMENTS + 1)][];
