@@ -20,6 +20,7 @@ public class ModTabs {
                         // Добавляем предметы в порядке очереди
                         output.accept(ModBlocks.STATION_STICKER.get());
                         output.accept(ModBlocks.LINE_SCHEME.get());
+                        output.accept(ModBlocks.ARRIVAL_DISPLAY.get());
                     })
                     .build());
 }

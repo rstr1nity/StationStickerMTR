@@ -1,6 +1,7 @@
 package com.tr1nity.stationsticker.registration;
 
 import com.tr1nity.stationsticker.StationStickerMod;
+import com.tr1nity.stationsticker.block.entity.ArrivalDisplayBlockEntity;
 import com.tr1nity.stationsticker.block.entity.LineSchemeEntity;
 import com.tr1nity.stationsticker.block.entity.StationStickerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -25,6 +26,13 @@ public class ModBlockEntities {
                     () -> BlockEntityType.Builder.of(
                             LineSchemeEntity::new,
                             ModBlocks.LINE_SCHEME.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<ArrivalDisplayBlockEntity>> ARRIVAL_DISPLAY =
+            BLOCK_ENTITIES.register("arrival_display",
+                    () -> BlockEntityType.Builder.of(
+                            ArrivalDisplayBlockEntity::new,
+                            ModBlocks.ARRIVAL_DISPLAY.get()
                     ).build(null));
 
 }

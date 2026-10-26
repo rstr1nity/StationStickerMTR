@@ -24,6 +24,10 @@ public class ClientModEvents {
                 ModBlockEntities.LINE_SCHEME.get(),
                 LineSchemeRenderer::new
         );
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.ARRIVAL_DISPLAY.get(),
+                ArrivalDisplayRenderer::new
+        );
     }
 
 

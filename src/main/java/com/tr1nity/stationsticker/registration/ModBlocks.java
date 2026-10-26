@@ -1,6 +1,8 @@
 package com.tr1nity.stationsticker.registration;
 
 import com.tr1nity.stationsticker.StationStickerMod;
+import com.tr1nity.stationsticker.block.ArrivalDisplayBlock;
+import com.tr1nity.stationsticker.block.ArrivalDisplayPartBlock;
 import com.tr1nity.stationsticker.block.LineSchemeBlock;
 import com.tr1nity.stationsticker.block.LineSchemePartBlock;
 import com.tr1nity.stationsticker.block.StationStickerBlock;
@@ -30,6 +32,13 @@ public class ModBlocks {
     // Без предмета: ставится только самой схемой линии
     public static final RegistryObject<LineSchemePartBlock> LINE_SCHEME_PART =
             BLOCKS.register("line_scheme_part", LineSchemePartBlock::new);
+
+    public static final RegistryObject<ArrivalDisplayBlock> ARRIVAL_DISPLAY =
+            registerBlock("arrival_display", ArrivalDisplayBlock::new);
+
+    // Без предмета: ставится только самим табло
+    public static final RegistryObject<ArrivalDisplayPartBlock> ARRIVAL_DISPLAY_PART =
+            BLOCKS.register("arrival_display_part", ArrivalDisplayPartBlock::new);
 
     // ВАЖНО: ЗДЕСЬ БОЛЬШЕ НЕТ ПЕРЕМЕННОЙ STICKER_TAB! Удалите её.
 

@@ -4,5 +4,8 @@
   "block.stationsticker.line_scheme": "Схема линии",
   "item.stationsticker.line_scheme": "Схема линии",
   "block.stationsticker.line_scheme_part": "Схема линии",
+  "block.stationsticker.arrival_display": "Табло прибытия",
+  "item.stationsticker.arrival_display": "Табло прибытия",
+  "block.stationsticker.arrival_display_part": "Табло прибытия",
   "itemGroup.stationsticker_tab": "Станционные стикеры"
 }

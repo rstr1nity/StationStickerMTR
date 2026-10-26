@@ -4,5 +4,8 @@
   "block.stationsticker.line_scheme": "Line Scheme",
   "item.stationsticker.line_scheme": "Line Scheme",
   "block.stationsticker.line_scheme_part": "Line Scheme",
+  "block.stationsticker.arrival_display": "Arrival Display",
+  "item.stationsticker.arrival_display": "Arrival Display",
+  "block.stationsticker.arrival_display_part": "Arrival Display",
   "itemGroup.stationsticker_tab": "Station Stickers"
 }
