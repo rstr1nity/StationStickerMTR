@@ -6,6 +6,7 @@ import com.tr1nity.stationsticker.block.DirectionSignBlock;
 import com.tr1nity.stationsticker.block.DisplayPartBlock;
 import com.tr1nity.stationsticker.block.LineSchemeBlock;
 import com.tr1nity.stationsticker.block.LineSchemePartBlock;
+import com.tr1nity.stationsticker.block.NavSignBlock;
 import com.tr1nity.stationsticker.block.StationStickerBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -39,6 +40,9 @@ public class ModBlocks {
 
     public static final RegistryObject<DirectionSignBlock> DIRECTION_SIGN =
             registerBlock("direction_sign", DirectionSignBlock::new);
+
+    public static final RegistryObject<NavSignBlock> NAV_SIGN =
+            registerBlock("nav_sign", NavSignBlock::new);
 
     // Без предмета: невидимые клетки широких экранов, ставятся самим экраном
     public static final RegistryObject<DisplayPartBlock> DISPLAY_PART =

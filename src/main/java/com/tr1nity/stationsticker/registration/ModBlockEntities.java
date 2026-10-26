@@ -4,6 +4,7 @@ import com.tr1nity.stationsticker.StationStickerMod;
 import com.tr1nity.stationsticker.block.entity.ArrivalDisplayBlockEntity;
 import com.tr1nity.stationsticker.block.entity.DirectionSignBlockEntity;
 import com.tr1nity.stationsticker.block.entity.LineSchemeEntity;
+import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
 import com.tr1nity.stationsticker.block.entity.StationStickerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.DeferredRegister;
@@ -41,6 +42,13 @@ public class ModBlockEntities {
                     () -> BlockEntityType.Builder.of(
                             DirectionSignBlockEntity::new,
                             ModBlocks.DIRECTION_SIGN.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<NavSignBlockEntity>> NAV_SIGN =
+            BLOCK_ENTITIES.register("nav_sign",
+                    () -> BlockEntityType.Builder.of(
+                            NavSignBlockEntity::new,
+                            ModBlocks.NAV_SIGN.get()
                     ).build(null));
 
 }

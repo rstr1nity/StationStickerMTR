@@ -32,6 +32,10 @@ public class ClientModEvents {
                 ModBlockEntities.DIRECTION_SIGN.get(),
                 DirectionSignRenderer::new
         );
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.NAV_SIGN.get(),
+                NavSignRenderer::new
+        );
     }
 
 

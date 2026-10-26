@@ -22,6 +22,7 @@ public class ModTabs {
                         output.accept(ModBlocks.LINE_SCHEME.get());
                         output.accept(ModBlocks.ARRIVAL_DISPLAY.get());
                         output.accept(ModBlocks.DIRECTION_SIGN.get());
+                        output.accept(ModBlocks.NAV_SIGN.get());
                     })
                     .build());
 }

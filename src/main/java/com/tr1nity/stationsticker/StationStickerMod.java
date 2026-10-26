@@ -1,5 +1,6 @@
 package com.tr1nity.stationsticker;
 
+import com.tr1nity.stationsticker.network.ModNetwork;
 import com.tr1nity.stationsticker.registration.ModBlocks;
 import com.tr1nity.stationsticker.registration.ModBlockEntities;
 import com.tr1nity.stationsticker.registration.ModTabs;
@@ -22,6 +23,7 @@ public class StationStickerMod {
         ModBlocks.ITEMS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModTabs.TABS.register(modEventBus);
+        ModNetwork.register();
 
         LOGGER.info("Station Sticker Addon initialized");
     }
