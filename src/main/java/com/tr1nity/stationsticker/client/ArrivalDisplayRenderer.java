@@ -14,7 +14,7 @@ public class ArrivalDisplayRenderer extends WideDisplayRenderer<ArrivalDisplayBl
 
     @Override
     protected int screenColor() {
-        return 0xFF060608;
+        return ArrivalBoard.SCREEN_COLOR;
     }
 
     @Override

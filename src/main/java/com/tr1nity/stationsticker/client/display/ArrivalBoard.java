@@ -32,6 +32,9 @@ public final class ArrivalBoard {
 
     private static final int TEXT_COLOR = 0xFFF2F2F2;
     private static final int TEXT_DIM_COLOR = 0xFFB0B0B0;
+    private static final int NO_BOARDING_COLOR = 0xFFFF4A3A;
+    // Цвет экрана табло (внутри кольца пиктограммы «Посадки нет»), совпадает с ArrivalDisplayRenderer
+    public static final int SCREEN_COLOR = 0xFF060608;
 
     private ArrivalBoard() {
     }
@@ -46,6 +49,12 @@ public final class ArrivalBoard {
             return;
         }
 
+        // На конечной у платформы прибытия: поезд дальше не идёт
+        if (arrival.getIsTerminating()) {
+            drawNoBoarding(canvas);
+            return;
+        }
+
         // Кружок линии с номером и конечная станция
         float radius = 6;
         float circleCenterY = STATION_Y + radius;
@@ -57,10 +66,7 @@ public final class ArrivalBoard {
                     circleCenterY - GLYPH_HEIGHT * numberScale / 2, numberScale, TEXT_COLOR, true);
         }
         float stationScale = 1.5f;
-        String destination = arrival.getIsTerminating()
-                ? I18n.get(KEY + "terminates")
-                : StationNames.forCurrentLanguage(arrival.getDestination());
-        canvas.ledText(destination, radius * 2 + 4,
+        canvas.ledText(StationNames.forCurrentLanguage(arrival.getDestination()), radius * 2 + 4,
                 circleCenterY - GLYPH_HEIGHT * stationScale / 2, stationScale, TEXT_COLOR, false);
 
         long now = currentMillis();
@@ -74,6 +80,16 @@ public final class ArrivalBoard {
         // Крупные цифры, мелкие подписи по базовой линии цифр
         float x = timerPart(canvas, 0, String.format("%02d", seconds / 60), I18n.get(KEY + "min"));
         timerPart(canvas, x + 6, String.format("%02d", seconds % 60), I18n.get(KEY + "sec"));
+    }
+
+    // «Посадки нет / No Boarding» красным, как на табло метро: перечёркнутый человек в кольце и надпись
+    private static void drawNoBoarding(SlideCanvas canvas) {
+        float radius = DESIGN_HEIGHT * 0.36f;
+        float centerY = DESIGN_HEIGHT / 2;
+        Pictograms.noBoarding(canvas, radius, centerY, radius, NO_BOARDING_COLOR, SCREEN_COLOR);
+        float textX = radius * 2 + 8;
+        canvas.ledText(I18n.get(KEY + "no_boarding"), textX, centerY - GLYPH_HEIGHT * 2.6f - 3, 2.6f, NO_BOARDING_COLOR, true);
+        canvas.ledText(I18n.get(KEY + "no_boarding_secondary"), textX, centerY + 4, 1.8f, NO_BOARDING_COLOR, true);
     }
 
     private static float timerPart(SlideCanvas canvas, float x, String digits, String unit) {
