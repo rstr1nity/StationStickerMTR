@@ -1,4 +1,5 @@
 {
   // Подменять изменённые классы в запущенной игре сразу после сохранения
-  "java.debug.settings.hotCodeReplace": "auto"
+  "java.debug.settings.hotCodeReplace": "auto",
+  "java.compile.nullAnalysis.mode": "automatic"
 }
