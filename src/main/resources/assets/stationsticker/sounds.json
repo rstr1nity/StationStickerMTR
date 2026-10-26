@@ -1,0 +1,8 @@
+{
+  "arrival_chime": {
+    "sounds": [
+      { "name": "stationsticker:arrival_chime", "stream": false }
+    ],
+    "subtitle": "subtitles.stationsticker.arrival_chime"
+  }
+}

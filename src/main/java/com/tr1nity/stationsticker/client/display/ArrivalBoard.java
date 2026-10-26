@@ -80,7 +80,7 @@ public final class ArrivalBoard {
 
     // Ближайший поезд, который ещё не ушёл; конечные (поезд дальше не идёт) пропускаем
     @Nullable
-    private static ArrivalResponse nextArrival(long platformId) {
+    public static ArrivalResponse nextArrival(long platformId) {
         long now = currentMillis();
         ArrivalResponse next = null;
         for (ArrivalResponse arrival : ArrivalsCacheClient.INSTANCE.requestArrivals(LongArrayList.of(platformId))) {
@@ -93,7 +93,7 @@ public final class ArrivalBoard {
     }
 
     // Время сервера MTR, как в RenderPIDS
-    private static long currentMillis() {
+    public static long currentMillis() {
         return System.currentTimeMillis() + ArrivalsCacheClient.INSTANCE.getMillisOffset();
     }
 
