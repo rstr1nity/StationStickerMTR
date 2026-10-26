@@ -281,6 +281,7 @@ public class SPBRouteMapGenerator implements IGui {
             } else {
                 final NativeImage nativeImage = new NativeImage(NativeImageFormat.getAbgrMapped(), 1, 1, false);
                 nativeImage.setPixelColor(0, 0, transparentWhite ? 0 : ARGB_WHITE);
+                return nativeImage;
             }
         } catch (Exception e) {
             Init.LOGGER.error("", e);
