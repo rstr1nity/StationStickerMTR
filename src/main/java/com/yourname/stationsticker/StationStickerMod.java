@@ -2,7 +2,7 @@ package com.yourname.stationsticker;
 
 import com.yourname.stationsticker.registration.ModBlocks;
 import com.yourname.stationsticker.registration.ModBlockEntities;
-import com.yourname.stationsticker.registration.ModTabs; // ← ДОБАВИТЬ ЭТОТ ИМПОРТ
+import com.yourname.stationsticker.registration.ModTabs;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -21,7 +21,7 @@ public class StationStickerMod {
         ModBlocks.BLOCKS.register(modEventBus);
         ModBlocks.ITEMS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
-        ModTabs.TABS.register(modEventBus); // ← ДОБАВИТЬ ЭТУ СТРОКУ
+        ModTabs.TABS.register(modEventBus);
 
         LOGGER.info("Station Sticker Addon initialized");
     }

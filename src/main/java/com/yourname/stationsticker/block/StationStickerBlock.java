@@ -31,7 +31,7 @@ public class StationStickerBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final DirectionProperty HORIZONTAL_FACING =
             DirectionProperty.create("horizontal_facing", Direction.Plane.HORIZONTAL);
-    // Добавь эти константы для тонкого хитбокса:
+    // Константы для тонкого хитбокса
     protected static final VoxelShape UP_AABB = Block.box(0, 0, 0, 16, 2, 16);
     protected static final VoxelShape DOWN_AABB = Block.box(0, 14, 0, 16, 16, 16);
     protected static final VoxelShape NORTH_AABB = Block.box(0, 0, 14, 16, 16, 16);
