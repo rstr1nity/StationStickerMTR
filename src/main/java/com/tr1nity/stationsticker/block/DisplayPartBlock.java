@@ -3,6 +3,8 @@ package com.tr1nity.stationsticker.block;
 import com.tr1nity.stationsticker.registration.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -16,6 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -63,6 +66,17 @@ public class DisplayPartBlock extends Block {
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.INVISIBLE;
+    }
+
+    // Клик (например, открыть настройки) передаём основному блоку
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        BlockPos mainPos = getMainPos(state, pos);
+        BlockState mainState = level.getBlockState(mainPos);
+        if (mainState.getBlock() instanceof WideDisplayBlock) {
+            return mainState.use(level, player, hand, hit.withPosition(mainPos));
+        }
+        return InteractionResult.PASS;
     }
 
     // Игрок ломает часть - ломается весь экран (в творческом режиме без выпадения)
