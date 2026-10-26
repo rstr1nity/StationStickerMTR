@@ -1,8 +1,5 @@
 {
   "variants": {
-    "facing=north": { "model": "stationsticker:block/station_sticker" },
-    "facing=south": { "model": "stationsticker:block/station_sticker" },
-    "facing=east": { "model": "stationsticker:block/station_sticker" },
-    "facing=west": { "model": "stationsticker:block/station_sticker" }
+    "": { "model": "stationsticker:block/station_sticker" }
   }
 }
