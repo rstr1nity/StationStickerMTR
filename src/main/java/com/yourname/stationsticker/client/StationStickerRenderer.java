@@ -72,32 +72,29 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
                 .findFirst()
                 .orElse(null);
     }
+    // Направление вдоль линии стикеров: индекс в линии растёт в эту сторону
+    private Direction getLineDirection(BlockState state, Direction facing) {
+        // Для пола/потолка ось линии задаёт горизонтальное направление
+        Direction axisSource = (facing == Direction.UP || facing == Direction.DOWN)
+                ? state.getValue(StationStickerBlock.HORIZONTAL_FACING)
+                : facing;
+
+        return (axisSource == Direction.NORTH || axisSource == Direction.SOUTH)
+                ? Direction.EAST
+                : Direction.SOUTH;
+    }
+
+    // В одну линию объединяются только стикеры, повёрнутые одинаково
+    private boolean isSameLine(BlockState origin, BlockState other) {
+        return other.getBlock() instanceof StationStickerBlock
+                && other.getValue(StationStickerBlock.FACING) == origin.getValue(StationStickerBlock.FACING)
+                && other.getValue(StationStickerBlock.HORIZONTAL_FACING) == origin.getValue(StationStickerBlock.HORIZONTAL_FACING);
+    }
+
     private int[] getLineInfo(StationStickerBlockEntity entity,Level level, BlockPos pos, Direction facing) {
-        Direction dir1;
-        Direction dir2;
-
-        // Определяем ось линии
-        if (facing == Direction.UP || facing == Direction.DOWN) {
-            // Для пола/потолка используем горизонтальное направление
-            Direction horizontal = entity.getBlockState().getValue(StationStickerBlock.HORIZONTAL_FACING);
-
-            if (horizontal == Direction.NORTH || horizontal == Direction.SOUTH) {
-                dir1 = Direction.WEST;
-                dir2 = Direction.EAST;
-            } else { // WEST или EAST
-                dir1 = Direction.NORTH;
-                dir2 = Direction.SOUTH;
-            }
-        } else {
-
-            if (facing == Direction.NORTH || facing == Direction.SOUTH) {
-                dir1 = Direction.WEST;
-                dir2 = Direction.EAST;
-            } else {
-                dir1 = Direction.NORTH;
-                dir2 = Direction.SOUTH;
-            }
-        }
+        BlockState origin = entity.getBlockState();
+        Direction dir2 = getLineDirection(origin, facing);
+        Direction dir1 = dir2.getOpposite();
 
         int length = 1;
         int index = 0;
@@ -109,7 +106,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         for (int i = 0; i < 128; i++) {
             checkPos.move(dir1);
 
-            if (!(level.getBlockState(checkPos).getBlock() instanceof StationStickerBlock)) {
+            if (!isSameLine(origin, level.getBlockState(checkPos))) {
                 break;
             }
 
@@ -123,7 +120,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
         for (int i = 0; i < 128; i++) {
             checkPos.move(dir2);
 
-            if (!(level.getBlockState(checkPos).getBlock() instanceof StationStickerBlock)) {
+            if (!isSameLine(origin, level.getBlockState(checkPos))) {
                 break;
             }
 
