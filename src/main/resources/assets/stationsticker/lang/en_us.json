@@ -7,5 +7,12 @@
   "block.stationsticker.arrival_display": "Arrival Display",
   "item.stationsticker.arrival_display": "Arrival Display",
   "block.stationsticker.arrival_display_part": "Arrival Display",
+  "display.stationsticker.arrival.direction": "Direction",
+  "display.stationsticker.arrival.no_trains": "No train information",
+  "display.stationsticker.arrival.arriving": "Train arriving",
+  "display.stationsticker.arrival.arrives_in": "Next train in",
+  "display.stationsticker.arrival.min": "min",
+  "display.stationsticker.arrival.sec": "sec",
+  "display.stationsticker.arrival.day": "Day %s",
   "itemGroup.stationsticker_tab": "Station Stickers"
 }

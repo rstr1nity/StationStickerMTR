@@ -4,6 +4,8 @@ import org.mtr.core.operation.ArrivalResponse;
 import org.mtr.libraries.it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.mtr.mod.data.ArrivalsCacheClient;
 
+import net.minecraft.client.resources.language.I18n;
+
 import javax.annotation.Nullable;
 
 // Табло прибытия в стиле Московского метро (без анимации):
@@ -25,6 +27,8 @@ public final class ArrivalBoard {
     // Высота раскладки: под неё рендерер подбирает масштаб
     public static final float DESIGN_HEIGHT = TIMER_BASELINE + 1;
 
+    private static final String KEY = "display.stationsticker.arrival.";
+
     private static final int TEXT_COLOR = 0xFFF2F2F2;
     private static final int TEXT_DIM_COLOR = 0xFFB0B0B0;
 
@@ -32,12 +36,12 @@ public final class ArrivalBoard {
     }
 
     public static void render(SlideCanvas canvas, long platformId, long dayTime) {
-        canvas.ledText("Направление", 0, 0, 1, TEXT_DIM_COLOR, false);
+        canvas.ledText(I18n.get(KEY + "direction"), 0, 0, 1, TEXT_DIM_COLOR, false);
         canvas.ledTextRight(formatDayTime(dayTime), canvas.width, 0, 1, TEXT_DIM_COLOR);
 
         ArrivalResponse arrival = platformId == 0 ? null : nextArrival(platformId);
         if (arrival == null) {
-            canvas.ledText("Нет данных о поездах", 0, CAPTION_Y, 1, TEXT_DIM_COLOR, false);
+            canvas.ledText(I18n.get(KEY + "no_trains"), 0, CAPTION_Y, 1, TEXT_DIM_COLOR, false);
             return;
         }
 
@@ -52,19 +56,19 @@ public final class ArrivalBoard {
                     circleCenterY - GLYPH_HEIGHT * numberScale / 2, numberScale, TEXT_COLOR, true);
         }
         float stationScale = 1.5f;
-        canvas.ledText(firstLanguage(arrival.getDestination()), radius * 2 + 4,
+        canvas.ledText(StationNames.forCurrentLanguage(arrival.getDestination()), radius * 2 + 4,
                 circleCenterY - GLYPH_HEIGHT * stationScale / 2, stationScale, TEXT_COLOR, false);
 
         long seconds = Math.max(0, (arrival.getArrival() - currentMillis()) / 1000);
         if (seconds == 0) {
-            canvas.ledText("Поезд прибывает", 0, TIMER_Y, 2, TEXT_COLOR, true);
+            canvas.ledText(I18n.get(KEY + "arriving"), 0, TIMER_Y, 2, TEXT_COLOR, true);
             return;
         }
-        canvas.ledText("Поезд прибывает через", 0, CAPTION_Y, 1, TEXT_DIM_COLOR, true);
+        canvas.ledText(I18n.get(KEY + "arrives_in"), 0, CAPTION_Y, 1, TEXT_DIM_COLOR, true);
 
         // Крупные цифры, мелкие подписи по базовой линии цифр
-        float x = timerPart(canvas, 0, String.format("%02d", seconds / 60), "мин");
-        timerPart(canvas, x + 6, String.format("%02d", seconds % 60), "сек");
+        float x = timerPart(canvas, 0, String.format("%02d", seconds / 60), I18n.get(KEY + "min"));
+        timerPart(canvas, x + 6, String.format("%02d", seconds % 60), I18n.get(KEY + "sec"));
     }
 
     private static float timerPart(SlideCanvas canvas, float x, String digits, String unit) {
@@ -99,12 +103,6 @@ public final class ArrivalBoard {
         long ticksInDay = dayTime % 24000;
         long hours = (ticksInDay / 1000 + 6) % 24;
         long minutes = (ticksInDay % 1000) * 60 / 1000;
-        return String.format("День %d  %02d:%02d", day, hours, minutes);
-    }
-
-    // Названия в MTR хранятся как "Русское|English": берём первую часть
-    private static String firstLanguage(String name) {
-        int separator = name.indexOf('|');
-        return separator < 0 ? name : name.substring(0, separator);
+        return I18n.get(KEY + "day", day) + String.format("  %02d:%02d", hours, minutes);
     }
 }
