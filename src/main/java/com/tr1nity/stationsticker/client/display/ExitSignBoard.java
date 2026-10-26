@@ -81,7 +81,7 @@ public final class ExitSignBoard {
         float boxWidth = canvas.boldTextWidth(name, BOX_SCALE) + 4;
         float boxX = rightSide ? arrowX - GAP - boxWidth : arrowX + arrowWidth + GAP;
         float boxY = headingCenter - BOX_HEIGHT / 2;
-        canvas.rect(boxX, boxY, boxWidth, BOX_HEIGHT, BOX_COLOR);
+        canvas.backgroundRect(boxX, boxY, boxWidth, BOX_HEIGHT, BOX_COLOR);
         canvas.boldText(name, boxX + 2, headingCenter - 3.5f * BOX_SCALE, BOX_SCALE, BOX_TEXT_COLOR);
 
         // Улица: крупно и латиница под ней

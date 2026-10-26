@@ -38,7 +38,7 @@ public final class MtrSigns {
     public static void draw(SlideCanvas canvas, String id, float x, float y, float size) {
         Sign sign = get(id);
         if (sign == null) return;
-        canvas.rect(x, y, size, size, sign.background());
+        canvas.backgroundRect(x, y, size, size, sign.background());
         canvas.texture(sign.texture(), x, y, size, size, sign.flip());
     }
 }

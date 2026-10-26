@@ -86,6 +86,15 @@ public final class SlideCanvas {
 
     // Закрашенный прямоугольник на уровне текста
     public void rect(float x, float y, float w, float h, int color) {
+        rect(x, y, w, h, color, 0);
+    }
+
+    // Подложка под текст (плашка): чуть глубже, иначе текст на ней мерцает (z-fighting)
+    public void backgroundRect(float x, float y, float w, float h, int color) {
+        rect(x, y, w, h, color, -0.1f);
+    }
+
+    private void rect(float x, float y, float w, float h, int color, float z) {
         int rectAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
         if (rectAlpha == 0) return;
         int r = (color >> 16) & 0xFF;
@@ -94,15 +103,15 @@ public final class SlideCanvas {
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
         Matrix4f pose = poseStack.last().pose();
         // y вниз меняет направление обхода - рисуем обе стороны
-        vertex(consumer, pose, x, y, 0, r, g, b, rectAlpha);
-        vertex(consumer, pose, x + w, y, 0, r, g, b, rectAlpha);
-        vertex(consumer, pose, x + w, y + h, 0, r, g, b, rectAlpha);
-        vertex(consumer, pose, x, y + h, 0, r, g, b, rectAlpha);
+        vertex(consumer, pose, x, y, z, r, g, b, rectAlpha);
+        vertex(consumer, pose, x + w, y, z, r, g, b, rectAlpha);
+        vertex(consumer, pose, x + w, y + h, z, r, g, b, rectAlpha);
+        vertex(consumer, pose, x, y + h, z, r, g, b, rectAlpha);
 
-        vertex(consumer, pose, x, y + h, 0, r, g, b, rectAlpha);
-        vertex(consumer, pose, x + w, y + h, 0, r, g, b, rectAlpha);
-        vertex(consumer, pose, x + w, y, 0, r, g, b, rectAlpha);
-        vertex(consumer, pose, x, y, 0, r, g, b, rectAlpha);
+        vertex(consumer, pose, x, y + h, z, r, g, b, rectAlpha);
+        vertex(consumer, pose, x + w, y + h, z, r, g, b, rectAlpha);
+        vertex(consumer, pose, x + w, y, z, r, g, b, rectAlpha);
+        vertex(consumer, pose, x, y, z, r, g, b, rectAlpha);
     }
 
     // Закрашенный круг; чуть глубже текста, чтобы цифра на нём была видна
