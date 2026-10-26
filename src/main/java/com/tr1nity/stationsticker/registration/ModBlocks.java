@@ -1,7 +1,7 @@
-package com.yourname.stationsticker.registration;
+package com.tr1nity.stationsticker.registration;
 
-import com.yourname.stationsticker.StationStickerMod;
-import com.yourname.stationsticker.block.StationStickerBlock;
+import com.tr1nity.stationsticker.StationStickerMod;
+import com.tr1nity.stationsticker.block.StationStickerBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -10,8 +10,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import com.yourname.stationsticker.block.LineSchemeBlock;
-import com.yourname.stationsticker.block.LineSchemePartBlock;
+import com.tr1nity.stationsticker.block.LineSchemeBlock;
+import com.tr1nity.stationsticker.block.LineSchemePartBlock;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =

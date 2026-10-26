@@ -25,7 +25,7 @@
 
 ## Структура
 
-- `src/main/java/com/yourname/stationsticker/` - пакет `com.yourname` временный, будет переименован
+- `src/main/java/com/tr1nity/stationsticker/` - пакет `com.tr1nity.stationsticker`
   - `block/` - блоки (`StationStickerBlock`, `LineSchemeBlock`), `block/entity/` - блок-сущности
   - `client/` - рендереры и регистрация клиента (`SPBRouteMapGenerator`, `SPBDynamicTextureCache` и т.д.)
   - `registration/` - `ModBlocks`, `ModBlockEntities`, `ModTabs`

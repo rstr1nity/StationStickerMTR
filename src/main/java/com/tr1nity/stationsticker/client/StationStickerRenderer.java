@@ -1,9 +1,9 @@
-package com.yourname.stationsticker.client;
+package com.tr1nity.stationsticker.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.yourname.stationsticker.block.StationStickerBlock;
-import com.yourname.stationsticker.block.entity.StationStickerBlockEntity;
+import com.tr1nity.stationsticker.block.StationStickerBlock;
+import com.tr1nity.stationsticker.block.entity.StationStickerBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;

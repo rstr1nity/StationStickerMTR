@@ -1,7 +1,7 @@
-package com.yourname.stationsticker;
+package com.tr1nity.stationsticker;
 
-import com.yourname.stationsticker.registration.ModBlocks;
-import com.yourname.stationsticker.registration.ModBlockEntities;
+import com.tr1nity.stationsticker.registration.ModBlocks;
+import com.tr1nity.stationsticker.registration.ModBlockEntities;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;

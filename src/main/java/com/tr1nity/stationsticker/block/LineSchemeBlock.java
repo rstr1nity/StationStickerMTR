@@ -1,6 +1,6 @@
-package com.yourname.stationsticker.block;
+package com.tr1nity.stationsticker.block;
 
-import com.yourname.stationsticker.block.entity.LineSchemeEntity;
+import com.tr1nity.stationsticker.block.entity.LineSchemeEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
