@@ -1,6 +1,7 @@
 package com.tr1nity.stationsticker.client;
 
 import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
+import com.tr1nity.stationsticker.client.display.ExitSignBoard;
 import com.tr1nity.stationsticker.client.display.SlideCanvas;
 import com.tr1nity.stationsticker.client.display.TransferSignBoard;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -17,14 +18,18 @@ public class NavSignRenderer extends WideDisplayRenderer<NavSignBlockEntity> {
     }
 
     @Override
-    protected float designHeight() {
-        return TransferSignBoard.DESIGN_HEIGHT;
+    protected float designHeight(NavSignBlockEntity entity) {
+        return switch (entity.getTemplate()) {
+            case TRANSFER -> TransferSignBoard.DESIGN_HEIGHT;
+            case EXIT -> ExitSignBoard.DESIGN_HEIGHT;
+        };
     }
 
     @Override
     protected void drawContent(NavSignBlockEntity entity, SlideCanvas canvas, boolean back) {
         switch (entity.getTemplate()) {
             case TRANSFER -> TransferSignBoard.render(canvas, entity, back);
+            case EXIT -> ExitSignBoard.render(canvas, entity, back);
         }
     }
 }

@@ -3,7 +3,9 @@ package com.tr1nity.stationsticker.client;
 import com.tr1nity.stationsticker.block.NavSignOptions.Arrow;
 import com.tr1nity.stationsticker.block.NavSignOptions.Pictogram;
 import com.tr1nity.stationsticker.block.NavSignOptions.Template;
+import com.tr1nity.stationsticker.block.NavSignSettings;
 import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
+import com.tr1nity.stationsticker.client.display.Exits;
 import com.tr1nity.stationsticker.client.display.StationNames;
 import com.tr1nity.stationsticker.client.display.Transfers;
 import com.tr1nity.stationsticker.network.ModNetwork;
@@ -14,11 +16,13 @@ import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import org.mtr.core.data.StationExit;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// Окно настройки навигационной таблички: шаблон и его параметры
+// Окно настройки навигационной таблички: шаблон и его параметры. Набор кнопок зависит от шаблона.
 public class NavSignScreen extends Screen {
 
     private static final String KEY = "gui.stationsticker.nav_sign.";
@@ -28,23 +32,35 @@ public class NavSignScreen extends Screen {
 
     private final NavSignBlockEntity sign;
     private final List<Transfers.Transfer> transfers;
-    private Template template;
-    private Arrow arrow;
-    private Pictogram pictogram;
-    private Transfers.Transfer transfer;
+    private final List<String> exitNames = new ArrayList<>();
+    private NavSignSettings settings;
 
     public NavSignScreen(NavSignBlockEntity sign) {
         super(Component.translatable(KEY + "title"));
         this.sign = sign;
         this.transfers = Transfers.optionsAt(sign.getBlockPos());
-        this.template = sign.getTemplate();
-        this.arrow = sign.getArrow();
-        this.pictogram = sign.getPictogram();
+        this.settings = sign.getSettings();
+        exitNames.add("");
+        for (StationExit exit : Exits.at(sign.getBlockPos())) exitNames.add(exit.getName());
+
         // Текущая пересадка, если она ещё есть на станции, иначе первая из списка
-        this.transfer = transfers.stream()
-                .filter(t -> t.stationId() == sign.getTransferStationId() && t.color() == sign.getTransferColor())
+        Transfers.Transfer transfer = transfers.stream()
+                .filter(t -> t.stationId() == settings.transferStationId() && t.color() == settings.transferColor())
                 .findFirst()
                 .orElse(transfers.isEmpty() ? null : transfers.get(0));
+        settings = transfer == null ? settings.withTransfer(0, 0) : settings.withTransfer(transfer.stationId(), transfer.color());
+    }
+
+    NavSignBlockEntity sign() {
+        return sign;
+    }
+
+    NavSignSettings settings() {
+        return settings;
+    }
+
+    void setSettings(NavSignSettings settings) {
+        this.settings = settings;
     }
 
     @Override
@@ -54,40 +70,77 @@ public class NavSignScreen extends Screen {
 
         addRenderableWidget(CycleButton.<Template>builder(value -> option("template", value))
                 .withValues(Template.values())
-                .withInitialValue(template)
-                .create(x, y, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable(KEY + "template"), (button, value) -> template = value));
+                .withInitialValue(settings.template())
+                .create(x, y, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable(KEY + "template"), (button, value) -> {
+                    settings = settings.withTemplate(value);
+                    rebuildWidgets();
+                }));
 
-        if (transfers.isEmpty()) {
-            Button empty = Button.builder(Component.translatable(KEY + "no_transfers"), button -> {
-            }).bounds(x, y + ROW, BUTTON_WIDTH, BUTTON_HEIGHT).build();
-            empty.active = false;
-            addRenderableWidget(empty);
+        int row = 1;
+        if (settings.template() == Template.TRANSFER) {
+            if (transfers.isEmpty()) {
+                addDisabled(x, y + ROW * row++, Component.translatable(KEY + "no_transfers"));
+            } else {
+                Transfers.Transfer current = transfers.stream()
+                        .filter(t -> t.stationId() == settings.transferStationId() && t.color() == settings.transferColor())
+                        .findFirst().orElse(transfers.get(0));
+                addRenderableWidget(CycleButton.<Transfers.Transfer>builder(NavSignScreen::describe)
+                        .withValues(transfers)
+                        .withInitialValue(current)
+                        .create(x, y + ROW * row++, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable(KEY + "transfer"),
+                                (button, value) -> settings = settings.withTransfer(value.stationId(), value.color())));
+            }
+            addRenderableWidget(CycleButton.<Arrow>builder(value -> option("arrow", value))
+                    .withValues(Arrow.values())
+                    .withInitialValue(settings.arrow())
+                    .create(x, y + ROW * row++, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable(KEY + "arrow"),
+                            (button, value) -> settings = settings.withArrow(value)));
+            addRenderableWidget(CycleButton.<Pictogram>builder(value -> option("pictogram", value))
+                    .withValues(Pictogram.values())
+                    .withInitialValue(settings.pictogram())
+                    .create(x, y + ROW * row++, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable(KEY + "pictogram"),
+                            (button, value) -> settings = settings.withPictogram(value)));
         } else {
-            addRenderableWidget(CycleButton.<Transfers.Transfer>builder(NavSignScreen::describe)
-                    .withValues(transfers)
-                    .withInitialValue(transfer)
-                    .create(x, y + ROW, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable(KEY + "transfer"), (button, value) -> transfer = value));
+            if (exitNames.size() == 1) {
+                addDisabled(x, y + ROW * row++, Component.translatable(KEY + "no_exits"));
+            } else {
+                row = addExitRow(x, y, row, false);
+                row = addExitRow(x, y, row, true);
+            }
         }
 
-        addRenderableWidget(CycleButton.<Arrow>builder(value -> option("arrow", value))
-                .withValues(Arrow.values())
-                .withInitialValue(arrow)
-                .create(x, y + ROW * 2, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable(KEY + "arrow"), (button, value) -> arrow = value));
-
-        addRenderableWidget(CycleButton.<Pictogram>builder(value -> option("pictogram", value))
-                .withValues(Pictogram.values())
-                .withInitialValue(pictogram)
-                .create(x, y + ROW * 3, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable(KEY + "pictogram"), (button, value) -> pictogram = value));
-
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> save())
-                .bounds(x, y + ROW * 4 + 8, BUTTON_WIDTH, BUTTON_HEIGHT)
+                .bounds(x, y + ROW * row + 8, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build());
     }
 
+    // Выход для половины таблички и кнопка его значков
+    private int addExitRow(int x, int y, int row, boolean right) {
+        String side = right ? "right" : "left";
+        String current = right ? settings.exitRight() : settings.exitLeft();
+        int iconsWidth = 90;
+        addRenderableWidget(CycleButton.<String>builder(name -> name.isEmpty()
+                        ? Component.translatable(KEY + "exit.none") : Component.literal(name))
+                .withValues(exitNames)
+                .withInitialValue(exitNames.contains(current) ? current : "")
+                .create(x, y + ROW * row, BUTTON_WIDTH - iconsWidth - 4, BUTTON_HEIGHT, Component.translatable(KEY + "exit." + side),
+                        (button, value) -> settings = settings.withExit(right, value)));
+        addRenderableWidget(Button.builder(Component.translatable(KEY + "icons"),
+                        button -> minecraft.setScreen(new ExitIconsScreen(this, right)))
+                .bounds(x + BUTTON_WIDTH - iconsWidth, y + ROW * row, iconsWidth, BUTTON_HEIGHT)
+                .build());
+        return row + 1;
+    }
+
+    private void addDisabled(int x, int y, Component text) {
+        Button button = Button.builder(text, b -> {
+        }).bounds(x, y, BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        button.active = false;
+        addRenderableWidget(button);
+    }
+
     private void save() {
-        long stationId = transfer == null ? 0 : transfer.stationId();
-        int color = transfer == null ? 0 : transfer.color();
-        ModNetwork.CHANNEL.sendToServer(new NavSignSettingsPacket(sign.getBlockPos(), template, arrow, pictogram, stationId, color));
+        ModNetwork.CHANNEL.sendToServer(new NavSignSettingsPacket(sign.getBlockPos(), settings));
         onClose();
     }
 

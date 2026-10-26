@@ -20,7 +20,7 @@ public class DirectionSignRenderer extends WideDisplayRenderer<DirectionSignBloc
     }
 
     @Override
-    protected float designHeight() {
+    protected float designHeight(DirectionSignBlockEntity entity) {
         return DirectionSignBoard.DESIGN_HEIGHT;
     }
 

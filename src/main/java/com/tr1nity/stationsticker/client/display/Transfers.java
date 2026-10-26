@@ -102,6 +102,13 @@ public final class Transfers {
         return nearest;
     }
 
+    // Станция, где стоит блок; вне станций (например, в переходе) - станция ближайшей платформы в радиусе
+    @Nullable
+    public static Station stationNear(BlockPos pos) {
+        Platform platform = nearestPlatform(pos);
+        return platform == null ? null : platform.area;
+    }
+
     // Ближайшая платформа станции, где стоит блок; вне станций - ближайшая в радиусе NEAR_STATION_RADIUS
     @Nullable
     private static Platform nearestPlatform(BlockPos pos) {

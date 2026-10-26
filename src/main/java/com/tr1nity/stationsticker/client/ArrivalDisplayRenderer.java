@@ -18,7 +18,7 @@ public class ArrivalDisplayRenderer extends WideDisplayRenderer<ArrivalDisplayBl
     }
 
     @Override
-    protected float designHeight() {
+    protected float designHeight(ArrivalDisplayBlockEntity entity) {
         return ArrivalBoard.DESIGN_HEIGHT;
     }
 

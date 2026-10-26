@@ -40,7 +40,7 @@ public abstract class WideDisplayRenderer<T extends BlockEntity> implements Bloc
     protected abstract int screenColor();
 
     // Высота раскладки содержимого в единицах холста: под неё подбирается масштаб
-    protected abstract float designHeight();
+    protected abstract float designHeight(T entity);
 
     // Содержимое экрана. back - обратная сторона подвесного экрана (лево и право для зрителя там поменяны)
     protected abstract void drawContent(T entity, SlideCanvas canvas, boolean back);
@@ -117,7 +117,7 @@ public abstract class WideDisplayRenderer<T extends BlockEntity> implements Bloc
                 screenColor(), LightTexture.FULL_BRIGHT);
 
         // Масштаб такой, чтобы раскладка помещалась по высоте экрана и не заходила на рамку
-        float textScale = Math.min(TEXT_SCALE, (screenTop - screenBottom - 2 * TEXT_MARGIN) / designHeight());
+        float textScale = Math.min(TEXT_SCALE, (screenTop - screenBottom - 2 * TEXT_MARGIN) / designHeight(entity));
 
         poseStack.pushPose();
         poseStack.translate(screenLeft + TEXT_MARGIN, screenTop - TEXT_MARGIN, z + 0.002f);
