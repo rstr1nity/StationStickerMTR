@@ -6,8 +6,10 @@ import com.mojang.math.Axis;
 import com.tr1nity.stationsticker.block.ArrivalDisplayBlock;
 import com.tr1nity.stationsticker.block.DisplayAttachment;
 import com.tr1nity.stationsticker.block.entity.ArrivalDisplayBlockEntity;
+import com.tr1nity.stationsticker.client.display.DisplaySlide;
+import com.tr1nity.stationsticker.client.display.SlideShow;
+import com.tr1nity.stationsticker.client.display.TestSlides;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -18,6 +20,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 import org.mtr.core.data.Platform;
+
+import java.util.List;
 
 // Локальные координаты: начало в центре клетки основного блока, +Z - лицевая сторона экрана,
 // +X - вправо, если смотреть на экран (в сторону части). Табло занимает по X от -0.5 до 1.5.
@@ -36,8 +40,6 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
     private static final int BODY_COLOR = 0xFF2B2B2E;
     private static final int BODY_SIDE_COLOR = 0xFF1E1E20;
     private static final int SCREEN_COLOR = 0xFF060608;
-    private static final int TEXT_COLOR = 0xFFF2F2F2;
-    private static final int TEXT_DIM_COLOR = 0xFFB0B0B0;
 
     public ArrivalDisplayRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -83,22 +85,31 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
             }
         }
 
-        Platform platform = PlatformLocator.findPlatformAt(entity.getBlockPos());
-        drawScreen(poseStack, bufferSource, platform, left, bottom, right, top, front);
+        List<DisplaySlide> slides = createSlides(PlatformLocator.findPlatformAt(entity.getBlockPos()));
+        double time = entity.getLevel() == null ? 0 : entity.getLevel().getGameTime() + partialTick;
+
+        drawScreen(poseStack, bufferSource, slides, time, left, bottom, right, top, front);
         if (attachment == DisplayAttachment.CEILING) {
             // У подвесного табло экран с обеих сторон
             poseStack.pushPose();
             poseStack.translate((left + right) / 2, 0, 0);
             poseStack.mulPose(Axis.YP.rotationDegrees(180));
             poseStack.translate(-(left + right) / 2, 0, 0);
-            drawScreen(poseStack, bufferSource, platform, left, bottom, right, top, front);
+            drawScreen(poseStack, bufferSource, slides, time, left, bottom, right, top, front);
             poseStack.popPose();
         }
 
         poseStack.popPose();
     }
 
-    private void drawScreen(PoseStack poseStack, MultiBufferSource bufferSource, Platform platform,
+    // Временные слайды: станция и платформа (проверка поиска платформы), дата и время
+    private static List<DisplaySlide> createSlides(Platform platform) {
+        String stationName = platform == null || platform.area == null ? "" : firstLanguage(platform.area.getName());
+        String platformName = platform == null ? "Нет платформы" : "Платформа " + firstLanguage(platform.getName());
+        return List.of(TestSlides.station(platformName, stationName), TestSlides.clock());
+    }
+
+    private void drawScreen(PoseStack poseStack, MultiBufferSource bufferSource, List<DisplaySlide> slides, double time,
                             float left, float bottom, float right, float top, float front) {
         float z = front + 0.002f;
         float screenLeft = left + BEZEL;
@@ -110,11 +121,8 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
         drawQuad(consumer, poseStack.last().pose(), screenLeft, screenBottom, screenRight, screenTop, z,
                 SCREEN_COLOR, LightTexture.FULL_BRIGHT);
 
-        // Временное содержимое: станция и платформа, чтобы проверить поиск платформы. Слайды - следующий этап.
-        String stationName = platform == null || platform.area == null ? "" : firstLanguage(platform.area.getName());
-        String platformName = platform == null ? "Нет платформы" : "Платформа " + firstLanguage(platform.getName());
-
-        // Две строки: мелкая (1x) и крупная (2x) с отступом 11 пикселей шрифта; уменьшаем, если не влезают по высоте
+        // Холст слайдов рассчитан на две строки: мелкую (1x) и крупную (2x) с отступом 11 пикселей шрифта.
+        // Если экран ниже, масштаб уменьшается, чтобы текст не заходил на рамку.
         int lineHeight = Minecraft.getInstance().font.lineHeight;
         float textHeight = 11 + lineHeight * 2;
         float textScale = Math.min(TEXT_SCALE, (screenTop - screenBottom - 2 * TEXT_MARGIN) / textHeight);
@@ -122,26 +130,9 @@ public class ArrivalDisplayRenderer implements BlockEntityRenderer<ArrivalDispla
         poseStack.pushPose();
         poseStack.translate(screenLeft + TEXT_MARGIN, screenTop - TEXT_MARGIN, z + 0.002f);
         poseStack.scale(textScale, -textScale, textScale);
-        float maxWidth = (screenRight - screenLeft - 2 * TEXT_MARGIN) / textScale;
-        drawText(poseStack, bufferSource, platformName, 0, maxWidth, 1.0f, TEXT_DIM_COLOR);
-        drawText(poseStack, bufferSource, stationName, 11, maxWidth, 2.0f, TEXT_COLOR);
-        poseStack.popPose();
-    }
-
-    // Текст в координатах шрифта (y вниз); scale уменьшается, если строка не помещается
-    private void drawText(PoseStack poseStack, MultiBufferSource bufferSource, String text,
-                          float y, float maxWidth, float scale, int color) {
-        if (text.isEmpty()) return;
-        Font font = Minecraft.getInstance().font;
-        float width = font.width(text) * scale;
-        if (width > maxWidth) {
-            scale *= maxWidth / width;
-        }
-        poseStack.pushPose();
-        poseStack.translate(0, y, 0);
-        poseStack.scale(scale, scale, scale);
-        font.drawInBatch(text, 0, 0, color, false, poseStack.last().pose(), bufferSource,
-                Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+        float canvasWidth = (screenRight - screenLeft - 2 * TEXT_MARGIN) / textScale;
+        float canvasHeight = (screenTop - screenBottom - 2 * TEXT_MARGIN) / textScale;
+        SlideShow.render(slides, time, poseStack, bufferSource, canvasWidth, canvasHeight);
         poseStack.popPose();
     }
 
