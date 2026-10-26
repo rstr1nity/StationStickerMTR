@@ -28,7 +28,8 @@ minecraft {
 
     runs {
         client {
-            workingDirectory project.file('run')
+            // Своя папка на каждую версию MC: мир из новой версии нельзя открыть в старой
+            workingDirectory project.file("run-${minecraft_version}")
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
             // Mixin'ы MTR ссылаются на SRG-имена, в dev-окружении их нужно переводить в официальные
