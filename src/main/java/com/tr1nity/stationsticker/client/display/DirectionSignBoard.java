@@ -4,7 +4,6 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import org.mtr.core.data.Platform;
-import org.mtr.core.data.Route;
 import org.mtr.core.data.SimplifiedRoute;
 import org.mtr.core.data.SimplifiedRoutePlatform;
 import org.mtr.core.data.Station;
@@ -114,7 +113,7 @@ public final class DirectionSignBoard {
 
         List<SimplifiedRoutePlatform> stops = side.route.getPlatforms();
         String terminal = stops.get(stops.size() - 1).getStationName();
-        String number = routeNumber(side.route);
+        String number = RouteNumbers.forRoute(side.route);
         float centerY = NAME_SCALE * 7 / 2 + 1;
 
         String[] arrow = rightSide ? Pictograms.mirror(Pictograms.ARROW_LEFT) : Pictograms.ARROW_LEFT;
@@ -161,7 +160,7 @@ public final class DirectionSignBoard {
         float dotX = x + nameWidth + 1 + DOT_RADIUS;
         for (int i = 0; i < colors.size(); i++) {
             int color = colors.getInt(i);
-            numberCircle(canvas, dotX, y + 2.6f, DOT_RADIUS, color, numberForColor(color));
+            numberCircle(canvas, dotX, y + 2.6f, DOT_RADIUS, color, RouteNumbers.forColor(color));
             dotX += DOT_RADIUS * 2 + 0.8f;
         }
     }
@@ -190,20 +189,5 @@ public final class DirectionSignBoard {
             float scale = Math.min(radius / 6, radius * 1.4f / canvas.boldTextWidth(number, 1));
             canvas.boldText(number, x - canvas.boldTextWidth(number, scale) / 2, y - 3.5f * scale, scale, NUMBER_COLOR);
         }
-    }
-
-    private static String routeNumber(SimplifiedRoute route) {
-        Route full = MinecraftClientData.getInstance().routeIdMap.get(route.getId());
-        return full == null ? "" : full.getRouteNumber();
-    }
-
-    // Номер линии по цвету: у пересадки известны только цвет и названия маршрутов
-    private static String numberForColor(int color) {
-        for (Route route : MinecraftClientData.getInstance().routeIdMap.values()) {
-            if (route.getColor() == color && !route.getRouteNumber().isEmpty()) {
-                return route.getRouteNumber();
-            }
-        }
-        return "";
     }
 }

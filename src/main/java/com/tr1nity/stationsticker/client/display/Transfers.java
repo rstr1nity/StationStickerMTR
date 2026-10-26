@@ -2,7 +2,6 @@ package com.tr1nity.stationsticker.client.display;
 
 import net.minecraft.core.BlockPos;
 import org.mtr.core.data.Platform;
-import org.mtr.core.data.Route;
 import org.mtr.core.data.SimplifiedRoute;
 import org.mtr.core.data.SimplifiedRoutePlatform;
 import org.mtr.core.data.Station;
@@ -59,7 +58,7 @@ public final class Transfers {
         Station station = MinecraftClientData.getInstance().stationIdMap.get(stationId);
         SimplifiedRoute route = routeWithColor(color, stationId);
         if (station == null || route == null) return null;
-        return new Transfer(stationId, station.getName(), color, route.getName(), routeNumber(route));
+        return new Transfer(stationId, station.getName(), color, route.getName(), RouteNumbers.forRoute(route));
     }
 
     private static void addOption(List<Transfer> options, IntArrayList seenColors, IntArrayList ownColors,
@@ -69,7 +68,7 @@ public final class Transfers {
         SimplifiedRoutePlatform stop = route == null ? null : nearestStop(route, pos);
         if (stop == null) return;
         seenColors.add(color);
-        options.add(new Transfer(stop.getStationId(), stop.getStationName(), color, route.getName(), routeNumber(route)));
+        options.add(new Transfer(stop.getStationId(), stop.getStationName(), color, route.getName(), RouteNumbers.forRoute(route)));
     }
 
     // Маршрут этого цвета; лучше тот, что проходит через указанную станцию
@@ -125,11 +124,6 @@ public final class Transfers {
         double dy = platform.getMidPosition().getY() - pos.getY();
         double dz = platform.getMidPosition().getZ() - pos.getZ();
         return dx * dx + dy * dy + dz * dz;
-    }
-
-    private static String routeNumber(SimplifiedRoute route) {
-        Route full = MinecraftClientData.getInstance().routeIdMap.get(route.getId());
-        return full == null ? "" : full.getRouteNumber();
     }
 
     private static Iterable<SimplifiedRoute> routes() {
