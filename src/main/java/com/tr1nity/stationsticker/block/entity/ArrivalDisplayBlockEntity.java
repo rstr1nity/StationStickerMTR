@@ -14,9 +14,6 @@ public class ArrivalDisplayBlockEntity extends BlockEntity {
 
     // Когда (время MTR, мс) прозвучал последний сигнал; только на клиенте
     public long lastChimeMillis;
-    // Сглаженное время прибытия, которое показывает таймер, и когда оно обновлялось; только на клиенте
-    public long shownArrival;
-    public long shownAt;
 
     public ArrivalDisplayBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ARRIVAL_DISPLAY.get(), pos, state);

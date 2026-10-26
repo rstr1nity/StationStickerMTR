@@ -4,7 +4,6 @@ import org.mtr.core.operation.ArrivalResponse;
 import org.mtr.libraries.it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.mtr.mod.data.ArrivalsCacheClient;
 
-import com.tr1nity.stationsticker.block.entity.ArrivalDisplayBlockEntity;
 import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.Nullable;
@@ -39,7 +38,7 @@ public final class ArrivalBoard {
     private ArrivalBoard() {
     }
 
-    public static void render(SlideCanvas canvas, ArrivalDisplayBlockEntity entity, long platformId, long dayTime) {
+    public static void render(SlideCanvas canvas, long platformId, long dayTime) {
         canvas.ledText(I18n.get(KEY + "direction"), 0, 0, 1, TEXT_DIM_COLOR, false);
         canvas.ledTextRight(formatDayTime(dayTime), canvas.width, 0, 1, TEXT_DIM_COLOR);
 
@@ -69,8 +68,7 @@ public final class ArrivalBoard {
         canvas.ledText(StationNames.forCurrentLanguage(arrival.getDestination()), radius * 2 + 4,
                 circleCenterY - GLYPH_HEIGHT * stationScale / 2, stationScale, TEXT_COLOR, false);
 
-        long now = currentMillis();
-        long seconds = Math.max(0, (smoothArrival(entity, arrival.getArrival(), now) - now) / 1000);
+        long seconds = Math.max(0, (arrival.getArrival() - currentMillis()) / 1000);
         if (seconds == 0) {
             canvas.ledText(I18n.get(KEY + "arriving"), 0, TIMER_Y, 2, TEXT_COLOR, true);
             return;
@@ -115,22 +113,6 @@ public final class ArrivalBoard {
             }
         }
         return next != null ? next : nextTerminating;
-    }
-
-    // MTR уточняет время прибытия на лету, и таймер прыгал на секунду-другую вверх и вниз.
-    // Показанное время догоняет новое плавно: отсчёт идёт со скоростью от 0.75 до 1.25 секунды в секунду
-    // и никогда не растёт. Разница больше SNAP_MILLIS - это уже другой поезд, переставляем сразу.
-    private static final long SNAP_MILLIS = 15000;
-
-    private static long smoothArrival(ArrivalDisplayBlockEntity entity, long target, long now) {
-        if (entity.shownArrival == 0 || Math.abs(target - entity.shownArrival) > SNAP_MILLIS) {
-            entity.shownArrival = target;
-        } else {
-            long maxStep = Math.max(0, now - entity.shownAt) / 4;
-            entity.shownArrival += Math.max(-maxStep, Math.min(maxStep, target - entity.shownArrival));
-        }
-        entity.shownAt = now;
-        return entity.shownArrival;
     }
 
     // Время сервера MTR, как в RenderPIDS

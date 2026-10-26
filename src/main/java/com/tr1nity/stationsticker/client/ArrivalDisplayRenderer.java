@@ -27,6 +27,6 @@ public class ArrivalDisplayRenderer extends WideDisplayRenderer<ArrivalDisplayBl
         Platform platform = PlatformLocator.findPlatformAt(entity.getBlockPos());
         long platformId = platform == null ? 0 : platform.getId();
         long dayTime = entity.getLevel() == null ? 0 : entity.getLevel().getDayTime();
-        ArrivalBoard.render(canvas, entity, platformId, dayTime);
+        ArrivalBoard.render(canvas, platformId, dayTime);
     }
 }
