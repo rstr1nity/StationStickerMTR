@@ -9,8 +9,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 
-// Окно указателя направлений: ширина в клетках ползунком
-public class DirectionSignScreen extends Screen {
+// Окно ширины экрана (ResizableDisplayBlock): ползунок в клетках, заголовок - название блока
+public class DisplayWidthScreen extends Screen {
 
     private static final int WIDGET_WIDTH = 200;
     private static final int WIDGET_HEIGHT = 20;
@@ -18,8 +18,8 @@ public class DirectionSignScreen extends Screen {
     private final BlockPos pos;
     private int signWidth;
 
-    public DirectionSignScreen(BlockPos pos, int signWidth) {
-        super(Component.translatable("gui.stationsticker.direction_sign.title"));
+    public DisplayWidthScreen(BlockPos pos, int signWidth, Component title) {
+        super(title);
         this.pos = pos;
         this.signWidth = signWidth;
     }

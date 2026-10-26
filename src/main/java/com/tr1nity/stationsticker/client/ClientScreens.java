@@ -1,10 +1,11 @@
 package com.tr1nity.stationsticker.client;
 
-import com.tr1nity.stationsticker.block.DirectionSignBlock;
 import com.tr1nity.stationsticker.block.ResizableDisplayBlock;
 import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.state.BlockState;
 
 // Окна настройки блоков; вызываются из блоков только на клиенте (DistExecutor)
 public final class ClientScreens {
@@ -19,10 +20,14 @@ public final class ClientScreens {
         }
     }
 
-    public static void openDirectionSign(BlockPos pos) {
+    // Ширина экрана ползунком; заголовок окна - название блока
+    public static void openWidthSettings(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != null && minecraft.level.getBlockState(pos).getBlock() instanceof DirectionSignBlock) {
-            minecraft.setScreen(new DirectionSignScreen(pos, minecraft.level.getBlockState(pos).getValue(ResizableDisplayBlock.WIDTH)));
+        if (minecraft.level == null) return;
+        BlockState state = minecraft.level.getBlockState(pos);
+        if (state.getBlock() instanceof ResizableDisplayBlock) {
+            minecraft.setScreen(new DisplayWidthScreen(pos, state.getValue(ResizableDisplayBlock.WIDTH),
+                    Component.translatable(state.getBlock().getDescriptionId())));
         }
     }
 }

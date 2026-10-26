@@ -135,7 +135,8 @@ public final class SlideCanvas {
         rect(x, y, w, h, color, -0.1f);
     }
 
-    private void rect(float x, float y, float w, float h, int color, float z) {
+    // Прямоугольник на заданной глубине (единицы холста): больше - ближе к зрителю, текст на 0
+    public void rect(float x, float y, float w, float h, int color, float z) {
         int rectAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
         if (rectAlpha == 0) return;
         int r = (color >> 16) & 0xFF;
@@ -157,6 +158,11 @@ public final class SlideCanvas {
 
     // Закрашенный круг; чуть глубже текста, чтобы цифра на нём была видна
     public void circle(float centerX, float centerY, float radius, int color) {
+        circle(centerX, centerY, radius, color, -0.1f);
+    }
+
+    // Круг на заданной глубине (слои фона слайда: солнце глубже облаков)
+    public void circle(float centerX, float centerY, float radius, int color, float z) {
         int circleAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
         if (circleAlpha == 0) return;
         int r = (color >> 16) & 0xFF;
@@ -165,7 +171,6 @@ public final class SlideCanvas {
 
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
         Matrix4f pose = poseStack.last().pose();
-        float z = -0.1f;
         int segments = 24;
         for (int i = 0; i < segments; i++) {
             double a0 = Math.PI * 2 * i / segments;
@@ -190,6 +195,10 @@ public final class SlideCanvas {
     // Кольцо полосой между двумя радиусами на уровне текста. Не круг поверх круга:
     // две фигуры на одной глубине перемешиваются пятнами (z-fighting)
     public void ring(float centerX, float centerY, float outerRadius, float innerRadius, int color) {
+        ring(centerX, centerY, outerRadius, innerRadius, color, 0);
+    }
+
+    public void ring(float centerX, float centerY, float outerRadius, float innerRadius, int color, float z) {
         int ringAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
         if (ringAlpha == 0) return;
         int r = (color >> 16) & 0xFF;
@@ -208,12 +217,16 @@ public final class SlideCanvas {
                     centerX + c0 * outerRadius, centerY + s0 * outerRadius,
                     centerX + c1 * outerRadius, centerY + s1 * outerRadius,
                     centerX + c1 * innerRadius, centerY + s1 * innerRadius,
-                    centerX + c0 * innerRadius, centerY + s0 * innerRadius, r, g, b, ringAlpha);
+                    centerX + c0 * innerRadius, centerY + s0 * innerRadius, r, g, b, ringAlpha, z);
         }
     }
 
     // Отрезок заданной толщины одним повёрнутым прямоугольником (без ступенек)
     public void line(float x0, float y0, float x1, float y1, float thickness, int color) {
+        line(x0, y0, x1, y1, thickness, color, 0);
+    }
+
+    public void line(float x0, float y0, float x1, float y1, float thickness, int color, float z) {
         int lineAlpha = Math.round(((color >>> 24) & 0xFF) * alpha);
         float length = (float) Math.hypot(x1 - x0, y1 - y0);
         if (lineAlpha == 0 || length == 0) return;
@@ -222,7 +235,7 @@ public final class SlideCanvas {
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(WHITE));
         quad(consumer, poseStack.last().pose(),
                 x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny,
-                (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, lineAlpha);
+                (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, lineAlpha, z);
     }
 
     // Картинка целиком в прямоугольник (например, значок таблички MTR); flipX - зеркально по горизонтали
@@ -251,16 +264,16 @@ public final class SlideCanvas {
 
     // Четырёхугольник с обеих сторон (обход зависит от направления осей)
     private static void quad(VertexConsumer consumer, Matrix4f pose, float ax, float ay, float bx, float by,
-                             float cx, float cy, float dx, float dy, int r, int g, int b, int a) {
-        vertex(consumer, pose, ax, ay, 0, r, g, b, a);
-        vertex(consumer, pose, bx, by, 0, r, g, b, a);
-        vertex(consumer, pose, cx, cy, 0, r, g, b, a);
-        vertex(consumer, pose, dx, dy, 0, r, g, b, a);
+                             float cx, float cy, float dx, float dy, int r, int g, int b, int a, float z) {
+        vertex(consumer, pose, ax, ay, z, r, g, b, a);
+        vertex(consumer, pose, bx, by, z, r, g, b, a);
+        vertex(consumer, pose, cx, cy, z, r, g, b, a);
+        vertex(consumer, pose, dx, dy, z, r, g, b, a);
 
-        vertex(consumer, pose, dx, dy, 0, r, g, b, a);
-        vertex(consumer, pose, cx, cy, 0, r, g, b, a);
-        vertex(consumer, pose, bx, by, 0, r, g, b, a);
-        vertex(consumer, pose, ax, ay, 0, r, g, b, a);
+        vertex(consumer, pose, dx, dy, z, r, g, b, a);
+        vertex(consumer, pose, cx, cy, z, r, g, b, a);
+        vertex(consumer, pose, bx, by, z, r, g, b, a);
+        vertex(consumer, pose, ax, ay, z, r, g, b, a);
     }
 
     private static void vertex(VertexConsumer consumer, Matrix4f pose, float x, float y, float z, int r, int g, int b, int a) {

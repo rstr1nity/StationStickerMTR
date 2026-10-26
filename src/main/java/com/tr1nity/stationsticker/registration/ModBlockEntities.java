@@ -3,6 +3,7 @@ package com.tr1nity.stationsticker.registration;
 import com.tr1nity.stationsticker.StationStickerMod;
 import com.tr1nity.stationsticker.block.entity.ArrivalDisplayBlockEntity;
 import com.tr1nity.stationsticker.block.entity.DirectionSignBlockEntity;
+import com.tr1nity.stationsticker.block.entity.InfoDisplayBlockEntity;
 import com.tr1nity.stationsticker.block.entity.LineSchemeEntity;
 import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
 import com.tr1nity.stationsticker.block.entity.StationStickerBlockEntity;
@@ -42,6 +43,13 @@ public class ModBlockEntities {
                     () -> BlockEntityType.Builder.of(
                             DirectionSignBlockEntity::new,
                             ModBlocks.DIRECTION_SIGN.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<InfoDisplayBlockEntity>> INFO_DISPLAY =
+            BLOCK_ENTITIES.register("info_display",
+                    () -> BlockEntityType.Builder.of(
+                            InfoDisplayBlockEntity::new,
+                            ModBlocks.INFO_DISPLAY.get()
                     ).build(null));
 
     public static final RegistryObject<BlockEntityType<NavSignBlockEntity>> NAV_SIGN =
