@@ -15,7 +15,7 @@ public final class TransferSignBoard {
 
     private static final float CENTER_Y = DESIGN_HEIGHT / 2;
     private static final float ARROW_SCALE = 2.2f;
-    private static final float PICTOGRAM_SCALE = 1.6f;
+    private static final float PICTOGRAM_HEIGHT = 24;
     private static final float CIRCLE_RADIUS = 9;
     private static final float GAP = 4;
     private static final float HEADER_Y = 3;
@@ -29,39 +29,6 @@ public final class TransferSignBoard {
     private static final int SECONDARY_COLOR = 0xFF5A5A5A;
     private static final int NUMBER_COLOR = 0xFFFFFFFF;
     private static final String KEY = "display.stationsticker.nav_sign.";
-
-    // Стрелка влево 8x7; остальные направления получаются поворотом
-    private static final String[] ARROW_LEFT = {
-            "...#....",
-            "..##....",
-            ".#######",
-            "########",
-            ".#######",
-            "..##....",
-            "...#...."};
-
-    // Человек идёт вправо 12x7; вариант с лестницей добавляет ступени снизу справа
-    private static final String[] PERSON = {
-            "...##.......",
-            "...##.......",
-            "..####......",
-            ".#.##.#.....",
-            "...##.......",
-            "..#..#......",
-            ".#....#....."};
-
-    private static final String[] STAIRS = {
-            "...##.......",
-            "...##.......",
-            "..####......",
-            ".#.##.#.....",
-            "...##.......",
-            "..#..#......",
-            ".#....#.....",
-            "..........##",
-            "........####",
-            "......######",
-            "....########"};
 
     private TransferSignBoard() {
     }
@@ -83,21 +50,22 @@ public final class TransferSignBoard {
         String[] arrowBitmap = arrowBitmap(arrow);
         String[] pictogram = switch (sign.getPictogram()) {
             case NONE -> null;
-            case PERSON -> PERSON;
-            case STAIRS -> STAIRS;
+            case PERSON -> Pictograms.PERSON;
+            case STAIRS -> Pictograms.STAIRS;
         };
 
         // Элементы от края со стрелкой к тексту: стрелка, пиктограмма, кружок
         float arrowWidth = arrowBitmap[0].length() * ARROW_SCALE;
-        float pictogramWidth = pictogram == null ? 0 : pictogram[0].length() * PICTOGRAM_SCALE;
+        float pictogramScale = pictogram == null ? 0 : PICTOGRAM_HEIGHT / pictogram.length;
+        float pictogramWidth = pictogram == null ? 0 : pictogram[0].length() * pictogramScale;
         float cursor = 0;
         drawAt(canvas, mirrored, cursor, arrowWidth, x ->
-                drawBitmap(canvas, arrowBitmap, x, CENTER_Y - arrowBitmap.length * ARROW_SCALE / 2, ARROW_SCALE, TEXT_COLOR, false));
+                Pictograms.draw(canvas, arrowBitmap, x, CENTER_Y - arrowBitmap.length * ARROW_SCALE / 2, ARROW_SCALE, TEXT_COLOR, false));
         cursor += arrowWidth + GAP;
         if (pictogram != null) {
             // Человек идёт в сторону стрелки
             drawAt(canvas, mirrored, cursor, pictogramWidth, x ->
-                    drawBitmap(canvas, pictogram, x, CENTER_Y - pictogram.length * PICTOGRAM_SCALE / 2, PICTOGRAM_SCALE, TEXT_COLOR, !mirrored));
+                    Pictograms.draw(canvas, pictogram, x, CENTER_Y - PICTOGRAM_HEIGHT / 2, pictogramScale, TEXT_COLOR, !mirrored));
             cursor += pictogramWidth + GAP;
         }
         drawAt(canvas, mirrored, cursor, CIRCLE_RADIUS * 2, x -> drawLineCircle(canvas, x + CIRCLE_RADIUS, transfer));
@@ -145,44 +113,10 @@ public final class TransferSignBoard {
 
     private static String[] arrowBitmap(Arrow arrow) {
         return switch (arrow) {
-            case LEFT -> ARROW_LEFT;
-            case RIGHT -> mirror(ARROW_LEFT);
-            case UP -> transpose(ARROW_LEFT);
-            case DOWN -> flipVertical(transpose(ARROW_LEFT));
+            case LEFT -> Pictograms.ARROW_LEFT;
+            case RIGHT -> Pictograms.mirror(Pictograms.ARROW_LEFT);
+            case UP -> Pictograms.transpose(Pictograms.ARROW_LEFT);
+            case DOWN -> Pictograms.flipVertical(Pictograms.transpose(Pictograms.ARROW_LEFT));
         };
-    }
-
-    private static void drawBitmap(SlideCanvas canvas, String[] rows, float x, float y, float scale, int color, boolean mirror) {
-        for (int row = 0; row < rows.length; row++) {
-            String line = mirror ? new StringBuilder(rows[row]).reverse().toString() : rows[row];
-            for (int col = 0; col < line.length(); col++) {
-                if (line.charAt(col) == '#') {
-                    // Чуть больше шага, чтобы между «пикселями» не было щелей
-                    canvas.rect(x + col * scale, y + row * scale, scale * 1.02f, scale * 1.02f, color);
-                }
-            }
-        }
-    }
-
-    private static String[] mirror(String[] rows) {
-        String[] result = new String[rows.length];
-        for (int i = 0; i < rows.length; i++) result[i] = new StringBuilder(rows[i]).reverse().toString();
-        return result;
-    }
-
-    private static String[] flipVertical(String[] rows) {
-        String[] result = new String[rows.length];
-        for (int i = 0; i < rows.length; i++) result[i] = rows[rows.length - 1 - i];
-        return result;
-    }
-
-    private static String[] transpose(String[] rows) {
-        String[] result = new String[rows[0].length()];
-        for (int col = 0; col < rows[0].length(); col++) {
-            StringBuilder builder = new StringBuilder();
-            for (String row : rows) builder.append(row.charAt(col));
-            result[col] = builder.toString();
-        }
-        return result;
     }
 }
