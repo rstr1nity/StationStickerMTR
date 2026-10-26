@@ -21,6 +21,7 @@ public class ModTabs {
                         output.accept(ModBlocks.STATION_STICKER.get());
                         output.accept(ModBlocks.LINE_SCHEME.get());
                         output.accept(ModBlocks.ARRIVAL_DISPLAY.get());
+                        output.accept(ModBlocks.DIRECTION_SIGN.get());
                     })
                     .build());
 }

@@ -1,5 +1,6 @@
 package com.tr1nity.stationsticker.client.display;
 
+import com.tr1nity.stationsticker.client.SPBRouteMapGenerator;
 import net.minecraft.client.Minecraft;
 
 // Названия в MTR хранятся по языкам через '|', например "Курская|Kurskaya".
@@ -18,6 +19,17 @@ public final class StationNames {
             }
         }
         return parts.length == 0 ? name : parts[0].trim();
+    }
+
+    // Подпись мелким шрифтом под основным названием: другой язык из MTR, иначе транслит русского названия
+    public static String secondary(String name) {
+        String primary = forCurrentLanguage(name);
+        for (String part : name.split("\\|")) {
+            if (!part.isBlank() && !part.trim().equals(primary)) {
+                return part.trim();
+            }
+        }
+        return hasCyrillic(primary) ? SPBRouteMapGenerator.transliterate(primary) : "";
     }
 
     private static boolean hasCyrillic(String text) {

@@ -536,7 +536,7 @@ public class SPBRouteMapGenerator implements IGui {
         }
     }
 
-    private static String transliterate(String text) {
+    public static String transliterate(String text) {
         char[] rus = {'а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ','ъ','ы','ь','э','ю','я'};
         String[] eng = {"a","b","v","g","d","e","yo","zh","z","i","y","k","l","m","n","o","p","r","s","t","u","f","kh","ts","ch","sh","sch","","y","","e","yu","ya"};
 

@@ -28,6 +28,10 @@ public class ClientModEvents {
                 ModBlockEntities.ARRIVAL_DISPLAY.get(),
                 ArrivalDisplayRenderer::new
         );
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.DIRECTION_SIGN.get(),
+                DirectionSignRenderer::new
+        );
     }
 
 

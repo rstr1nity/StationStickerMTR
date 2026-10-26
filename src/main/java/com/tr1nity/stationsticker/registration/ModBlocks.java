@@ -2,6 +2,7 @@ package com.tr1nity.stationsticker.registration;
 
 import com.tr1nity.stationsticker.StationStickerMod;
 import com.tr1nity.stationsticker.block.ArrivalDisplayBlock;
+import com.tr1nity.stationsticker.block.DirectionSignBlock;
 import com.tr1nity.stationsticker.block.DisplayPartBlock;
 import com.tr1nity.stationsticker.block.LineSchemeBlock;
 import com.tr1nity.stationsticker.block.LineSchemePartBlock;
@@ -35,6 +36,9 @@ public class ModBlocks {
 
     public static final RegistryObject<ArrivalDisplayBlock> ARRIVAL_DISPLAY =
             registerBlock("arrival_display", ArrivalDisplayBlock::new);
+
+    public static final RegistryObject<DirectionSignBlock> DIRECTION_SIGN =
+            registerBlock("direction_sign", DirectionSignBlock::new);
 
     // Без предмета: невидимые клетки широких экранов, ставятся самим экраном
     public static final RegistryObject<DisplayPartBlock> DISPLAY_PART =

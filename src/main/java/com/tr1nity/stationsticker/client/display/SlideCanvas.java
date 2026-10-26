@@ -56,6 +56,15 @@ public final class SlideCanvas {
         drawFitted(Component.literal(text), x, y, scale, color, x, true);
     }
 
+    // То же с явной максимальной шириной (например, половина экрана)
+    public void text(String text, float x, float y, float scale, int color, float maxWidth) {
+        drawFitted(Component.literal(text), x, y, scale, color, maxWidth, false);
+    }
+
+    public void textRight(String text, float x, float y, float scale, int color, float maxWidth) {
+        drawFitted(Component.literal(text), x, y, scale, color, maxWidth, true);
+    }
+
     private static Component bold(String text) {
         return Component.literal(text).withStyle(ChatFormatting.BOLD);
     }
