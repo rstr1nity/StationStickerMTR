@@ -16,7 +16,7 @@ import java.util.List;
 // Если выход выбран только с одной стороны, он занимает всю табличку.
 public final class ExitSignBoard {
 
-    public static final float DESIGN_HEIGHT = 44;
+    public static final float DESIGN_HEIGHT = 48;
 
     private static final float ARROW_SCALE = 1.0f;     // стрелка 13x10 клеток
     private static final float NAME_SCALE = 1.3f;
@@ -24,10 +24,11 @@ public final class ExitSignBoard {
     private static final float SECONDARY_SCALE = 0.65f;
     private static final float BOX_HEIGHT = 11;
     private static final float BOX_SCALE = 1.1f;
-    private static final float LIST_Y = 18.5f;
-    private static final float LIST_ROW = 8.4f;
+    private static final float LIST_Y = 18;
+    private static final float LIST_ROW = 9.6f;
     private static final float ICON_SIZE = 7;
     private static final float ITEM_SCALE = 0.7f;
+    private static final float ITEM_SECONDARY_Y = 6.4f;   // ниже хвостов кириллицы (Ц, Р, у)
     private static final float ITEM_SECONDARY_SCALE = 0.45f;
     private static final float GAP = 3;
 
@@ -106,7 +107,7 @@ public final class ExitSignBoard {
             float itemEdge = rightSide ? listEdge - iconWidth : listEdge + iconWidth;
             float itemWidth = rightSide ? itemEdge - x0 : x1 - itemEdge;
             text(canvas, StationNames.primary(item), itemEdge, y, ITEM_SCALE, TEXT_COLOR, itemWidth, rightSide);
-            text(canvas, StationNames.secondary(item), itemEdge, y + 5, ITEM_SECONDARY_SCALE, SECONDARY_COLOR, itemWidth, rightSide);
+            text(canvas, StationNames.secondary(item), itemEdge, y + ITEM_SECONDARY_Y, ITEM_SECONDARY_SCALE, SECONDARY_COLOR, itemWidth, rightSide);
         }
     }
 
