@@ -59,14 +59,15 @@ public final class ArrivalBoard {
         }
         canvas.boldText("Поезд прибывает через", 0, CAPTION_Y, 1, TEXT_DIM_COLOR);
 
-        // Крупные жирные цифры, мелкие подписи по базовой линии цифр
+        // Крупные цифры, мелкие подписи по базовой линии цифр.
+        // Цифры не жирные: жирный шрифт Minecraft - глиф со сдвигом на пиксель, при увеличении дырки в «0» и «8» слипаются.
         float x = timerPart(canvas, 0, String.format("%02d", seconds / 60), "мин");
         timerPart(canvas, x + 6, String.format("%02d", seconds % 60), "сек");
     }
 
     private static float timerPart(SlideCanvas canvas, float x, String digits, String unit) {
-        canvas.boldText(digits, x, TIMER_Y, DIGIT_SCALE, TEXT_COLOR);
-        x += canvas.boldTextWidth(digits, DIGIT_SCALE) + 1.5f;
+        canvas.text(digits, x, TIMER_Y, DIGIT_SCALE, TEXT_COLOR);
+        x += canvas.textWidth(digits, DIGIT_SCALE) + 1.5f;
         canvas.text(unit, x, TIMER_BASELINE - GLYPH_HEIGHT * UNIT_SCALE, UNIT_SCALE, TEXT_COLOR);
         return x + canvas.textWidth(unit, UNIT_SCALE);
     }
