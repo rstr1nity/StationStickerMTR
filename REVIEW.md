@@ -16,7 +16,7 @@
 
 ## B. Мусор и плейсхолдеры
 
-8. Пакет `com.yourname.stationsticker` и `group = 'com.yourname...'` переименовать до публичного релиза (меняется везде: java, `mods.toml`, `mixins.json`, импорты).
+8. ✅ (`com.tr1nity.stationsticker`) Пакет `com.yourname.stationsticker` и `group = 'com.yourname...'` переименовать до публичного релиза (меняется везде: java, `mods.toml`, `mixins.json`, импорты).
 9. ✅ `src/main/resources/stationsticker.mixins.json` пустой, не подключён, ссылается на несуществующие `refmap` и пакет `mixin`. Удалить.
 10. ✅ `README.txt`, `CREDITS.txt`, `LICENSE.txt`, `changelog.txt` (47 КБ) взяты из Forge MDK. `LICENSE.txt` - лицензия Forge, а в `mods.toml` указано `license="All rights reserved"` и отдельно `license="MIT"`. Определиться с лицензией, положить свой LICENSE и написать README про аддон.
 11. ✅ (в 1.19.2 то же было в `StationStickerMod.java`) `client/ClientModEvents.java`: в начале файла закомментированный старый вариант класса, удалить. Убрать оставшиеся комментарии вида `// ← ДОБАВИТЬ ЭТОТ ИМПОРТ`, `// ИЗМЕНЕНО С true НА false!`.
@@ -50,7 +50,7 @@
 24. ✅ **Схема на платформе без маршрутов перегенерируется каждый кадр.** `SPBRouteMapGenerator.generateRouteMap`, ветка `routeCount == 0`: картинка 1x1 создаётся, но не возвращается, метод отдаёт `null`. `SPBDynamicTextureCache.getResource` такой результат не кэширует и на следующем кадре снова ставит задачу генерации. Вернуть созданную картинку (`return nativeImage;`).
 25. ✅ **`setConstants()` вызывается после постановки задачи в рабочий поток** (`SPBDynamicTextureCache.getResource`). Первая генерация может пройти с `scale = 0`, получить `width = 0` и вернуть `null` (см. п. 24). Перенести вызов перед `scheduleDynamicTextures`.
 26. ✅ **Названия с точкой, апострофом и т.п. рисуются дважды.** `isEnglishOnly = stationName.matches("[A-Za-z0-9\\s\\-]+")`: для «St. Petersburg» это `false`, имя считается русским, транслит возвращает ту же строку, и она рисуется и сверху, и снизу. Проверять наличие кириллицы, а не только латиницы.
-27. **Все кружки станций окрашены в цвет первого маршрута** (`routeDetails.get(0)`), даже если через платформу идут маршруты разных цветов. В коде помечено как упрощение. Решить, нужно ли.
+27. ✅ (так задумано: кружок в цвет линии схемы, секторы — пересадочные линии) **Все кружки станций окрашены в цвет первого маршрута** (`routeDetails.get(0)`), даже если через платформу идут маршруты разных цветов. В коде помечено как упрощение. Решить, нужно ли.
 28. **Размеры в пикселях не зависят от `scale`.** Смещения текста (`x+22`, `x-20`), стрелки (20/10/50) и отступы (30/40) заданы в пикселях, а `scale` зависит от настройки MTR «разрешение динамических текстур». При другой настройке подписи и стрелки съедут. Выразить через `lineSize`/`scale`.
 29. ✅ Мёртвый код:
     - в `SPBRouteMapGenerator`: `drawString`, `drawStringPixelated`, `drawResource`, `getStationName`, константы `*_RESOURCE`, `TEMP_CIRCULAR_MARKER_*`, `PIXEL_RESOLUTION`, поле `interchangeNames`, дублированный javadoc, пустые строки, комментарии-инструкции;
