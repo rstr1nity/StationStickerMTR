@@ -2,6 +2,7 @@ package com.yourname.stationsticker.registration;
 
 import com.yourname.stationsticker.StationStickerMod;
 import com.yourname.stationsticker.block.LineSchemeBlock;
+import com.yourname.stationsticker.block.LineSchemePartBlock;
 import com.yourname.stationsticker.block.StationStickerBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -25,6 +26,10 @@ public class ModBlocks {
 
     public static final RegistryObject<LineSchemeBlock> LINE_SCHEME =
             registerBlock("line_scheme", LineSchemeBlock::new);
+
+    // Без предмета: ставится только самой схемой линии
+    public static final RegistryObject<LineSchemePartBlock> LINE_SCHEME_PART =
+            BLOCKS.register("line_scheme_part", LineSchemePartBlock::new);
 
     // ВАЖНО: ЗДЕСЬ БОЛЬШЕ НЕТ ПЕРЕМЕННОЙ STICKER_TAB! Удалите её.
 

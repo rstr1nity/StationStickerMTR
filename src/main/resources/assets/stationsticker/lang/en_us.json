@@ -3,5 +3,6 @@
   "item.stationsticker.station_sticker": "Station Sticker",
   "block.stationsticker.line_scheme": "Line Scheme",
   "item.stationsticker.line_scheme": "Line Scheme",
+  "block.stationsticker.line_scheme_part": "Line Scheme",
   "itemGroup.stationsticker_tab": "Station Stickers"
 }
