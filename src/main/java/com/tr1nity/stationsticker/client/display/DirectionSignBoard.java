@@ -1,5 +1,6 @@
 package com.tr1nity.stationsticker.client.display;
 
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import org.mtr.core.data.Platform;
@@ -12,33 +13,44 @@ import org.mtr.mod.InitClient;
 import org.mtr.mod.client.MinecraftClientData;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 // Указатель направлений в стиле навигации Московского метро:
-//   <- (6) Новоясеневская              Медведково (6) ->
-//          Novoyasenevskaya             Medvedkovo
-//   ------------------------------------------------
-//                  (5) (2) (8)  - пересадки
-// Слева и справа - ближайшие платформы станции с соответствующей стороны от зрителя.
+//   <- (7) Котельники                   |                  Планерная (7) ->
+//          Kotelniki                    |                  Planernaya
+//   Кузнецкий Мост (1)  Китай-город (6) | Баррикадная (5)  Улица 1905 года
+//   Таганская (5)(8)    Пролетарская    | Беговая          Полежаевская
+// Слева и справа - ближайшие платформы станции с соответствующей стороны от зрителя: конечная крупно,
+// под ней следующие станции маршрута с пересадками. Если поезда здесь только заканчивают маршрут -
+// «Посадки нет».
 public final class DirectionSignBoard {
 
-    public static final float DESIGN_HEIGHT = 42;
+    public static final float DESIGN_HEIGHT = 44;
 
-    private static final float NAME_SCALE = 1.6f;
-    private static final float SECONDARY_Y = 15;
-    private static final float SECONDARY_SCALE = 0.9f;
-    private static final float DIVIDER_Y = 27;
-    private static final float TRANSFER_Y = 36;      // центр кружков пересадок
+    private static final float ARROW_SCALE = 1.6f;
     private static final float LINE_RADIUS = 6;
-    private static final float TRANSFER_RADIUS = 5;
-    private static final float ARROW_WIDTH = 12;
+    private static final float NAME_SCALE = 1.4f;
+    private static final float SECONDARY_Y = 11;
+    private static final float SECONDARY_SCALE = 0.65f;
+    private static final float LIST_Y = 20;
+    private static final float LIST_ROW = 12;
+    private static final int LIST_ROWS = 2;
+    private static final float LIST_NAME_SCALE = 0.75f;
+    private static final float LIST_SECONDARY_SCALE = 0.5f;
+    private static final float COLUMN_WIDTH = 62;
+    private static final float DOT_RADIUS = 2.2f;
     private static final float GAP = 3;
 
     private static final int TEXT_COLOR = 0xFF1A1A1A;
     private static final int SECONDARY_COLOR = 0xFF5A5A5A;
     private static final int DIVIDER_COLOR = 0xFFB8B8B8;
     private static final int NUMBER_COLOR = 0xFFFFFFFF;
+    private static final int NO_BOARDING_COLOR = 0xFFE0322A;
+    private static final int SCREEN_COLOR = 0xFFF4F4F2;
+    private static final String KEY = "display.stationsticker.arrival.";
 
-    private record Direction2(String terminal, String number, int color) {
+    // Направление с платформы: маршрут и индекс этой остановки в нём; route == null - поезда здесь только заканчивают маршрут
+    private record Side(@Nullable SimplifiedRoute route, int index) {
     }
 
     private DirectionSignBoard() {
@@ -74,65 +86,106 @@ public final class DirectionSignBoard {
             }
         }
 
-        IntArrayList ownColors = new IntArrayList();
-        Direction2 leftDirection = left == null ? null : directionOf(left.getId());
-        Direction2 rightDirection = right == null ? null : directionOf(right.getId());
-        if (leftDirection != null) {
-            drawSide(canvas, leftDirection, false);
-            ownColors.add(leftDirection.color);
-        }
-        if (rightDirection != null) {
-            drawSide(canvas, rightDirection, true);
-            ownColors.add(rightDirection.color);
-        }
-
-        canvas.rect(0, DIVIDER_Y, canvas.width, 0.6f, DIVIDER_COLOR);
-        drawTransfers(canvas, left != null ? left.getId() : right != null ? right.getId() : 0, ownColors);
+        float halfWidth = canvas.width / 2;
+        canvas.rect(halfWidth - 0.3f, 1, 0.6f, DESIGN_HEIGHT - 2, DIVIDER_COLOR);
+        Side leftSide = left == null ? null : sideOf(left.getId());
+        Side rightSide = right == null ? null : sideOf(right.getId());
+        if (leftSide != null) drawSide(canvas, leftSide, 0, halfWidth - GAP * 2, false);
+        if (rightSide != null) drawSide(canvas, rightSide, halfWidth + GAP * 2, canvas.width, true);
     }
 
-    // Направление с платформы: первый маршрут, который идёт дальше этой станции
     @Nullable
-    private static Direction2 directionOf(long platformId) {
+    private static Side sideOf(long platformId) {
+        boolean terminating = false;
         for (SimplifiedRoute route : MinecraftClientData.getInstance().simplifiedRoutes) {
             int index = route.getPlatformIndex(platformId);
-            if (index < 0 || index >= route.getPlatforms().size() - 1) continue;
-            String terminal = route.getPlatforms().get(route.getPlatforms().size() - 1).getStationName();
-            Route fullRoute = MinecraftClientData.getInstance().routeIdMap.get(route.getId());
-            String number = fullRoute == null ? "" : fullRoute.getRouteNumber();
-            return new Direction2(terminal, number, route.getColor());
+            if (index < 0) continue;
+            if (index < route.getPlatforms().size() - 1) return new Side(route, index);
+            terminating = true;
         }
-        return null;
+        return terminating ? new Side(null, -1) : null;
     }
 
-    private static void drawSide(SlideCanvas canvas, Direction2 direction, boolean rightSide) {
-        float half = canvas.width / 2 - GAP * 2;
-        String name = StationNames.forCurrentLanguage(direction.terminal);
-        String secondary = StationNames.secondary(direction.terminal);
-        float circleY = NAME_SCALE * 7 / 2 + 1;
+    // Половина экрана от x0 до x1; rightSide - стрелка и заголовок у правого края
+    private static void drawSide(SlideCanvas canvas, Side side, float x0, float x1, boolean rightSide) {
+        if (side.route == null) {
+            drawNoBoarding(canvas, x0, x1, rightSide);
+            return;
+        }
 
-        if (!rightSide) {
-            drawArrow(canvas, 0, circleY, false);
-            float circleX = ARROW_WIDTH + GAP + LINE_RADIUS;
-            drawLineCircle(canvas, circleX, circleY, LINE_RADIUS, direction);
-            float textX = circleX + LINE_RADIUS + GAP;
-            canvas.text(name, textX, 1, NAME_SCALE, TEXT_COLOR, half - textX);
-            canvas.text(secondary, textX, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, half - textX);
+        List<SimplifiedRoutePlatform> stops = side.route.getPlatforms();
+        String terminal = stops.get(stops.size() - 1).getStationName();
+        String number = routeNumber(side.route);
+        float centerY = NAME_SCALE * 7 / 2 + 1;
+
+        String[] arrow = rightSide ? Pictograms.mirror(Pictograms.ARROW_LEFT) : Pictograms.ARROW_LEFT;
+        float arrowWidth = arrow[0].length() * ARROW_SCALE;
+        float arrowX = rightSide ? x1 - arrowWidth : x0;
+        Pictograms.draw(canvas, arrow, arrowX, centerY - arrow.length * ARROW_SCALE / 2, ARROW_SCALE, TEXT_COLOR, false);
+
+        float circleX = rightSide ? arrowX - GAP - LINE_RADIUS : arrowX + arrowWidth + GAP + LINE_RADIUS;
+        numberCircle(canvas, circleX, centerY, LINE_RADIUS, side.route.getColor(), number);
+
+        float textEdge = rightSide ? circleX - LINE_RADIUS - GAP : circleX + LINE_RADIUS + GAP;
+        float maxWidth = rightSide ? textEdge - x0 : x1 - textEdge;
+        if (rightSide) {
+            canvas.textRight(StationNames.forCurrentLanguage(terminal), textEdge, 0, NAME_SCALE, TEXT_COLOR, maxWidth);
+            canvas.textRight(StationNames.secondary(terminal), textEdge, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, maxWidth);
         } else {
-            drawArrow(canvas, canvas.width - ARROW_WIDTH, circleY, true);
-            float circleX = canvas.width - ARROW_WIDTH - GAP - LINE_RADIUS;
-            drawLineCircle(canvas, circleX, circleY, LINE_RADIUS, direction);
-            float textRight = circleX - LINE_RADIUS - GAP;
-            float maxWidth = textRight - (canvas.width - half);
-            canvas.textRight(name, textRight, 1, NAME_SCALE, TEXT_COLOR, maxWidth);
-            canvas.textRight(secondary, textRight, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, maxWidth);
+            canvas.text(StationNames.forCurrentLanguage(terminal), textEdge, 0, NAME_SCALE, TEXT_COLOR, maxWidth);
+            canvas.text(StationNames.secondary(terminal), textEdge, SECONDARY_Y, SECONDARY_SCALE, SECONDARY_COLOR, maxWidth);
+        }
+
+        // Следующие станции по столбцам сверху вниз, слева направо; конечная уже в заголовке
+        int columns = Math.max(1, (int) ((x1 - x0) / COLUMN_WIDTH));
+        float columnWidth = (x1 - x0) / columns;
+        int capacity = columns * LIST_ROWS;
+        int shown = 0;
+        for (int i = side.index + 1; i < stops.size() - 1 && shown < capacity; i++, shown++) {
+            float itemX = x0 + (shown / LIST_ROWS) * columnWidth;
+            float itemY = LIST_Y + (shown % LIST_ROWS) * LIST_ROW;
+            drawStop(canvas, stops.get(i), side.route.getColor(), itemX, itemY, columnWidth - GAP);
         }
     }
 
-    private static void drawLineCircle(SlideCanvas canvas, float x, float y, float radius, Direction2 direction) {
-        drawNumberCircle(canvas, x, y, radius, direction.color, direction.number);
+    private static void drawStop(SlideCanvas canvas, SimplifiedRoutePlatform stop, int lineColor, float x, float y, float width) {
+        IntArrayList colors = new IntArrayList();
+        stop.forEach((color, routeNames) -> {
+            if (color != lineColor && !colors.contains((int) color)) colors.add(color);
+        });
+        float dotsWidth = colors.size() * (DOT_RADIUS * 2 + 0.8f);
+        String name = StationNames.forCurrentLanguage(stop.getStationName());
+        float nameWidth = Math.min(canvas.textWidth(name, LIST_NAME_SCALE), width - dotsWidth - 1);
+        canvas.text(name, x, y, LIST_NAME_SCALE, TEXT_COLOR, width - dotsWidth - 1);
+        canvas.text(StationNames.secondary(stop.getStationName()), x, y + 6.5f, LIST_SECONDARY_SCALE, SECONDARY_COLOR, width);
+
+        float dotX = x + nameWidth + 1 + DOT_RADIUS;
+        for (int i = 0; i < colors.size(); i++) {
+            int color = colors.getInt(i);
+            numberCircle(canvas, dotX, y + 2.6f, DOT_RADIUS, color, numberForColor(color));
+            dotX += DOT_RADIUS * 2 + 0.8f;
+        }
     }
 
-    private static void drawNumberCircle(SlideCanvas canvas, float x, float y, float radius, int color, String number) {
+    private static void drawNoBoarding(SlideCanvas canvas, float x0, float x1, boolean rightSide) {
+        float radius = 9;
+        float centerY = DESIGN_HEIGHT / 2;
+        float iconX = rightSide ? x1 - radius : x0 + radius;
+        Pictograms.noBoarding(canvas, iconX, centerY, radius, NO_BOARDING_COLOR, SCREEN_COLOR);
+        String text = I18n.get(KEY + "no_boarding");
+        String secondary = I18n.get(KEY + "no_boarding_secondary");
+        if (rightSide) {
+            float edge = iconX - radius - GAP;
+            canvas.textRight(text, edge, centerY - 9, 1.3f, NO_BOARDING_COLOR, edge - x0);
+            canvas.textRight(secondary, edge, centerY + 2, 0.9f, NO_BOARDING_COLOR, edge - x0);
+        } else {
+            float edge = iconX + radius + GAP;
+            canvas.text(text, edge, centerY - 9, 1.3f, NO_BOARDING_COLOR, x1 - edge);
+            canvas.text(secondary, edge, centerY + 2, 0.9f, NO_BOARDING_COLOR, x1 - edge);
+        }
+    }
+
+    private static void numberCircle(SlideCanvas canvas, float x, float y, float radius, int color, String number) {
         canvas.circle(x, y, radius, 0xFF000000 | color);
         if (!number.isEmpty()) {
             float scale = Math.min(radius / 6, radius * 1.4f / canvas.boldTextWidth(number, 1));
@@ -140,39 +193,9 @@ public final class DirectionSignBoard {
         }
     }
 
-    // Стрелка «пикселями»: древко и треугольный наконечник из столбиков
-    private static void drawArrow(SlideCanvas canvas, float x, float centerY, boolean pointRight) {
-        float thickness = 1.6f;
-        float head = 5;
-        canvas.rect(x + (pointRight ? 0 : head - 1), centerY - thickness / 2, ARROW_WIDTH - head + 1, thickness, TEXT_COLOR);
-        for (int i = 0; i < head; i++) {
-            float columnX = pointRight ? x + ARROW_WIDTH - 1 - i : x + i;
-            float halfHeight = i + 0.8f;
-            canvas.rect(columnX, centerY - halfHeight, 1, halfHeight * 2, TEXT_COLOR);
-        }
-    }
-
-    // Линии, на которые можно пересесть на этой станции (кроме своих)
-    private static void drawTransfers(SlideCanvas canvas, long platformId, IntArrayList ownColors) {
-        if (platformId == 0) return;
-        IntArrayList colors = new IntArrayList();
-        for (SimplifiedRoute route : MinecraftClientData.getInstance().simplifiedRoutes) {
-            int index = route.getPlatformIndex(platformId);
-            if (index < 0) continue;
-            SimplifiedRoutePlatform stop = route.getPlatforms().get(index);
-            stop.forEach((color, routeNames) -> {
-                if (!ownColors.contains(color) && !colors.contains(color)) {
-                    colors.add(color);
-                }
-            });
-        }
-
-        float step = TRANSFER_RADIUS * 2 + 2;
-        float x = canvas.width / 2 - (colors.size() - 1) * step / 2;
-        for (int i = 0; i < colors.size(); i++) {
-            int color = colors.getInt(i);
-            drawNumberCircle(canvas, x + i * step, TRANSFER_Y, TRANSFER_RADIUS, color, numberForColor(color));
-        }
+    private static String routeNumber(SimplifiedRoute route) {
+        Route full = MinecraftClientData.getInstance().routeIdMap.get(route.getId());
+        return full == null ? "" : full.getRouteNumber();
     }
 
     // Номер линии по цвету: у пересадки известны только цвет и названия маршрутов
