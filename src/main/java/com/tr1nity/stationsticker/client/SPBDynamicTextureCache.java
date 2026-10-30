@@ -45,6 +45,7 @@ public class SPBDynamicTextureCache implements IGui {
     }
 
     public void tick() {
+        resourceRegistryQueue.process(Runnable::run);
         final ObjectArrayList<String> keysToRemove = new ObjectArrayList<>();
         final long currentTimeMillis = System.currentTimeMillis();
         dynamicResources.forEach((checkKey, checkDynamicResource) -> {
