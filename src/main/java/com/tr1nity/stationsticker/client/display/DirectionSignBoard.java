@@ -65,6 +65,10 @@ public final class DirectionSignBoard {
         double centerX = mainPos.getX() + 0.5 + partAxis.getStepX() * half;
         double centerZ = mainPos.getZ() + 0.5 + partAxis.getStepZ() * half;
 
+        Side leftBoarding = null;
+        Side rightBoarding = null;
+        double leftBoardingDistance = Double.MAX_VALUE;
+        double rightBoardingDistance = Double.MAX_VALUE;
         Platform left = null;
         Platform right = null;
         double leftDistance = Double.MAX_VALUE;
@@ -75,6 +79,16 @@ public final class DirectionSignBoard {
             double dz = platform.getMidPosition().getZ() + 0.5 - centerZ;
             double side = dx * rightAxis.getStepX() + dz * rightAxis.getStepZ();
             double distance = dx * dx + dz * dz;
+            Side candidate = sideOf(platform.getId());
+            if (candidate != null && candidate.route != null) {
+                if (side < 0 && distance < leftBoardingDistance) {
+                    leftBoarding = candidate;
+                    leftBoardingDistance = distance;
+                } else if (side >= 0 && distance < rightBoardingDistance) {
+                    rightBoarding = candidate;
+                    rightBoardingDistance = distance;
+                }
+            }
             if (side < 0 && distance < leftDistance) {
                 left = platform;
                 leftDistance = distance;
@@ -86,8 +100,8 @@ public final class DirectionSignBoard {
 
         float halfWidth = canvas.width / 2;
         canvas.rect(halfWidth - 0.3f, 1, 0.6f, DESIGN_HEIGHT - 2, DIVIDER_COLOR);
-        Side leftSide = left == null ? null : sideOf(left.getId());
-        Side rightSide = right == null ? null : sideOf(right.getId());
+        Side leftSide = leftBoarding != null ? leftBoarding : left == null ? null : sideOf(left.getId());
+        Side rightSide = rightBoarding != null ? rightBoarding : right == null ? null : sideOf(right.getId());
         if (leftSide != null) drawSide(canvas, leftSide, 0, halfWidth - GAP * 2, false);
         if (rightSide != null) drawSide(canvas, rightSide, halfWidth + GAP * 2, canvas.width, true);
     }
