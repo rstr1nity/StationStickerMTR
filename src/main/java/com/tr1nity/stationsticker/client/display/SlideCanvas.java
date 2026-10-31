@@ -26,6 +26,7 @@ public final class SlideCanvas {
     public final float width;
     public final float height;
     private final float alpha;
+    private float shiftY;
     // Сколько экрана есть за краями холста (поля): фон слайда может заходить туда, текст - нет
     public final float bleed;
     // Радиус скруглённых углов экрана в единицах холста (экран - прямоугольник с полями bleed вокруг холста)
@@ -50,12 +51,16 @@ public final class SlideCanvas {
     public void drawShifted(float shiftY, float extraAlpha, java.util.function.Consumer<SlideCanvas> drawer) {
         poseStack.pushPose();
         poseStack.translate(0, shiftY, 0);
-        drawer.accept(new SlideCanvas(poseStack, bufferSource, width, height, alpha * extraAlpha, bleed, screenRadius));
+        SlideCanvas shifted = new SlideCanvas(poseStack, bufferSource, width, height, alpha * extraAlpha, bleed, screenRadius);
+        shifted.shiftY = this.shiftY + shiftY;
+        drawer.accept(shifted);
         poseStack.popPose();
     }
 
     // Весь экран вертикальным градиентом по его скруглённому контуру (фон слайда «до краёв», без углов)
     public void screenGradient(int top, int bottom) {
+        poseStack.pushPose();
+        poseStack.translate(0, -shiftY, 0);
         float[][] outline = WideDisplayRenderer.roundedOutline(-bleed, -bleed, width + bleed, height + bleed, screenRadius);
         float cy = height / 2;
         int center = mixY(top, bottom, cy);
@@ -78,6 +83,7 @@ public final class SlideCanvas {
             gradientVertex(consumer, pose, a[0], a[1], z, ca);
             gradientVertex(consumer, pose, a[0], a[1], z, ca);
         }
+        poseStack.popPose();
     }
 
     // Цвет градиента экрана на высоте y (от -bleed до height + bleed)

@@ -74,7 +74,7 @@ public final class WeatherSlide implements DisplaySlide {
         String condition = I18n.get(KEY + state.condition.name().toLowerCase(Locale.ROOT));
         float textRight = Math.max(canvas.textWidth(clock, 3),
                 Math.max(canvas.textWidth(state.stationName, 0.9f), canvas.textWidth(condition, 1.2f)));
-        drawClouds(canvas, Math.min(textRight, w * 0.6f) + 6, w, h, bad, night);
+        drawClouds(canvas, w * 0.28f, w, h, bad, night);
         switch (state.condition) {
             case RAIN -> drawRain(canvas, w, h);
             case THUNDER -> {
@@ -124,7 +124,7 @@ public final class WeatherSlide implements DisplaySlide {
     // у краёв полосы растворяются в небе и появляются с другой стороны. Скорость одна и та же, места
     // разнесены равномерно - облака не сбиваются в кучу. В непогоду их больше, они серее (в грозу и ночью темнее)
     private void drawClouds(SlideCanvas canvas, float left, float w, float h, boolean bad, float night) {
-        int count = bad ? 4 : 2;
+        int count = bad ? 4 : 3;
         int color;
         if (bad) {
             color = state.condition == Condition.THUNDER ? 0xFF5A6270 : 0xFF8A94A2;
@@ -133,12 +133,12 @@ public final class WeatherSlide implements DisplaySlide {
             color = mixColor(0xFFF2F6FA, 0xFF2E3A52, night);
         }
         float speed = 0.06f;
+        float span = w - left - CLOUD_WIDTH * 1.2f;
+        if (span < 20) return;
         for (int i = 0; i < count; i++) {
             float s = (bad ? 1.0f : 0.8f) + hash(i, 8) * 0.4f;
-            float span = w - left - CLOUD_WIDTH * s;
-            if (span < 20) return;
-            float phase = ((float) i / count + (hash(i, 6) - 0.5f) * 0.15f) * span;
-            float x = left + (float) (((phase + state.time * speed) % span + span) % span);
+            float phase = (float) i / count * span;
+            float x = left + wrap(phase + (float) state.time * speed, 0, span);
             float y = 2 + hash(i, 7) * (h * 0.45f);
             float fade = Math.min(1, Math.min(x - left, left + span - x) / 12);
             int c = overSky(color, fade, y + 6 * s);

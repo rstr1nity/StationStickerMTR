@@ -3,7 +3,7 @@ package com.tr1nity.stationsticker.client.display;
 import java.util.List;
 
 // Смена слайдов по игровому времени: у всех игроков на сервере экраны показывают одно и то же.
-// Переход: старый слайд уходит вверх и гаснет, новый поднимается снизу и проявляется.
+// Переход: старый слайд уходит вверх, затем новый появляется снизу.
 public final class SlideShow {
 
     public static final int SLIDE_TICKS = 160;       // 8 секунд на слайд
@@ -28,9 +28,14 @@ public final class SlideShow {
 
         if (local < TRANSITION_TICKS) {
             float p = smoothstep((float) (local / TRANSITION_TICKS));
-            DisplaySlide previous = slides.get((index - 1 + count) % count);
-            canvas.drawShifted(-p * SHIFT, 1 - p, previous::render);
-            canvas.drawShifted((1 - p) * SHIFT, p, slides.get(index)::render);
+            if (p < 0.5f) {
+                float progress = p * 2;
+                DisplaySlide previous = slides.get((index - 1 + count) % count);
+                canvas.drawShifted(-progress * SHIFT, 1 - progress, previous::render);
+            } else {
+                float progress = (p - 0.5f) * 2;
+                canvas.drawShifted((1 - progress) * SHIFT, progress, slides.get(index)::render);
+            }
         } else {
             slides.get(index).render(canvas);
         }
