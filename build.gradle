@@ -61,6 +61,8 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     implementation fg.deobf("maven.modrinth:minecraft-transit-railway:${mtr_maven_version}")
+    // Скрипты поездов ресурспаков в тестовом клиенте; не обязательная зависимость Station Sticker.
+    runtimeOnly fg.deobf("maven.modrinth:jcm:${jcm_maven_version}")
 }
 
 // Подстановка версий из gradle.properties в mods.toml и pack.mcmeta
