@@ -64,6 +64,8 @@ dependencies {
     implementation fg.deobf("maven.modrinth:minecraft-transit-railway:${mtr_maven_version}")
     // Скрипты поездов ресурспаков в тестовом клиенте; не обязательная зависимость Station Sticker.
     runtimeOnly fg.deobf("maven.modrinth:jcm:${jcm_maven_version}")
+    // Просмотр рецептов в тестовом клиенте, не зависимость мода.
+    runtimeOnly fg.deobf("maven.modrinth:jei:${jei_maven_version}")
 }
 
 // Подстановка версий из gradle.properties в mods.toml и pack.mcmeta
