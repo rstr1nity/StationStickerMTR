@@ -47,8 +47,8 @@ public final class DirectionSignBoard {
     private static final int NO_BOARDING_COLOR = 0xFFE0322A;
     private static final String KEY = "display.stationsticker.arrival.";
 
-    // Направление с платформы: маршрут и индекс этой остановки в нём; route == null - поезда здесь только заканчивают маршрут
-    private record Side(@Nullable SimplifiedRoute route, int index) {
+    // Направление с платформы: маршрут и индекс остановки; последний индекс означает конечную.
+    private record Side(SimplifiedRoute route, int index) {
     }
 
     private DirectionSignBoard() {
@@ -65,62 +65,76 @@ public final class DirectionSignBoard {
         double centerX = mainPos.getX() + 0.5 + partAxis.getStepX() * half;
         double centerZ = mainPos.getZ() + 0.5 + partAxis.getStepZ() * half;
 
-        Side leftBoarding = null;
-        Side rightBoarding = null;
-        double leftBoardingDistance = Double.MAX_VALUE;
-        double rightBoardingDistance = Double.MAX_VALUE;
-        Platform left = null;
-        Platform right = null;
+        // Выбираем линию по ближайшей платформе, учитывая высоту этажа.
+        Integer lineColor = null;
+        double nearestDistance = Double.MAX_VALUE;
+        for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
+            if (platform.area != station) continue;
+            Side candidate = sideOf(platform.getId(), null);
+            if (candidate == null) continue;
+            double dx = platform.getMidPosition().getX() + 0.5 - centerX;
+            double dy = platform.getMidPosition().getY() + 0.5 - (mainPos.getY() + 0.5);
+            double dz = platform.getMidPosition().getZ() + 0.5 - centerZ;
+            double distance = dx * dx + dy * dy + dz * dz;
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                lineColor = candidate.route.getColor();
+            }
+        }
+        if (lineColor == null) return;
+
+        Side leftSide = null;
+        Side rightSide = null;
         double leftDistance = Double.MAX_VALUE;
         double rightDistance = Double.MAX_VALUE;
         for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
             if (platform.area != station) continue;
+            Side candidate = sideOf(platform.getId(), lineColor);
+            if (candidate == null) continue;
             double dx = platform.getMidPosition().getX() + 0.5 - centerX;
+            double dy = platform.getMidPosition().getY() + 0.5 - (mainPos.getY() + 0.5);
             double dz = platform.getMidPosition().getZ() + 0.5 - centerZ;
             double side = dx * rightAxis.getStepX() + dz * rightAxis.getStepZ();
-            double distance = dx * dx + dz * dz;
-            Side candidate = sideOf(platform.getId());
-            if (candidate != null && candidate.route != null) {
-                if (side < 0 && distance < leftBoardingDistance) {
-                    leftBoarding = candidate;
-                    leftBoardingDistance = distance;
-                } else if (side >= 0 && distance < rightBoardingDistance) {
-                    rightBoarding = candidate;
-                    rightBoardingDistance = distance;
-                }
-            }
-            if (side < 0 && distance < leftDistance) {
-                left = platform;
+            double distance = dx * dx + dy * dy + dz * dz;
+            if (side < 0 && (leftSide == null || better(candidate, distance, leftSide, leftDistance))) {
+                leftSide = candidate;
                 leftDistance = distance;
-            } else if (side >= 0 && distance < rightDistance) {
-                right = platform;
+            } else if (side >= 0 && (rightSide == null || better(candidate, distance, rightSide, rightDistance))) {
+                rightSide = candidate;
                 rightDistance = distance;
             }
         }
 
         float halfWidth = canvas.width / 2;
         canvas.rect(halfWidth - 0.3f, 1, 0.6f, DESIGN_HEIGHT - 2, DIVIDER_COLOR);
-        Side leftSide = leftBoarding != null ? leftBoarding : left == null ? null : sideOf(left.getId());
-        Side rightSide = rightBoarding != null ? rightBoarding : right == null ? null : sideOf(right.getId());
         if (leftSide != null) drawSide(canvas, leftSide, 0, halfWidth - GAP * 2, false);
         if (rightSide != null) drawSide(canvas, rightSide, halfWidth + GAP * 2, canvas.width, true);
     }
 
-    @Nullable
-    private static Side sideOf(long platformId) {
-        boolean terminating = false;
-        for (SimplifiedRoute route : MinecraftClientData.getInstance().simplifiedRoutes) {
-            int index = route.getPlatformIndex(platformId);
-            if (index < 0) continue;
-            if (index < route.getPlatforms().size() - 1) return new Side(route, index);
-            terminating = true;
-        }
-        return terminating ? new Side(null, -1) : null;
+    private static boolean isBoarding(Side side) {
+        return side.index < side.route.getPlatforms().size() - 1;
     }
 
+    private static boolean better(Side candidate, double distance, Side current, double currentDistance) {
+        return isBoarding(candidate) != isBoarding(current) ? isBoarding(candidate) : distance < currentDistance;
+    }
+
+    @Nullable
+    private static Side sideOf(long platformId, @Nullable Integer color) {
+        Side terminating = null;
+        for (SimplifiedRoute route : MinecraftClientData.getInstance().simplifiedRoutes) {
+            if (color != null && route.getColor() != color) continue;
+            int index = route.getPlatformIndex(platformId);
+            if (index < 0) continue;
+            Side side = new Side(route, index);
+            if (isBoarding(side)) return side;
+            terminating = side;
+        }
+        return terminating;
+    }
     // Половина экрана от x0 до x1; rightSide - стрелка и заголовок у правого края
     private static void drawSide(SlideCanvas canvas, Side side, float x0, float x1, boolean rightSide) {
-        if (side.route == null) {
+        if (!isBoarding(side)) {
             drawNoBoarding(canvas, x0, x1, rightSide);
             return;
         }
