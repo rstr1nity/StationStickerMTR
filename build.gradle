@@ -29,6 +29,9 @@ minecraft {
     runs {
         client {
             jvmArg '-Xmx6G'
+            if (project.hasProperty('debugStationClient')) {
+                jvmArg '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=127.0.0.1:5006'
+            }
             // Своя папка на каждую версию MC: мир из новой версии нельзя открыть в старой
             workingDirectory project.file("run-${minecraft_version}")
             property 'forge.logging.markers', 'REGISTRIES'

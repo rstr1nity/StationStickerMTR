@@ -2,23 +2,23 @@
   "version": "0.2.0",
   "configurations": [
     {
-      // Сам запускает ./gradlew runClient --debug-jvm и подключается, когда игра откроет порт 5005
+      // Сам запускает ./gradlew runClient -PdebugStationClient и подключается, когда игра откроет порт 5005
       "type": "java",
       "name": "Запустить Minecraft (hot swap)",
       "request": "attach",
       "hostName": "127.0.0.1",
-      "port": 5005,
-      "projectName": "StationStickerMTR",
-      "preLaunchTask": "runClient --debug-jvm"
+      "port": 5006,
+      "projectName": "StationStickerMTR-1.19.2",
+      "preLaunchTask": "runClient (debug 1.19.2)"
     },
     {
-      // Если игра уже запущена вручную: ./gradlew runClient --debug-jvm (игра ждёт отладчик на порту 5005)
+      // Если игра уже запущена вручную: ./gradlew runClient -PdebugStationClient (игра ждёт отладчик на порту 5005)
       "type": "java",
       "name": "Подключиться к Minecraft (hot swap)",
       "request": "attach",
       "hostName": "127.0.0.1",
-      "port": 5005,
-      "projectName": "StationStickerMTR"
+      "port": 5006,
+      "projectName": "StationStickerMTR-1.19.2"
     }
   ]
 }
