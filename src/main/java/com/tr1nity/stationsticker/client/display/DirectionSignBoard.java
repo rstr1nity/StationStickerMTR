@@ -56,7 +56,7 @@ public final class DirectionSignBoard {
 
     // mainPos - основной блок, partAxis - в какую сторону от него стоят части, width - ширина в клетках,
     // rightAxis - «вправо» для зрителя этой стороны экрана (у обратной стороны подвесного экрана - против partAxis)
-    public static void render(SlideCanvas canvas, BlockPos mainPos, Direction partAxis, int width, Direction rightAxis) {
+    public static void render(SlideCanvas canvas, BlockPos mainPos, Direction partAxis, int width, Direction rightAxis, boolean ceiling) {
         Station station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(mainPos.getX(), mainPos.getY(), mainPos.getZ()));
         if (station == null) return;
 
@@ -68,6 +68,7 @@ public final class DirectionSignBoard {
         // Выбираем линию по ближайшей платформе, учитывая высоту этажа.
         Integer lineColor = null;
         double nearestDistance = Double.MAX_VALUE;
+        boolean selectedBelow = false;
         for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
             if (platform.area != station) continue;
             Side candidate = sideOf(platform.getId(), null);
@@ -76,7 +77,9 @@ public final class DirectionSignBoard {
             double dy = platform.getMidPosition().getY() + 0.5 - (mainPos.getY() + 0.5);
             double dz = platform.getMidPosition().getZ() + 0.5 - centerZ;
             double distance = dx * dx + dy * dy + dz * dz;
-            if (distance < nearestDistance) {
+            boolean below = ceiling && platform.getMidPosition().getY() < mainPos.getY();
+            if ((below && !selectedBelow) || (below == selectedBelow && distance < nearestDistance)) {
+                selectedBelow = below;
                 nearestDistance = distance;
                 lineColor = candidate.route.getColor();
             }
@@ -89,6 +92,7 @@ public final class DirectionSignBoard {
         double rightDistance = Double.MAX_VALUE;
         for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
             if (platform.area != station) continue;
+            if (selectedBelow && platform.getMidPosition().getY() >= mainPos.getY()) continue;
             Side candidate = sideOf(platform.getId(), lineColor);
             if (candidate == null) continue;
             double dx = platform.getMidPosition().getX() + 0.5 - centerX;

@@ -1,6 +1,7 @@
 package com.tr1nity.stationsticker.client;
 
 import com.tr1nity.stationsticker.block.WideDisplayBlock;
+import com.tr1nity.stationsticker.block.DisplayAttachment;
 import com.tr1nity.stationsticker.block.entity.DirectionSignBlockEntity;
 import com.tr1nity.stationsticker.client.display.DirectionSignBoard;
 import com.tr1nity.stationsticker.client.display.SlideCanvas;
@@ -30,6 +31,7 @@ public class DirectionSignRenderer extends WideDisplayRenderer<DirectionSignBloc
         if (!(state.getBlock() instanceof WideDisplayBlock block)) return;
         Direction partAxis = WideDisplayBlock.partDirection(state.getValue(WideDisplayBlock.FACING));
         Direction rightAxis = back ? partAxis.getOpposite() : partAxis;
-        DirectionSignBoard.render(canvas, entity.getBlockPos(), partAxis, block.width(state), rightAxis);
+        DirectionSignBoard.render(canvas, entity.getBlockPos(), partAxis, block.width(state), rightAxis,
+                state.getValue(WideDisplayBlock.ATTACHMENT) == DisplayAttachment.CEILING);
     }
 }
