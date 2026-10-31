@@ -14,12 +14,17 @@ public final class StationNames {
     // если его нет - первая часть (латинское название показывается одно, без второй строки)
     public static String primary(String name) {
         String[] parts = withoutNote(name).split("\\|");
+        if (!Minecraft.getInstance().getLanguageManager().getSelected().startsWith("ru")) {
+            String translated = english(parts);
+            if (!translated.isEmpty()) return translated;
+        }
         for (String part : parts) {
             if (!part.isBlank() && hasCyrillic(part)) {
                 return part.trim();
             }
         }
-        return parts.length == 0 ? name : parts[0].trim();
+        String english = english(parts);
+        return !english.isEmpty() ? english : parts.length == 0 ? "" : parts[0].trim();
     }
 
     // Мелкая строка под названием станции: латиница из MTR, иначе транслит; у латинского названия - пусто
@@ -27,7 +32,7 @@ public final class StationNames {
         String primary = primary(name);
         if (!hasCyrillic(primary)) return "";
         for (String part : withoutNote(name).split("\\|")) {
-            if (!part.isBlank() && !hasCyrillic(part)) {
+            if (isLatin(part)) {
                 return part.trim();
             }
         }
@@ -41,11 +46,21 @@ public final class StationNames {
         String[] parts = name.split("\\|");
         boolean russian = Minecraft.getInstance().getLanguageManager().getSelected().startsWith("ru");
         for (String part : parts) {
-            if (!part.isBlank() && hasCyrillic(part) == russian) {
+            if (!part.isBlank() && (russian ? hasCyrillic(part) : isLatin(part))) {
                 return part.trim();
             }
         }
-        return parts.length == 0 ? name : parts[0].trim();
+        String english = english(parts);
+        return !english.isEmpty() ? english : parts.length == 0 ? "" : parts[0].trim();
+    }
+
+    private static String english(String[] parts) {
+        for (String part : parts) if (isLatin(part)) return part.trim();
+        return "";
+    }
+
+    private static boolean isLatin(String text) {
+        return !hasCyrillic(text) && text.codePoints().anyMatch(c -> Character.UnicodeScript.of(c) == Character.UnicodeScript.LATIN);
     }
 
     private static String withoutNote(String name) {

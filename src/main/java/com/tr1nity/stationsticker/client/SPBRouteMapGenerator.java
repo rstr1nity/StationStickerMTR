@@ -1,6 +1,7 @@
 package com.tr1nity.stationsticker.client;
 
 import org.mtr.core.data.*;
+import com.tr1nity.stationsticker.client.display.StationNames;
 import org.mtr.core.tool.Utilities;
 import org.mtr.libraries.it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import org.mtr.libraries.it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
@@ -178,7 +179,7 @@ public class SPBRouteMapGenerator implements IGui {
                     }
                     drawStation(nativeImage, x, y, heightScale, lines, passed, currentStation, stationLineColor, interchangeColors);
 
-                    String stationName = key.substring(0, key.indexOf('|')).trim();
+                    String stationName = StationNames.primary(key);
                     // Без кириллицы транслит не нужен: иначе имя вроде "St. Petersburg" рисуется дважды
                     boolean isEnglishOnly = !stationName.matches("(?s).*\\p{IsCyrillic}.*");
 
@@ -200,7 +201,7 @@ public class SPBRouteMapGenerator implements IGui {
 
                     } else {
                         // --- РУССКОЕ (Сверху) + ТРАНСЛИТ (Снизу) ---
-                        String englishName = transliterate(stationName);
+                        String englishName = StationNames.secondary(key);
 
                         // 1. Русское название (Верхнее)
                         int[] rusDims = new int[2];
