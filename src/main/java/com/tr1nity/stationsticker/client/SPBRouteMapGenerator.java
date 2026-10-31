@@ -31,7 +31,7 @@ public class SPBRouteMapGenerator implements IGui {
     private static final int MIN_VERTICAL_SIZE = 5;
 
     public static void setConstants() {
-        scale = (int) Math.pow(2, Config.getClient().getDynamicTextureResolution() + 5);
+        scale = (int) Math.pow(2, Config.getClient().getDynamicTextureResolution() + 6);
         lineSize = scale / 8;
         lineSpacing = lineSize * 3 / 2;
         fontSizeBig = lineSize * 2;
@@ -178,7 +178,7 @@ public class SPBRouteMapGenerator implements IGui {
                     }
                     drawStation(nativeImage, x, y, heightScale, lines, passed, currentStation, stationLineColor, interchangeColors);
 
-                    String stationName = key.split("\\|\\|")[0];
+                    String stationName = key.substring(0, key.indexOf('|')).trim();
                     // Без кириллицы транслит не нужен: иначе имя вроде "St. Petersburg" рисуется дважды
                     boolean isEnglishOnly = !stationName.matches("(?s).*\\p{IsCyrillic}.*");
 
@@ -196,7 +196,7 @@ public class SPBRouteMapGenerator implements IGui {
 
                         // anchorX = x (центр), anchorY = y - verticalOffset (самый верх кружка)
                         // Pivot: 0.0f (начало слова), 1.0f (низ слова)
-                        drawRotatedString(nativeImage, engPix, engDims, x+22, y - verticalOffset, angle, textColor, 0.0f, 1.0f);
+                        drawRotatedString(nativeImage, engPix, engDims, x + Math.round(22 * scale / 128f), y - verticalOffset, angle, textColor, 0.0f, 1.0f);
 
                     } else {
                         // --- РУССКОЕ (Сверху) + ТРАНСЛИТ (Снизу) ---
@@ -207,7 +207,7 @@ public class SPBRouteMapGenerator implements IGui {
                         byte[] rusPix = clientCache.getTextPixels(stationName, rusDims, scale * 5, fontSizeBig, fontSizeBig, fontSizeSmall, 0, HorizontalAlignment.CENTER);
 
                         // Начинается от верхней точки кружка
-                        drawRotatedString(nativeImage, rusPix, rusDims, x+22, y - verticalOffset, angle, textColor, 0.0f, 1.0f);
+                        drawRotatedString(nativeImage, rusPix, rusDims, x + Math.round(22 * scale / 128f), y - verticalOffset, angle, textColor, 0.0f, 1.0f);
 
                         // 2. Английское название (Нижнее)
                         if (!englishName.isEmpty()) {
@@ -217,7 +217,7 @@ public class SPBRouteMapGenerator implements IGui {
                             // Заканчивается у нижней точки кружка (с учетом высоты пересадки)
                             // anchorX = x (центр), anchorY = y + высота + verticalOffset (самый низ кружка)
                             // Pivot: 1.0f (КОНЕЦ слова), 0.0f (ВЕРХ слова)
-                            drawRotatedString(nativeImage, transPix, transDims, x-20, y + totalLinesHeight + verticalOffset, angle, textColor, 1.0f, 0.0f);
+                            drawRotatedString(nativeImage, transPix, transDims, x - Math.round(20 * scale / 128f), y + totalLinesHeight + verticalOffset, angle, textColor, 1.0f, 0.0f);
                         }
                     }
                 }));
@@ -233,8 +233,8 @@ public class SPBRouteMapGenerator implements IGui {
                 }
 
                 int imgWidth = nativeImage.getWidth();
-                int topPadding = 30; // Отступ сверху
-                int sidePadding = 40; // Отступ от краев
+                int topPadding = Math.round(30 * scale / 128f); // Отступ сверху
+                int sidePadding = Math.round(40 * scale / 128f); // Отступ от краев
 
                 if (flip) {
                     // Если flip = true: рисуем "левую" стрелку справа, а "правую" слева
@@ -631,9 +631,9 @@ public class SPBRouteMapGenerator implements IGui {
     }
 
     private static void drawArrow(NativeImage image, int x, int y, int color, boolean isRight) {
-        int size = 20;
-        int thickness = 10;
-        int shaftLength = 50;
+        int size = Math.max(1, Math.round(20 * scale / 128f));
+        int thickness = Math.max(1, Math.round(10 * scale / 128f));
+        int shaftLength = Math.max(1, Math.round(50 * scale / 128f));
 
         // Рисуем наконечник
         for (int i = 0; i < size; i++) {
