@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "GLG",
+    "III"
+  ],
+  "key": {
+    "I": {
+      "tag": "forge:ingots/iron"
+    },
+    "G": {
+      "tag": "forge:glass_panes"
+    },
+    "L": {
+      "tag": "forge:dusts/glowstone"
+    }
+  },
+  "result": {
+    "item": "stationsticker:info_display",
+    "count": 1
+  }
+}

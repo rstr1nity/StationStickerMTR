@@ -1,7 +1,11 @@
 package com.tr1nity.stationsticker.registration;
 
 import com.tr1nity.stationsticker.StationStickerMod;
+import com.tr1nity.stationsticker.block.entity.ArrivalDisplayBlockEntity;
+import com.tr1nity.stationsticker.block.entity.DirectionSignBlockEntity;
+import com.tr1nity.stationsticker.block.entity.InfoDisplayBlockEntity;
 import com.tr1nity.stationsticker.block.entity.LineSchemeEntity;
+import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
 import com.tr1nity.stationsticker.block.entity.StationStickerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.DeferredRegister;
@@ -25,6 +29,34 @@ public class ModBlockEntities {
                     () -> BlockEntityType.Builder.of(
                             LineSchemeEntity::new,
                             ModBlocks.LINE_SCHEME.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<ArrivalDisplayBlockEntity>> ARRIVAL_DISPLAY =
+            BLOCK_ENTITIES.register("arrival_display",
+                    () -> BlockEntityType.Builder.of(
+                            ArrivalDisplayBlockEntity::new,
+                            ModBlocks.ARRIVAL_DISPLAY.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<DirectionSignBlockEntity>> DIRECTION_SIGN =
+            BLOCK_ENTITIES.register("direction_sign",
+                    () -> BlockEntityType.Builder.of(
+                            DirectionSignBlockEntity::new,
+                            ModBlocks.DIRECTION_SIGN.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<InfoDisplayBlockEntity>> INFO_DISPLAY =
+            BLOCK_ENTITIES.register("info_display",
+                    () -> BlockEntityType.Builder.of(
+                            InfoDisplayBlockEntity::new,
+                            ModBlocks.INFO_DISPLAY.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<NavSignBlockEntity>> NAV_SIGN =
+            BLOCK_ENTITIES.register("nav_sign",
+                    () -> BlockEntityType.Builder.of(
+                            NavSignBlockEntity::new,
+                            ModBlocks.NAV_SIGN.get()
                     ).build(null));
 
 }

@@ -28,6 +28,7 @@ minecraft {
 
     runs {
         client {
+            jvmArg '-Xmx6G'
             // Своя папка на каждую версию MC: мир из новой версии нельзя открыть в старой
             workingDirectory project.file("run-${minecraft_version}")
             property 'forge.logging.markers', 'REGISTRIES'

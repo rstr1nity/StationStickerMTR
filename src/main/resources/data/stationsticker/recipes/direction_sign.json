@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IGI",
+    "GLG",
+    "IGI"
+  ],
+  "key": {
+    "I": {
+      "tag": "forge:ingots/iron"
+    },
+    "G": {
+      "tag": "forge:glass_panes"
+    },
+    "L": {
+      "tag": "forge:dusts/glowstone"
+    }
+  },
+  "result": {
+    "item": "stationsticker:direction_sign",
+    "count": 1
+  }
+}

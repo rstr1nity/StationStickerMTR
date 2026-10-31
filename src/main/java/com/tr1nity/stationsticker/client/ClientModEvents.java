@@ -24,6 +24,22 @@ public class ClientModEvents {
                 ModBlockEntities.LINE_SCHEME.get(),
                 LineSchemeRenderer::new
         );
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.ARRIVAL_DISPLAY.get(),
+                ArrivalDisplayRenderer::new
+        );
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.DIRECTION_SIGN.get(),
+                DirectionSignRenderer::new
+        );
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.NAV_SIGN.get(),
+                NavSignRenderer::new
+        );
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.INFO_DISPLAY.get(),
+                InfoDisplayRenderer::new
+        );
     }
 
 

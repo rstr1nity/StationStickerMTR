@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "stationsticker:block/arrival_display" }
+  }
+}

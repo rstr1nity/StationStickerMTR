@@ -12,9 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.mtr.core.data.Platform;
-import org.mtr.core.data.Station;
-import org.mtr.mod.InitClient;
-import org.mtr.mod.client.MinecraftClientData;
 import org.mtr.mod.render.MainRenderer;
 import org.mtr.mod.render.QueuedRenderLayer;
 import org.mtr.mod.render.StoredMatrixTransformations;
@@ -42,25 +39,6 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
         };
     }
 
-    // Этот метод можно оставить, он нужен для поиска
-    private Platform findPlatformAt(BlockPos pos) {
-        // ... ваш код поиска платформы без изменений ...
-        Station station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(pos.getX(), pos.getY(), pos.getZ()));
-        if (station == null) return null;
-
-        for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
-            if (platform.area == station && isPlatformAtPosition(platform, pos)) {
-                return platform;
-            }
-        }
-        return null;
-    }
-
-    private boolean isPlatformAtPosition(Platform platform, BlockPos pos) {
-        return Math.abs(platform.getMidPosition().getX() - pos.getX()) < 10 &&
-                Math.abs(platform.getMidPosition().getZ() - pos.getZ()) < 10;
-    }
-
 
     @Override
     public void render(LineSchemeEntity entity, float partialTick,
@@ -76,7 +54,7 @@ public class LineSchemeRenderer implements BlockEntityRenderer<LineSchemeEntity>
 
         Direction facing = state.getValue(LineSchemeBlock.FACING);
 
-        Platform platform = findPlatformAt(pos);
+        Platform platform = PlatformLocator.findPlatformAt(pos);
         if (platform == null) return;
 
         long platformId = platform.getId();

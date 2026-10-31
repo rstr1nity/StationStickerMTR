@@ -2,19 +2,21 @@
   "version": "2.0.0",
   "tasks": [
     {
-      // Запускает игру на паузе; задача считается готовой, когда JVM открыла порт 5005 для отладчика
+      // Запускает игру на паузе; задача считается готовой, когда JVM открыла порт 5005 для отладчика.
+      // --console=plain: без прогресс-бара Gradle строка «Listening for transport» приходит целиком,
+      // VS Code узнаёт её и сам подключает отладчик (иначе приходилось жать F5 ещё раз)
       "label": "runClient --debug-jvm",
       "type": "shell",
       "command": "./gradlew",
       "windows": { "command": ".\\gradlew.bat" },
-      "args": ["runClient", "--debug-jvm"],
+      "args": ["runClient", "--debug-jvm", "--console=plain"],
       "isBackground": true,
       "problemMatcher": {
         "owner": "gradle",
         "pattern": { "regexp": "^\\b\\B$" },
         "background": {
           "activeBegins": true,
-          "beginsPattern": "^> Task :runClient",
+          "beginsPattern": "Task :runClient",
           "endsPattern": "Listening for transport dt_socket at address"
         }
       }

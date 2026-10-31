@@ -2,6 +2,11 @@ package com.tr1nity.stationsticker.registration;
 
 import com.tr1nity.stationsticker.StationStickerMod;
 import com.tr1nity.stationsticker.block.StationStickerBlock;
+import com.tr1nity.stationsticker.block.ArrivalDisplayBlock;
+import com.tr1nity.stationsticker.block.DirectionSignBlock;
+import com.tr1nity.stationsticker.block.NavSignBlock;
+import com.tr1nity.stationsticker.block.InfoDisplayBlock;
+import com.tr1nity.stationsticker.block.DisplayPartBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -40,6 +45,12 @@ public class ModBlocks {
     // Без предмета: ставится только самой схемой линии
     public static final RegistryObject<LineSchemePartBlock> LINE_SCHEME_PART =
             BLOCKS.register("line_scheme_part", LineSchemePartBlock::new);
+
+    public static final RegistryObject<ArrivalDisplayBlock> ARRIVAL_DISPLAY = registerBlock("arrival_display", ArrivalDisplayBlock::new);
+    public static final RegistryObject<DirectionSignBlock> DIRECTION_SIGN = registerBlock("direction_sign", DirectionSignBlock::new);
+    public static final RegistryObject<NavSignBlock> NAV_SIGN = registerBlock("nav_sign", NavSignBlock::new);
+    public static final RegistryObject<InfoDisplayBlock> INFO_DISPLAY = registerBlock("info_display", InfoDisplayBlock::new);
+    public static final RegistryObject<DisplayPartBlock> DISPLAY_PART = BLOCKS.register("display_part", DisplayPartBlock::new);
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name,
                                                                      java.util.function.Supplier<T> block) {
