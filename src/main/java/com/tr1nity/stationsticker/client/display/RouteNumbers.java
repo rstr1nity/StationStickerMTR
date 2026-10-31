@@ -30,7 +30,20 @@ public final class RouteNumbers {
             KNOWN.put(route.getId(), number);
             return number;
         }
-        return KNOWN.getOrDefault(route.getId(), "");
+        number = KNOWN.getOrDefault(route.getId(), "");
+        if (!number.isEmpty()) return number;
+
+        // Противоположное направление той же линии может быть единственным источником номера.
+        for (SimplifiedRoute other : MinecraftClientData.getInstance().simplifiedRoutes) {
+            if (other.getId() == route.getId() || other.getColor() != route.getColor()) continue;
+            number = find(other);
+            if (number.isEmpty()) number = KNOWN.getOrDefault(other.getId(), "");
+            if (!number.isEmpty()) {
+                KNOWN.put(other.getId(), number);
+                return number;
+            }
+        }
+        return "";
     }
 
     private static String find(SimplifiedRoute route) {
