@@ -7,6 +7,18 @@ import java.util.List;
 public final class NetworkMapLabels {
     public record Placement(Rectangle2D box, boolean leader) {}
     private NetworkMapLabels() {}
+    public static Placement nearby(Point2D.Double station, int width, int height, List<Rectangle2D> occupied, List<Shape> lines, int bottom) {
+        // Сначала близкая подпись, затем перенос/меньший шрифт на стороне вызывающего кода.
+        for (int radius : new int[]{10, 18, 28, 42, 64, 90, 120}) {
+            for (double[] offset : new double[][]{{radius, -height / 2.0}, {-width - radius, -height / 2.0},
+                    {radius, -height - 3}, {radius, 3}, {-width - radius, -height - 3}, {-width - radius, 3},
+                    {-width / 2.0, -height - radius}, {-width / 2.0, radius}}) {
+                var box = new Rectangle2D.Double(Math.rint(station.x + offset[0]), Math.rint(station.y + offset[1]), width + 4, height + 4);
+                if (score(box, occupied, lines, bottom) == 0) return new Placement(box, radius > 28);
+            }
+        }
+        return null;
+    }
     public static Placement place(Point2D.Double station, int width, int height, List<Rectangle2D> occupied, List<Shape> lines, int bottom) {
         Rectangle2D best = null; double bestScore = Double.POSITIVE_INFINITY;
         for (int radius : new int[]{18, 30, 48, 72, 110, 160}) {
@@ -23,7 +35,8 @@ public final class NetworkMapLabels {
         Rectangle2D free = null;
         for (int y = 300; y + height < bottom; y += height + 10) for (int x = 150; x + width < 1900; x += 24) {
             Rectangle2D box = new Rectangle2D.Double(x, y, width + 6, height + 6);
-            double d = Point2D.distanceSq(station.x, station.y, box.getCenterX(), box.getCenterY());
+            double d = Point2D.distanceSq(station.x, station.y,
+                    Math.max(box.getMinX(), Math.min(station.x, box.getMaxX())), Math.max(box.getMinY(), Math.min(station.y, box.getMaxY())));
             if (d < distance && score(box, occupied, lines, bottom) == 0) { free = box; distance = d; }
         }
         return new Placement(free == null ? best : free, true);
