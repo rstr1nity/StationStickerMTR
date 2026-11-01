@@ -111,6 +111,15 @@ jar {
     }
 }
 // Копирование jar в игру, только если mods_dir_<версия MC> задан в ~/.gradle/gradle.properties
+tasks.register('checkNetworkMapImage', JavaExec) {
+    dependsOn testClasses, 'extractNatives'
+    workingDir project.file('build')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.tr1nity.stationsticker.NetworkMapImageRegression'
+    systemProperty 'org.lwjgl.system.stackSize', '64'
+    systemProperty 'org.lwjgl.librarypath', file('build/natives').absolutePath
+}
+
 def modsDirProperty = "mods_dir_${minecraft_version}"
 if (project.hasProperty(modsDirProperty)) {
     task copyToMods(type: Copy) {

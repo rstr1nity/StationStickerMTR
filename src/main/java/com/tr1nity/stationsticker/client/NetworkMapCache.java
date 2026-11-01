@@ -1,6 +1,5 @@
 package com.tr1nity.stationsticker.client;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import com.tr1nity.stationsticker.map.NetworkMapData;
 import com.tr1nity.stationsticker.network.*;
 import net.minecraft.Util;
@@ -9,8 +8,6 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import org.mtr.mod.InitClient;
-import javax.imageio.ImageIO;
-import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -62,21 +59,25 @@ public final class NetworkMapCache {
         NetworkMapData snapshot = data;
         long version = generation;
         CompletableFuture.supplyAsync(() -> {
+            var image = NetworkMapPainter.paint(snapshot, stationId, language.startsWith("ru"));
             try {
-                ByteArrayOutputStream output = new ByteArrayOutputStream();
-                ImageIO.write(NetworkMapPainter.paint(snapshot, stationId, language.startsWith("ru")), "PNG", output);
-                return output.toByteArray();
-            } catch (Exception e) { throw new java.util.concurrent.CompletionException(e); }
-        }, Util.backgroundExecutor()).whenComplete((bytes, error) -> Minecraft.getInstance().execute(() -> {
-            if (version != generation) return;
+                // Не декодируем PNG через MemoryStack: для большой схемы его не хватает.
+                return NetworkMapImages.create(image);
+            } finally { image.flush(); }
+        }, Util.backgroundExecutor()).whenComplete((image, error) -> Minecraft.getInstance().execute(() -> {
+            if (version != generation) {
+                if (image != null) image.close();
+                return;
+            }
             GENERATING.remove(key);
             if (error != null) {
                 FAILED_UNTIL.put(key, System.currentTimeMillis() + 30_000);
                 org.mtr.mod.Init.LOGGER.error("Could not render Station Sticker network map", error);
                 return;
             }
+            DynamicTexture texture = null;
             try {
-                var texture = new DynamicTexture(NativeImage.read(bytes));
+                texture = new DynamicTexture(image);
                 ResourceLocation id = Minecraft.getInstance().getTextureManager().register("stationsticker_network_map", texture);
                 TEXTURES.put(key, id);
                 while (TEXTURES.size() > 8) {
@@ -84,6 +85,8 @@ public final class NetworkMapCache {
                     Minecraft.getInstance().getTextureManager().release(iterator.next().getValue()); iterator.remove();
                 }
             } catch (Exception e) {
+                if (texture != null) texture.close();
+                else image.close();
                 FAILED_UNTIL.put(key, System.currentTimeMillis() + 30_000);
                 org.mtr.mod.Init.LOGGER.error("Could not upload Station Sticker network map", e);
             }
