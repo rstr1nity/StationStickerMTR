@@ -25,13 +25,15 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 // Невидимая клетка широкого экрана (WideDisplayBlock): чтобы экран выделялся и ломался по всей ширине
 public class DisplayPartBlock extends Block {
     // Сколько клеток до основного блока
-    public static final IntegerProperty OFFSET = IntegerProperty.create("offset", 1, WideDisplayBlock.MAX_WIDTH - 1);
+    public static final IntegerProperty OFFSET = IntegerProperty.create("offset", 0, WideDisplayBlock.MAX_WIDTH - 1);
+    public static final IntegerProperty ROW = IntegerProperty.create("row", 0, 2);
 
     public DisplayPartBlock() {
         super(Properties.of()
                 .strength(1.0f)
                 .sound(SoundType.METAL)
                 .noOcclusion()
+                .dynamicShape() // форма зависит от высоты и ширины основного блока
                 .noLootTable()
                 .pushReaction(PushReaction.BLOCK));
 
@@ -50,17 +52,20 @@ public class DisplayPartBlock extends Block {
 
     public static BlockPos getMainPos(BlockState state, BlockPos pos) {
         Direction facing = state.getValue(WideDisplayBlock.FACING);
-        return pos.relative(WideDisplayBlock.partDirection(facing).getOpposite(), state.getValue(OFFSET));
+        return pos.relative(WideDisplayBlock.partDirection(facing).getOpposite(), state.getValue(OFFSET)).above(state.getValue(ROW));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(WideDisplayBlock.FACING, WideDisplayBlock.ATTACHMENT, OFFSET);
+        builder.add(WideDisplayBlock.FACING, WideDisplayBlock.ATTACHMENT, OFFSET, ROW);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return WideDisplayBlock.shapeFor(state.getValue(WideDisplayBlock.FACING), state.getValue(WideDisplayBlock.ATTACHMENT));
+        BlockState mainState = level.getBlockState(getMainPos(state, pos));
+        return mainState.getBlock() instanceof WideDisplayBlock
+                ? WideDisplayBlock.shapeAt(mainState, state.getValue(OFFSET), state.getValue(ROW))
+                : net.minecraft.world.phys.shapes.Shapes.empty();
     }
 
     @Override
@@ -102,7 +107,7 @@ public class DisplayPartBlock extends Block {
         if (!state.is(newState.getBlock())) {
             BlockPos mainPos = getMainPos(state, pos);
             BlockState mainState = level.getBlockState(mainPos);
-            if (mainState.getBlock() instanceof WideDisplayBlock display && state.getValue(OFFSET) < display.width(mainState)) {
+            if (mainState.getBlock() instanceof WideDisplayBlock && WideDisplayBlock.parts(mainPos, mainState).containsKey(pos)) {
                 level.destroyBlock(mainPos, true);
             }
         }

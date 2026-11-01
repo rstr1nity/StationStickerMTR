@@ -54,10 +54,10 @@ public abstract class WideDisplayRenderer<T extends BlockEntity> implements Bloc
         Direction facing = state.getValue(WideDisplayBlock.FACING);
         DisplayAttachment attachment = state.getValue(WideDisplayBlock.ATTACHMENT);
 
-        float bottom = WideDisplayBlock.bodyBottom(attachment) / 16f - 0.5f;
-        float top = WideDisplayBlock.bodyTop(attachment) / 16f - 0.5f;
-        float left = -0.5f;
-        float right = left + block.width(state);
+        float bottom = WideDisplayBlock.bodyBottom(attachment) / 16f - 0.5f - WideDisplayBlock.drop(state);
+        float top = WideDisplayBlock.bodyTop(attachment) / 16f - 0.5f - WideDisplayBlock.drop(state);
+        float left = attachment == DisplayAttachment.SIDE ? -0.25f : -0.5f;
+        float right = -0.5f + block.width(state);
         float back;
         float front;
         if (attachment == DisplayAttachment.WALL) {
@@ -81,6 +81,15 @@ public abstract class WideDisplayRenderer<T extends BlockEntity> implements Bloc
         drawFlatShape(consumer, pose, outline, back, BODY_COLOR, packedLight);
         drawShapeSides(consumer, pose, outline, back, front, BODY_SIDE_COLOR, packedLight);
 
+        // Два горизонтальных штыря от боковой стены до торца табло.
+        if (attachment == DisplayAttachment.SIDE) {
+            float rod = 1 / 32f;
+            for (float y : new float[]{-0.25f, 0.25f}) {
+                drawBox(consumer, pose, -0.5f, y - rod, -rod, left + 0.04f, y + rod, rod,
+                        BODY_SIDE_COLOR, BODY_SIDE_COLOR, packedLight);
+            }
+        }
+
         // Подвес к потолку (в клетке основного блока и части)
         if (attachment == DisplayAttachment.CEILING) {
             float rod = 1 / 32f;
@@ -90,7 +99,7 @@ public abstract class WideDisplayRenderer<T extends BlockEntity> implements Bloc
         }
 
         drawScreen(entity, poseStack, bufferSource, false, left, bottom, right, top, front);
-        if (attachment == DisplayAttachment.CEILING) {
+        if (attachment != DisplayAttachment.WALL) {
             // У подвесного экрана лицевая сторона с обеих сторон
             poseStack.pushPose();
             poseStack.translate((left + right) / 2, 0, 0);

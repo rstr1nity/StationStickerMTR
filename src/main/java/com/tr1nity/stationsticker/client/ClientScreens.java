@@ -25,9 +25,8 @@ public final class ClientScreens {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
         BlockState state = minecraft.level.getBlockState(pos);
-        if (state.getBlock() instanceof ResizableDisplayBlock) {
-            minecraft.setScreen(new DisplayWidthScreen(pos, state.getValue(ResizableDisplayBlock.WIDTH),
-                    Component.translatable(state.getBlock().getDescriptionId())));
+        if (state.getBlock() instanceof com.tr1nity.stationsticker.block.WideDisplayBlock) {
+            minecraft.setScreen(new DisplayWidthScreen(pos, state));
         }
     }
 }

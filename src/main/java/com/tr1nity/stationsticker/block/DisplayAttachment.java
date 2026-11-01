@@ -5,7 +5,8 @@ import net.minecraft.util.StringRepresentable;
 // Как закреплён экран: на стене или на подвесе к потолку
 public enum DisplayAttachment implements StringRepresentable {
     WALL("wall"),
-    CEILING("ceiling");
+    CEILING("ceiling"),
+    SIDE("side");
 
     private final String name;
 

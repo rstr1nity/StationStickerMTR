@@ -2,13 +2,11 @@ package com.tr1nity.stationsticker.block;
 
 import com.tr1nity.stationsticker.client.ClientScreens;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
@@ -51,28 +49,6 @@ public abstract class ResizableDisplayBlock extends WideDisplayBlock {
     // Меняет ширину на сервере: достраивает или убирает невидимые клетки справа.
     // false - для расширения не хватает места, ничего не изменено
     public static boolean resize(Level level, BlockPos pos, BlockState state, int newWidth) {
-        int oldWidth = state.getValue(WIDTH);
-        if (newWidth == oldWidth) return true;
-        Direction facing = state.getValue(FACING);
-        Direction toParts = partDirection(facing);
-
-        for (int offset = oldWidth; offset < newWidth; offset++) {
-            BlockPos partPos = pos.relative(toParts, offset);
-            if (!canPlacePart(level, partPos) || !level.getBlockState(partPos).canBeReplaced()) return false;
-        }
-
-        // Сначала новая ширина, потом клетки: убранная клетка за пределами ширины не ломает экран
-        level.setBlock(pos, state.setValue(WIDTH, newWidth), Block.UPDATE_ALL);
-        for (int offset = oldWidth; offset < newWidth; offset++) {
-            level.setBlock(pos.relative(toParts, offset),
-                    DisplayPartBlock.partState(facing, state.getValue(ATTACHMENT), offset), Block.UPDATE_ALL);
-        }
-        for (int offset = newWidth; offset < oldWidth; offset++) {
-            BlockPos partPos = pos.relative(toParts, offset);
-            if (level.getBlockState(partPos).getBlock() instanceof DisplayPartBlock) {
-                level.setBlock(partPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
-            }
-        }
-        return true;
+        return reconfigure(level, pos, state, state.setValue(WIDTH, newWidth));
     }
 }

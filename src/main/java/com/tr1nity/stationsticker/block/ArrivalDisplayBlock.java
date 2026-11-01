@@ -3,7 +3,6 @@ package com.tr1nity.stationsticker.block;
 import com.tr1nity.stationsticker.block.entity.ArrivalDisplayBlockEntity;
 import com.tr1nity.stationsticker.registration.ModBlockEntities;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -18,7 +17,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-// Табло прибытия 2x1. Сигнал перед приходом поезда включается и выключается кисточкой MTR.
+// Табло прибытия 2x1. Кисточка MTR открывает настройки крепления и сигнала.
 public class ArrivalDisplayBlock extends WideDisplayBlock {
     public static final BooleanProperty SOUND = BooleanProperty.create("sound");
 
@@ -39,13 +38,10 @@ public class ArrivalDisplayBlock extends WideDisplayBlock {
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!player.getItemInHand(hand).is(org.mtr.mod.Items.BRUSH.get().data)) return InteractionResult.PASS;
-        if (!level.isClientSide) {
-            BlockState newState = state.cycle(SOUND);
-            level.setBlock(pos, newState, Block.UPDATE_ALL);
-            player.displayClientMessage(Component.translatable(newState.getValue(SOUND)
-                    ? "message.stationsticker.arrival_display.sound_on"
-                    : "message.stationsticker.arrival_display.sound_off"), true);
+        if (!player.getItemInHand(hand).is(org.mtr.mod.Items.BRUSH.get().data) || !player.mayBuild()) return InteractionResult.PASS;
+        if (level.isClientSide) {
+            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT,
+                    () -> () -> com.tr1nity.stationsticker.client.ClientScreens.openWidthSettings(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
