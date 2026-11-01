@@ -59,7 +59,18 @@ public final class NetworkMapCache {
         NetworkMapData snapshot = data;
         long version = generation;
         CompletableFuture.supplyAsync(() -> {
-            var image = NetworkMapPainter.paint(snapshot, stationId, language.startsWith("ru"));
+            Set<Integer> characters = new HashSet<>();
+            snapshot.stations().forEach(s -> s.name().codePoints().forEach(characters::add));
+            snapshot.lines().forEach(line -> (line.name() + line.number()).codePoints().forEach(characters::add));
+            "СХЕМА МЕТРО METRO NETWORK Station Sticker Нет доступных линий MTR No MTR lines available0123456789…".codePoints().forEach(characters::add);
+            NetworkMapFont font;
+            try {
+                font = NetworkMapFont.load(id -> Minecraft.getInstance().getResourceManager().open(new ResourceLocation(id)), characters);
+            } catch (java.io.IOException error) {
+                org.mtr.mod.Init.LOGGER.warn("Could not load Minecraft bitmap font for network map", error);
+                font = NetworkMapFont.fallback();
+            }
+            var image = NetworkMapPainter.paint(snapshot, stationId, language.startsWith("ru"), font);
             try {
                 // Не декодируем PNG через MemoryStack: для большой схемы его не хватает.
                 return NetworkMapImages.create(image);

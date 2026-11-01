@@ -23,8 +23,7 @@ public class NetworkMapRenderer implements BlockEntityRenderer<NetworkMapBlockEn
         poses.translate(0.5, 0, 0.5);
         poses.mulPose(Axis.YP.rotationDegrees(-entity.getBlockState().getValue(NetworkMapBlock.FACING).toYRot()));
         VertexConsumer body = buffers.getBuffer(RenderType.text(WHITE));
-        box(body, poses.last().pose(), -1.15f, 0, -0.25f, 1.15f, 0.4f, 0.25f, light);
-        box(body, poses.last().pose(), -0.15f, 0.4f, -0.1f, 0.15f, 0.8f, 0.1f, light);
+        base(body, poses.last().pose(), light);
         disk(body, poses.last().pose(), NetworkMapBlock.RADIUS, 0.08f, 0xFF404247, light);
         disk(body, poses.last().pose(), NetworkMapBlock.RADIUS, -0.08f, 0xFF404247, light);
         for (int i = 0; i < SEGMENTS; i++) {
@@ -65,14 +64,17 @@ public class NetworkMapRenderer implements BlockEntityRenderer<NetworkMapBlockEn
             }
         }
     }
-    private static void box(VertexConsumer out, Matrix4f p, float x0, float y0, float z0, float x1, float y1, float z1, int light) {
-        int c = 0xFF292B30;
-        quad(out,p,x0,y0,z0,x1,y0,z0,x1,y1,z0,x0,y1,z0,c,light);
-        quad(out,p,x0,y0,z1,x1,y0,z1,x1,y1,z1,x0,y1,z1,c,light);
-        quad(out,p,x0,y0,z0,x0,y0,z1,x0,y1,z1,x0,y1,z0,c,light);
-        quad(out,p,x1,y0,z0,x1,y0,z1,x1,y1,z1,x1,y1,z0,c,light);
-        quad(out,p,x0,y0,z0,x1,y0,z0,x1,y0,z1,x0,y0,z1,c,light);
-        quad(out,p,x0,y1,z0,x1,y1,z0,x1,y1,z1,x0,y1,z1,c,light);
+    private static void base(VertexConsumer out, Matrix4f p, int light) {
+        float[][] outline = WideDisplayRenderer.roundedOutline(-NetworkMapBlock.BASE_HALF_WIDTH, 0,
+                NetworkMapBlock.BASE_HALF_WIDTH, NetworkMapBlock.BASE_HEIGHT, 0.08f);
+        float depth = NetworkMapBlock.BASE_HALF_DEPTH, center = NetworkMapBlock.BASE_HEIGHT / 2;
+        for (int i = 0; i < outline.length; i++) {
+            float[] a = outline[i], b = outline[(i + 1) % outline.length];
+            for (float z : new float[]{-depth, depth}) {
+                quad(out,p,0,center,z,a[0],a[1],z,b[0],b[1],z,b[0],b[1],z,0xFF202124,light);
+            }
+            quad(out,p,a[0],a[1],-depth,b[0],b[1],-depth,b[0],b[1],depth,a[0],a[1],depth,0xFF161719,light);
+        }
     }
     private static void quad(VertexConsumer out, Matrix4f p, float ax,float ay,float az,float bx,float by,float bz,float cx,float cy,float cz,float dx,float dy,float dz,int color,int light) {
         vertex(out,p,ax,ay,az,0,0,color,light); vertex(out,p,bx,by,bz,1,0,color,light);
