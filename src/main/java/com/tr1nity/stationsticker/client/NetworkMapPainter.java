@@ -144,61 +144,22 @@ public final class NetworkMapPainter {
     public static Map<Long, Point2D.Double> layout(NetworkMapData data, NetworkMapFont font, boolean russian) {
         Map<Long, Point2D.Double> result = new LinkedHashMap<>();
         if (data.stations().isEmpty()) return result;
-        var xs = data.stations().stream().map(NetworkMapData.Station::x).distinct().sorted().toList();
-        var zs = data.stations().stream().map(NetworkMapData.Station::z).distinct().sorted().toList();
-        Map<Long, Point2D.Double> compressed = new HashMap<>();
-        double extent = 0.001;
-        for (var station : data.stations()) {
-            double x = compact(station.x(), xs), z = compact(station.z(), zs);
-            compressed.put(station.id(), new Point2D.Double(x, z)); extent = Math.max(extent, Math.hypot(x, z));
-        }
+        double minX = data.stations().stream().mapToDouble(NetworkMapData.Station::x).min().orElse(0);
+        double maxX = data.stations().stream().mapToDouble(NetworkMapData.Station::x).max().orElse(0);
+        double minZ = data.stations().stream().mapToDouble(NetworkMapData.Station::z).min().orElse(0);
+        double maxZ = data.stations().stream().mapToDouble(NetworkMapData.Station::z).max().orElse(0);
+        double centerX = minX / 2 + maxX / 2, centerZ = minZ / 2 + maxZ / 2;
+        double extent = 0;
+        for (var station : data.stations()) extent = Math.max(extent, Math.hypot(station.x() - centerX, station.z() - centerZ));
         double chartBottom = Math.min(1580, legendTop(data) - 65);
         double centerY = (300 + chartBottom) / 2, chartRadius = Math.min(600, (chartBottom - 300) / 2 - 25);
+        double scale = extent > 0 ? chartRadius / extent : 1;
+        // Одинаковый масштаб X/Z сохраняет географию. Освобождаем место подписям, не сдвигая станции.
         for (var station : data.stations()) result.put(station.id(), new Point2D.Double(
-                1024 + compressed.get(station.id()).x * chartRadius / extent, centerY + compressed.get(station.id()).y * chartRadius / extent));
-        Map<Long, Point2D.Double> anchors = new HashMap<>();
-        result.forEach((id, point) -> anchors.put(id, new Point2D.Double(point.x, point.y)));
-        font.size(data.stations().size() > 150 ? 16 : 24);
-        Map<Long, Double> widths = new HashMap<>();
-        for (var station : data.stations()) widths.put(station.id(), (double) Math.min(240, font.width(name(station.name(), russian))) + 36);
-        // Раздвигаем плотные узлы, оставляя слабую привязку к исходной географии.
-        for (int iteration = 0; iteration < 60; iteration++) {
-            Map<String, List<Long>> grid = new HashMap<>();
-            result.forEach((id, p) -> grid.computeIfAbsent((int) (p.x / 300) + ":" + (int) (p.y / 80), key -> new ArrayList<>()).add(id));
-            Map<Long, Point2D.Double> forces = new HashMap<>();
-            result.forEach((id, p) -> forces.put(id, new Point2D.Double((anchors.get(id).x - p.x) * 0.015, (anchors.get(id).y - p.y) * 0.015)));
-            for (var entry : result.entrySet()) {
-                long id = entry.getKey(); var p = entry.getValue();
-                int gx = (int) (p.x / 300), gy = (int) (p.y / 80);
-                for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (long other : grid.getOrDefault((gx + dx) + ":" + (gy + dy), List.of())) {
-                    if (other <= id) continue;
-                    var q = result.get(other);
-                    double x = p.x - q.x, y = p.y - q.y, targetX = (widths.get(id) + widths.get(other)) / 2;
-                    if (Math.abs(x) >= targetX || Math.abs(y) >= 60) continue;
-                    double pushX = (targetX - Math.abs(x)) / targetX, pushY = (60 - Math.abs(y)) / 60;
-                    // Чаще раздвигаем по вертикали: длинные имена получают свободную строку.
-                    double fy = Math.copySign(5 * pushX * pushY, Math.abs(y) < 0.01 ? (id < other ? -1 : 1) : y);
-                    double fx = Math.copySign(1.5 * pushX * pushY, Math.abs(x) < 0.01 ? 1 : x);
-                    forces.get(id).x += fx; forces.get(id).y += fy;
-                    forces.get(other).x -= fx; forces.get(other).y -= fy;
-                }
-            }
-            result.forEach((id, p) -> {
-                p.x += Math.max(-12, Math.min(12, forces.get(id).x)); p.y += Math.max(-12, Math.min(12, forces.get(id).y));
-                double radius = Point2D.distance(p.x, p.y, 1024, centerY);
-                if (radius > chartRadius) { p.x = 1024 + (p.x - 1024) * chartRadius / radius; p.y = centerY + (p.y - centerY) * chartRadius / radius; }
-            });
-        }
+                1024 + (station.x() - centerX) * scale, centerY + (station.z() - centerZ) * scale));
         return result;
     }
     private static void centered(Graphics2D g, NetworkMapFont font, String text, int baseline) { font.draw(g, text, (SIZE - font.width(text)) / 2, baseline); }
-    private static double compact(double value, List<Double> coordinates) {
-        if (coordinates.size() < 2) return 0;
-        double min = coordinates.get(0), max = coordinates.get(coordinates.size() - 1);
-        double geography = (value - min) / Math.max(1, max - min);
-        double order = (double) Collections.binarySearch(coordinates, value) / (coordinates.size() - 1);
-        return geography * 0.35 + order * 0.65 - 0.5;
-    }
     private static int legendTop(NetworkMapData data) {
         int columns = Math.max(1, (data.lines().size() + 9) / 10);
         int rows = Math.max(1, (data.lines().size() + columns - 1) / columns);

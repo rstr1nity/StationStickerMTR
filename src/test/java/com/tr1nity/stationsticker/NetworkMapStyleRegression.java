@@ -11,6 +11,7 @@ import java.util.List;
 public final class NetworkMapStyleRegression {
     public static void run() throws Exception {
         verifyUnifontArchive();
+        verifyGeography();
         check(NetworkMapPainter.name("中文|Завод|Factory||note", true).equals("Завод"), "Russian preference");
         check(NetworkMapPainter.name("中文|Завод|Factory", false).equals("Factory"), "English preference over Chinese");
         check(NetworkMapPainter.name("Завод R|Factory", false).equals("Factory"), "Mixed Cyrillic text is not an English translation");
@@ -62,6 +63,68 @@ public final class NetworkMapStyleRegression {
         System.out.println("PASS: Minecraft bitmap font, language selection, curved routes, terminal badges and 50 nonoverlapping dense-node labels");
     }
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }
+
+    private static void verifyGeography() throws Exception {
+        var stations = List.of(new NetworkMapData.Station(1, "West", -1000, 20),
+                new NetworkMapData.Station(2, "Middle", -990, 20),
+                new NetworkMapData.Station(3, "East", 1000, 20),
+                new NetworkMapData.Station(4, "North", 1000, -180));
+        var data = new NetworkMapData(stations, List.of(), List.of());
+        var points = NetworkMapPainter.layout(data);
+        var west = points.get(1L); var middle = points.get(2L); var east = points.get(3L); var north = points.get(4L);
+        check(west.y == middle.y && middle.y == east.y, "Collinear stations must not be pushed apart for labels");
+        check(east.x == north.x && north.y < east.y, "World north is up, equal X coordinates stay aligned");
+        double scale = (east.x - west.x) / 2000;
+        check(Math.abs((middle.x - west.x) - 10 * scale) < 1e-8, "Unequal world distances keep their ratio");
+        check(Math.abs((east.y - north.y) - 200 * scale) < 1e-8, "X and Z use the same scale");
+        var otherLanguage = NetworkMapPainter.layout(data, NetworkMapFont.fallback(), false);
+        check(points.equals(otherLanguage), "Font and language must not move stations");
+        var localData = java.nio.file.Path.of("mtr-local-map-data.json");
+        if (java.nio.file.Files.exists(localData)) {
+            var root = com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(localData)).getAsJsonObject().getAsJsonObject("data");
+            Map<Long, double[]> positions = new TreeMap<>();
+            List<NetworkMapData.Edge> edges = new ArrayList<>();
+            Map<Integer, NetworkMapData.Line> lines = new TreeMap<>();
+            for (var element : root.getAsJsonArray("routes")) {
+                var route = element.getAsJsonObject(); var stops = route.getAsJsonArray("stations");
+                if (route.get("hidden").getAsBoolean() || stops.size() < 2) continue;
+                int color = route.get("color").getAsInt();
+                lines.putIfAbsent(color, new NetworkMapData.Line(color, route.get("number").getAsString(), route.get("name").getAsString()));
+                Long previous = null;
+                for (var stopElement : stops) {
+                    var stop = stopElement.getAsJsonObject(); long id = Long.parseUnsignedLong(stop.get("id").getAsString(), 16);
+                    var sum = positions.computeIfAbsent(id, key -> new double[3]);
+                    sum[0] += stop.get("x").getAsDouble(); sum[1] += stop.get("z").getAsDouble(); sum[2]++;
+                    if (previous != null && previous != id) {
+                        var edge = new NetworkMapData.Edge(Math.min(previous, id), Math.max(previous, id), color);
+                        if (!edges.contains(edge)) edges.add(edge);
+                    }
+                    previous = id;
+                }
+            }
+            List<NetworkMapData.Station> liveStations = new ArrayList<>();
+            for (var element : root.getAsJsonArray("stations")) {
+                var station = element.getAsJsonObject(); long id = Long.parseUnsignedLong(station.get("id").getAsString(), 16);
+                var sum = positions.get(id);
+                if (sum != null) liveStations.add(new NetworkMapData.Station(id, station.get("name").getAsString(), sum[0] / sum[2], sum[1] / sum[2]));
+            }
+            var live = new NetworkMapData(liveStations, edges, new ArrayList<>(lines.values()));
+            var projected = NetworkMapPainter.layout(live);
+            double liveScale = 0;
+            for (int i = 0; i < liveStations.size(); i++) for (int j = i + 1; j < liveStations.size(); j++) {
+                var a = liveStations.get(i); var b = liveStations.get(j);
+                double distance = Math.hypot(a.x() - b.x(), a.z() - b.z());
+                if (distance == 0) continue;
+                double ratio = projected.get(a.id()).distance(projected.get(b.id())) / distance;
+                if (liveScale == 0) liveScale = ratio;
+                check(Math.abs(ratio - liveScale) < 1e-8, "Live MTR map keeps every pairwise distance ratio");
+            }
+            var image = NetworkMapPainter.paint(live, 0, true);
+            javax.imageio.ImageIO.write(image, "PNG", new java.io.File("network-map-local-world-preview.png")); image.flush();
+            System.out.println("PASS: live localhost MTR network uses identical station coordinates and uniform world scale");
+        }
+        System.out.println("PASS: geographic projection preserves alignment, distance ratios and directions independently of labels");
+    }
 
     private static void verifyUnifontArchive() throws Exception {
         var bytes = new java.io.ByteArrayOutputStream();

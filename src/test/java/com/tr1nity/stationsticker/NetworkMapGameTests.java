@@ -44,6 +44,8 @@ public class NetworkMapGameTests {
         var response = new ListDataResponse(data).list();
         var map = new MtrNetworkMapResponse(new org.mtr.core.serializer.JsonReader(org.mtr.core.tool.Utilities.getJsonObjectFromData(response))).map;
         helper.assertTrue(map.stations().size() == 2, "Full snapshot preserves station coordinates without nearby-client data");
+        helper.assertTrue(map.stations().stream().allMatch(station -> station.z() == p.getMidPosition().getZ()),
+                "Map positions use platform midpoints like the MTR website, not station area centers");
         helper.assertTrue(map.lines().size() == 1 && map.edges().size() == 1, "Hidden routes excluded, reverse directions deduplicated");
         var bytes = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         try {
