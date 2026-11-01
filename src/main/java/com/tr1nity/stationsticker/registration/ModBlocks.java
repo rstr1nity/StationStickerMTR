@@ -52,8 +52,26 @@ public class ModBlocks {
     public static final RegistryObject<InfoDisplayBlock> INFO_DISPLAY = registerBlock("info_display", InfoDisplayBlock::new);
     public static final RegistryObject<DisplayPartBlock> DISPLAY_PART = BLOCKS.register("display_part", DisplayPartBlock::new);
 
-    private static <T extends Block> RegistryObject<T> registerBlock(String name,
-                                                                     java.util.function.Supplier<T> block) {
+    public static final RegistryObject<DirectionSignBlock> DIRECTION_SIGN =
+            registerBlock("direction_sign", DirectionSignBlock::new);
+
+    public static final RegistryObject<NavSignBlock> NAV_SIGN =
+            registerBlock("nav_sign", NavSignBlock::new);
+
+    public static final RegistryObject<InfoDisplayBlock> INFO_DISPLAY =
+            registerBlock("info_display", InfoDisplayBlock::new);
+    public static final RegistryObject<com.tr1nity.stationsticker.block.NetworkMapBlock> NETWORK_MAP =
+            registerBlock("network_map", com.tr1nity.stationsticker.block.NetworkMapBlock::new);
+    public static final RegistryObject<com.tr1nity.stationsticker.block.NetworkMapPartBlock> NETWORK_MAP_PART =
+            BLOCKS.register("network_map_part", com.tr1nity.stationsticker.block.NetworkMapPartBlock::new);
+
+    // Без предмета: невидимые клетки широких экранов, ставятся самим экраном
+    public static final RegistryObject<DisplayPartBlock> DISPLAY_PART =
+            BLOCKS.register("display_part", DisplayPartBlock::new);
+
+    // ВАЖНО: ЗДЕСЬ БОЛЬШЕ НЕТ ПЕРЕМЕННОЙ STICKER_TAB! Удалите её.
+
+    private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
         RegistryObject<T> registeredBlock = BLOCKS.register(name, block);
         ITEMS.register(name, () -> new BlockItem(registeredBlock.get(),
                 new Item.Properties().tab(STICKER_TAB)));

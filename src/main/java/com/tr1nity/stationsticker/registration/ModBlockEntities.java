@@ -16,6 +16,9 @@ public class ModBlockEntities {
 
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, StationStickerMod.MOD_ID);
+    public static final RegistryObject<BlockEntityType<com.tr1nity.stationsticker.block.entity.NetworkMapBlockEntity>> NETWORK_MAP =
+            BLOCK_ENTITIES.register("network_map", () -> BlockEntityType.Builder.of(
+                    com.tr1nity.stationsticker.block.entity.NetworkMapBlockEntity::new, ModBlocks.NETWORK_MAP.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<StationStickerBlockEntity>> STATION_STICKER =
             BLOCK_ENTITIES.register("station_sticker",

@@ -62,5 +62,7 @@
   "gui.stationsticker.display.mount.wall": "Wall",
   "gui.stationsticker.display.mount.side": "Side brackets",
   "gui.stationsticker.display.sound": "Arrival chime",
+  "block.stationsticker.network_map": "Round Metro Network Map",
+  "display.stationsticker.network_map.loading": "Loading metro network…",
   "itemGroup.stationsticker_tab": "Station Stickers"
 }

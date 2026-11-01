@@ -13,6 +13,11 @@ public final class ClientCacheEvents {
     }
 
     @SubscribeEvent
+    public static void onLogout(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        NetworkMapCache.reset();
+    }
+
+    @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             SPBDynamicTextureCache.instance.tick();

@@ -16,6 +16,7 @@ public class ClientModEvents {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(ModBlockEntities.NETWORK_MAP.get(), NetworkMapRenderer::new);
         event.registerBlockEntityRenderer(
                 ModBlockEntities.STATION_STICKER.get(),
                 StationStickerRenderer::new
@@ -40,6 +41,12 @@ public class ClientModEvents {
                 ModBlockEntities.INFO_DISPLAY.get(),
                 InfoDisplayRenderer::new
         );
+    }
+
+    @SubscribeEvent
+    public static void registerNetworkMapReload(net.minecraftforge.client.event.RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) resources ->
+                net.minecraft.client.Minecraft.getInstance().execute(NetworkMapCache::reset));
     }
 
 
