@@ -26,6 +26,9 @@ public class NetworkMapBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final float RADIUS = 1.45f;
     public static final float CENTER_Y = 2;
+    public static final float BASE_HALF_WIDTH = 1.18f;
+    public static final float BASE_HEIGHT = 0.68f;
+    public static final float BASE_HALF_DEPTH = 0.22f;
     public NetworkMapBlock() {
         super(Properties.of().strength(1).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.BLOCK));
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
@@ -83,9 +86,9 @@ public class NetworkMapBlock extends BaseEntityBlock {
                     box(facing, x0 - h + 0.5, clipped0 - row, 0.42, x1 - h + 0.5, clipped1 - row, 0.58));
         }
         if (row == 0) {
-            double x0 = Math.max(h - 0.5, -1.15), x1 = Math.min(h + 0.5, 1.15);
-            if (x1 > x0) shape = Shapes.or(shape, box(facing, x0 - h + 0.5, 0, 0.25, x1 - h + 0.5, 0.4, 0.75));
-            if (h == 0) shape = Shapes.or(shape, box(facing, 0.35, 0.4, 0.4, 0.65, 0.8, 0.6));
+            double x0 = Math.max(h - 0.5, -BASE_HALF_WIDTH), x1 = Math.min(h + 0.5, BASE_HALF_WIDTH);
+            if (x1 > x0) shape = Shapes.or(shape, box(facing, x0 - h + 0.5, 0, 0.5 - BASE_HALF_DEPTH,
+                    x1 - h + 0.5, BASE_HEIGHT, 0.5 + BASE_HALF_DEPTH));
         }
         return shape;
     }

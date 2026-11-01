@@ -30,5 +30,6 @@ public final class NetworkMapImageRegression {
             }
         } finally { image.flush(); }
         System.out.println("PASS: original Out of stack space reproduced; direct 2048x2048 transfer succeeds with correct colors and alpha");
+        NetworkMapStyleRegression.run();
     }
 }
