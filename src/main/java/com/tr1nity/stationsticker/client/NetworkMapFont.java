@@ -66,14 +66,20 @@ public final class NetworkMapFont {
             }
             if (type.equals("unihex")) {
                 try (ZipInputStream zip = new ZipInputStream(resources.open(provider.get("hex_file").getAsString()))) {
-                    while (zip.getNextEntry() != null) {
+                    java.util.zip.ZipEntry entry;
+                    while ((entry = zip.getNextEntry()) != null) {
+                        if (entry.isDirectory() || !entry.getName().toLowerCase(Locale.ROOT).endsWith(".hex")) continue;
                         BufferedReader reader = new BufferedReader(new InputStreamReader(zip, StandardCharsets.UTF_8));
                         String line;
                         while ((line = reader.readLine()) != null) {
-                            int colon = line.indexOf(':'); if (colon < 0) continue;
+                            int colon = line.indexOf(':');
+                            // Архив содержит также лицензию/README; проверяем и сами записи .hex.
+                            if (colon < 4 || colon > 6 || !hexadecimal(line.substring(0, colon))) continue;
                             int code = Integer.parseInt(line.substring(0, colon), 16);
-                            if (!needed.contains(code) || glyphs.containsKey(code)) continue;
-                            String hex = line.substring(colon + 1); int w = hex.length() / 4;
+                            if (!Character.isValidCodePoint(code) || !needed.contains(code) || glyphs.containsKey(code)) continue;
+                            String hex = line.substring(colon + 1);
+                            if ((hex.length() != 32 && hex.length() != 64 && hex.length() != 96 && hex.length() != 128) || !hexadecimal(hex)) continue;
+                            int w = hex.length() / 4;
                             boolean[][] pixels = new boolean[16][w];
                             for (int y = 0; y < 16; y++) for (int x = 0; x < w; x++) {
                                 int value = Character.digit(hex.charAt(y * w / 4 + x / 4), 16);
@@ -85,6 +91,9 @@ public final class NetworkMapFont {
                 }
             }
         }
+    }
+    private static boolean hexadecimal(String value) {
+        return value.chars().allMatch(c -> Character.digit(c, 16) >= 0);
     }
     // Для символов, отсутствующих в bitmap-провайдерах, сохраняем читаемый пиксельный fallback.
     private Glyph glyph(int code) {

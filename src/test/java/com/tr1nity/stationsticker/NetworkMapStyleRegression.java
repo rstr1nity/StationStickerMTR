@@ -10,6 +10,7 @@ import java.util.List;
 
 public final class NetworkMapStyleRegression {
     public static void run() throws Exception {
+        verifyUnifontArchive();
         check(NetworkMapPainter.name("中文|Завод|Factory||note", true).equals("Завод"), "Russian preference");
         check(NetworkMapPainter.name("中文|Завод|Factory", false).equals("Factory"), "English preference over Chinese");
         check(NetworkMapPainter.name("Завод R|Factory", false).equals("Factory"), "Mixed Cyrillic text is not an English translation");
@@ -61,4 +62,46 @@ public final class NetworkMapStyleRegression {
         System.out.println("PASS: Minecraft bitmap font, language selection, curved routes, terminal badges and 50 nonoverlapping dense-node labels");
     }
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }
+
+    private static void verifyUnifontArchive() throws Exception {
+        var bytes = new java.io.ByteArrayOutputStream();
+        try (var zip = new java.util.zip.ZipOutputStream(bytes)) {
+            zip.putNextEntry(new java.util.zip.ZipEntry("LICENSE.txt"));
+            zip.write("release is licensed as follows: not glyph data".getBytes(java.nio.charset.StandardCharsets.UTF_8)); zip.closeEntry();
+            zip.putNextEntry(new java.util.zip.ZipEntry("font.hex"));
+            String rows = "release is licensed as follows: malformed comment\nGGGG:BAD\n0041:XYZ\n0041:" + "FF".repeat(16) + "\n";
+            zip.write(rows.getBytes(java.nio.charset.StandardCharsets.UTF_8)); zip.closeEntry();
+        }
+        byte[] provider = "{\"providers\":[{\"type\":\"unihex\",\"hex_file\":\"minecraft:font/test.zip\"}]}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var sampleFont = NetworkMapFont.load(id -> new java.io.ByteArrayInputStream(id.endsWith(".zip") ? bytes.toByteArray() : provider), Set.of(65));
+        sampleFont.size(8);
+        check(sampleFont.width("A") == 5, "Valid glyph after license, comments and malformed rows must be loaded");
+
+        var assets = java.nio.file.Path.of(System.getProperty("stationsticker.test.assets"));
+        com.google.gson.JsonObject objects = null;
+        try (var indexes = java.nio.file.Files.list(assets.resolve("indexes"))) {
+            for (var index : indexes.filter(path -> path.toString().endsWith(".json")).toList()) {
+                try (var reader = java.nio.file.Files.newBufferedReader(index)) {
+                    var candidate = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("objects");
+                    if (candidate.has("minecraft/font/unifont.zip")) { objects = candidate; break; }
+                }
+            }
+        }
+        check(objects != null, "Installed Minecraft Unifont archive must be tested");
+        final var assetObjects = objects;
+        NetworkMapFont realFont = NetworkMapFont.load(id -> {
+            String[] location = id.split(":", 2);
+            String key = location[0] + "/" + location[1];
+            if (assetObjects.has(key)) {
+                String hash = assetObjects.getAsJsonObject(key).get("hash").getAsString();
+                return java.nio.file.Files.newInputStream(assets.resolve("objects").resolve(hash.substring(0, 2)).resolve(hash));
+            }
+            var input = NetworkMapStyleRegression.class.getResourceAsStream("/assets/" + key);
+            if (input == null) throw new IOException("Missing resource " + key);
+            return input;
+        }, Set.of((int) 'A', (int) 'Я', (int) '中'));
+        realFont.size(8);
+        check(realFont.width("中") == 9, "Chinese glyph must come from the installed 16-pixel Unifont, not a fallback");
+        System.out.println("PASS: Unifont archive ignores license/README and malformed records; installed Minecraft archive loads Russian, Latin and Chinese glyphs");
+    }
 }
