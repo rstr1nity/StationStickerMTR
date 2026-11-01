@@ -17,6 +17,7 @@ public final class MtrNetworkMapResponse {
         new ListDataResponse(reader, data).write();
         data.sync();
         Map<Long, NetworkMapData.Station> stations = new TreeMap<>();
+        Map<Long, double[]> platformPositions = new HashMap<>();
         Map<String, NetworkMapData.Edge> edges = new TreeMap<>();
         Map<Integer, NetworkMapData.Line> lines = new TreeMap<>();
         List<Route> routes = new ArrayList<>(data.routes);
@@ -29,11 +30,19 @@ public final class MtrNetworkMapResponse {
                 if (platform == null || platform.area == null) continue;
                 Station station = platform.area;
                 long id = station.getId();
-                var center = station.getCenter();
+                var center = platform.getMidPosition();
                 stations.putIfAbsent(id, new NetworkMapData.Station(id, truncate(station.getName(), 256), center.getX(), center.getZ()));
                 if (stops.isEmpty() || stops.get(stops.size() - 1) != id) stops.add(id);
             }
             if (stops.size() < 2) continue;
+            // Веб-карта MTR усредняет середины платформ всех видимых маршрутов станции.
+            for (var stop : route.getRoutePlatforms()) {
+                var platform = stop.getPlatform();
+                if (platform == null || platform.area == null) continue;
+                var position = platform.getMidPosition();
+                var sum = platformPositions.computeIfAbsent(platform.area.getId(), id -> new double[3]);
+                sum[0] += position.getX(); sum[1] += position.getZ(); sum[2]++;
+            }
             int color = route.getColor() & 0xFFFFFF;
             lines.putIfAbsent(color, new NetworkMapData.Line(color, truncate(route.getRouteNumber(), 64), truncate(route.getName(), 256)));
             for (int i = 1; i < stops.size(); i++) {
@@ -46,6 +55,10 @@ public final class MtrNetworkMapResponse {
         Set<Long> used = new HashSet<>();
         edges.values().forEach(edge -> { used.add(edge.from()); used.add(edge.to()); });
         stations.keySet().retainAll(used);
+        stations.replaceAll((id, station) -> {
+            var sum = platformPositions.get(id);
+            return new NetworkMapData.Station(id, station.name(), sum[0] / sum[2], sum[1] / sum[2]);
+        });
         for (Station station : data.stations) {
             if (!used.contains(station.getId())) continue;
             for (Station connected : station.connectedStations) {
