@@ -27,6 +27,18 @@ minecraft {
     mappings channel: mapping_channel, version: mapping_version
 
     runs {
+        gameTestServer {
+            workingDirectory project.file('build/gametest')
+            property 'forge.enabledGameTestNamespaces', 'stationsticker'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            mods {
+                stationsticker {
+                    source sourceSets.main
+                    source sourceSets.test
+                }
+            }
+        }
         client {
             jvmArg '-Xmx6G'
             if (project.hasProperty('debugStationClient')) {

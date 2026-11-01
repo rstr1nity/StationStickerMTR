@@ -9,7 +9,6 @@ import com.tr1nity.stationsticker.block.entity.NavSignBlockEntity;
 import com.tr1nity.stationsticker.client.display.Exits;
 import com.tr1nity.stationsticker.client.display.StationNames;
 import com.tr1nity.stationsticker.client.display.Transfers;
-import com.tr1nity.stationsticker.network.DisplayWidthPacket;
 import com.tr1nity.stationsticker.network.ModNetwork;
 import com.tr1nity.stationsticker.network.NavSignSettingsPacket;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -37,10 +36,12 @@ public class NavSignScreen extends Screen {
     private final List<String> exitNames = new ArrayList<>();
     private NavSignSettings settings;
     private int signWidth;
+    private int drop;
 
     public NavSignScreen(NavSignBlockEntity sign) {
         super(Component.translatable(KEY + "title"));
         this.sign = sign;
+        this.drop = sign.getBlockState().getValue(com.tr1nity.stationsticker.block.WideDisplayBlock.DROP);
         this.transfers = Transfers.optionsAt(sign.getBlockPos());
         this.settings = sign.getSettings();
         this.signWidth = sign.getBlockState().hasProperty(ResizableDisplayBlock.WIDTH)
@@ -71,7 +72,7 @@ public class NavSignScreen extends Screen {
     @Override
     protected void init() {
         int x = (width - BUTTON_WIDTH) / 2;
-        int y = height / 2 - ROW * 2;
+        int y = height / 2 - ROW * 3;
 
         addRenderableWidget(CycleButton.<Template>builder(value -> option("template", value))
                 .withValues(Template.values())
@@ -84,6 +85,10 @@ public class NavSignScreen extends Screen {
         addRenderableWidget(new WidthSlider(x, y + ROW, BUTTON_WIDTH, BUTTON_HEIGHT, signWidth, value -> signWidth = value));
 
         int row = 2;
+        if (sign.getBlockState().getValue(com.tr1nity.stationsticker.block.WideDisplayBlock.ATTACHMENT)
+                == com.tr1nity.stationsticker.block.DisplayAttachment.CEILING) {
+            addRenderableWidget(new DropSlider(x, y + ROW * row++, BUTTON_WIDTH, BUTTON_HEIGHT, drop, value -> drop = value));
+        }
         if (settings.template() == Template.TRANSFER) {
             if (transfers.isEmpty()) {
                 addDisabled(x, y + ROW * row++, Component.translatable(KEY + "no_transfers"));
@@ -143,7 +148,7 @@ public class NavSignScreen extends Screen {
 
     private void save() {
         ModNetwork.CHANNEL.sendToServer(new NavSignSettingsPacket(sign.getBlockPos(), settings));
-        ModNetwork.CHANNEL.sendToServer(new DisplayWidthPacket(sign.getBlockPos(), signWidth));
+        ModNetwork.CHANNEL.sendToServer(new com.tr1nity.stationsticker.network.DisplayMountPacket(sign.getBlockPos(), signWidth, drop, false, false));
         onClose();
     }
 
@@ -161,7 +166,7 @@ public class NavSignScreen extends Screen {
     @Override
     public void render(PoseStack graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
-        drawCenteredString(graphics, font, title, width / 2, height / 2 - ROW * 2 - 20, 0xFFFFFF);
+        graphics.drawCenteredString(font, title, width / 2, height / 2 - ROW * 3 - 20, 0xFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 

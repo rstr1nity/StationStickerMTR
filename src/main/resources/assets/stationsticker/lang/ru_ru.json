@@ -17,7 +17,7 @@
   "block.stationsticker.nav_sign": "Навигационная табличка",
   "item.stationsticker.nav_sign": "Навигационная табличка",
   "gui.stationsticker.display.width": "Ширина: %s бл.",
-  "message.stationsticker.display.no_space": "Не хватает места, чтобы расширить табличку",
+  "message.stationsticker.display.no_space": "Не хватает места для выбранного размера или крепления",
   "gui.stationsticker.nav_sign.title": "Навигационная табличка",
   "gui.stationsticker.nav_sign.template": "Шаблон",
   "gui.stationsticker.nav_sign.template.transfer": "Переход на линию",
@@ -57,5 +57,10 @@
   "display.stationsticker.arrival.min": "мин",
   "display.stationsticker.arrival.sec": "сек",
   "display.stationsticker.arrival.day": "День %s",
+  "gui.stationsticker.display.drop": "Опустить знак на: %s блока",
+  "gui.stationsticker.display.mount": "Крепление",
+  "gui.stationsticker.display.mount.wall": "На стене",
+  "gui.stationsticker.display.mount.side": "Боковое, на штырях",
+  "gui.stationsticker.display.sound": "Сигнал прибытия",
   "itemGroup.stationsticker_tab": "Станционные стикеры"
 }
