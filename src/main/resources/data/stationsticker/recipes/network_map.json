@@ -1,0 +1,6 @@
+{
+  "type":"minecraft:crafting_shaped",
+  "pattern":[" G ","GMG","III"],
+  "key":{"G":{"tag":"forge:glass_panes"},"M":{"item":"minecraft:map"},"I":{"tag":"forge:ingots/iron"}},
+  "result":{"item":"stationsticker:network_map","count":1}
+}

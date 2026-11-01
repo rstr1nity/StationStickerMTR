@@ -47,6 +47,10 @@ public class ModBlocks {
 
     public static final RegistryObject<InfoDisplayBlock> INFO_DISPLAY =
             registerBlock("info_display", InfoDisplayBlock::new);
+    public static final RegistryObject<com.tr1nity.stationsticker.block.NetworkMapBlock> NETWORK_MAP =
+            registerBlock("network_map", com.tr1nity.stationsticker.block.NetworkMapBlock::new);
+    public static final RegistryObject<com.tr1nity.stationsticker.block.NetworkMapPartBlock> NETWORK_MAP_PART =
+            BLOCKS.register("network_map_part", com.tr1nity.stationsticker.block.NetworkMapPartBlock::new);
 
     // Без предмета: невидимые клетки широких экранов, ставятся самим экраном
     public static final RegistryObject<DisplayPartBlock> DISPLAY_PART =

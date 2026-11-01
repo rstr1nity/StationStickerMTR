@@ -62,5 +62,7 @@
   "gui.stationsticker.display.mount.wall": "На стене",
   "gui.stationsticker.display.mount.side": "Боковое, на штырях",
   "gui.stationsticker.display.sound": "Сигнал прибытия",
+  "block.stationsticker.network_map": "Круглый стенд со схемой метро",
+  "display.stationsticker.network_map.loading": "Загрузка схемы метро…",
   "itemGroup.stationsticker_tab": "Станционные стикеры"
 }
