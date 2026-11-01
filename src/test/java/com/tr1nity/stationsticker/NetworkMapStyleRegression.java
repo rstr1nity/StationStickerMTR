@@ -12,6 +12,8 @@ public final class NetworkMapStyleRegression {
     public static void run() throws Exception {
         verifyUnifontArchive();
         verifyGeography();
+        NetworkMapDensityRegression.run();
+        NetworkMapWorldPreview.run();
         check(NetworkMapPainter.name("中文|Завод|Factory||note", true).equals("Завод"), "Russian preference");
         check(NetworkMapPainter.name("中文|Завод|Factory", false).equals("Factory"), "English preference over Chinese");
         check(NetworkMapPainter.name("Завод R|Factory", false).equals("Factory"), "Mixed Cyrillic text is not an English translation");

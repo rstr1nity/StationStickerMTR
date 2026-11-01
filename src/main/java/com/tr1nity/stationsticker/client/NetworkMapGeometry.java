@@ -26,6 +26,9 @@ public final class NetworkMapGeometry {
         return result;
     }
     public static List<LinePath> paths(NetworkMapData data, Map<Long, Point2D.Double> positions) {
+        return paths(data, positions, 8);
+    }
+    public static List<LinePath> paths(NetworkMapData data, Map<Long, Point2D.Double> positions, float width) {
         List<LinePath> result = new ArrayList<>();
         Map<String, SortedSet<Integer>> shared = new HashMap<>();
         for (var edge : data.edges()) if (edge.color() >= 0) shared.computeIfAbsent(key(edge.from(), edge.to()), k -> new TreeSet<>()).add(edge.color());
@@ -41,7 +44,7 @@ public final class NetworkMapGeometry {
                     Point2D.Double a = positions.get(from), b = positions.get(to);
                     if (a == null || b == null) break;
                     var colors = new ArrayList<>(shared.get(key(from, to)));
-                    double shift = (colors.indexOf(color) - (colors.size() - 1) / 2.0) * 9;
+                    double shift = (colors.indexOf(color) - (colors.size() - 1) / 2.0) * (width + 2);
                     double length = Math.max(1, a.distance(b));
                     double sign = from < to ? 1 : -1;
                     double dx = -(b.y - a.y) / length * shift * sign, dy = (b.x - a.x) / length * shift * sign;
@@ -54,7 +57,7 @@ public final class NetworkMapGeometry {
                     for (long neighbor : line.get(to)) if (neighbor != from) { next = neighbor; break; }
                     from = to; to = next;
                 }
-                if (points.size() > 1) result.add(new LinePath(color, rounded(points, 24)));
+                if (points.size() > 1) result.add(new LinePath(color, rounded(points, Math.max(8, width * 3))));
             }
         });
         return result;
