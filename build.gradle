@@ -118,6 +118,7 @@ tasks.register('checkNetworkMapImage', JavaExec) {
     mainClass = 'com.tr1nity.stationsticker.NetworkMapImageRegression'
     systemProperty 'org.lwjgl.system.stackSize', '64'
     systemProperty 'org.lwjgl.librarypath', file('build/natives').absolutePath
+    systemProperty 'stationsticker.test.assets', new File(gradle.gradleUserHomeDir, 'caches/forge_gradle/assets').absolutePath
 }
 
 def modsDirProperty = "mods_dir_${minecraft_version}"
