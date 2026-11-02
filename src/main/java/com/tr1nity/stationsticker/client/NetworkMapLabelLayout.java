@@ -17,6 +17,10 @@ public final class NetworkMapLabelLayout {
 
     public static List<NetworkMapSymbols.Label> place(NetworkMapData data, Map<Long, Point2D.Double> points,
             NetworkMapFont font, boolean russian, List<Rectangle2D> fixed, List<Shape> paths, int bottom) {
+        return place(data, points, font, russian, fixed, paths, bottom, 0);
+    }
+    public static List<NetworkMapSymbols.Label> place(NetworkMapData data, Map<Long, Point2D.Double> points,
+            NetworkMapFont font, boolean russian, List<Rectangle2D> fixed, List<Shape> paths, int bottom, long current) {
         var solver = new NetworkMapLabelLayout();
         solver.minimumOnly = data.stations().size() > 60;
         List<Rectangle2D> pathBounds = paths.stream().map(Shape::getBounds2D).toList();
@@ -30,6 +34,10 @@ public final class NetworkMapLabelLayout {
                     var rows = NetworkMapSymbols.wrap(NetworkMapPainter.name(station.name(), russian), font, wrap);
                     int width = rows.stream().mapToInt(font::width).max().orElse(0) + 4;
                     int height = rows.size() * (font.height() + 1) + 4;
+                    if (station.id() == current) {
+                        width = Math.max(width + (int) Math.ceil(font.boldOffset()), font.width(NetworkMapSymbols.youAreHere(russian)) + 10);
+                        height += font.height() + 8;
+                    }
                     // Сдвиги вдоль края подписи позволяют использовать узкие промежутки внутри сети.
                     for (int gap : new int[]{9, 16, 26, 42, 64, 90}) for (double align : new double[]{0, 0.25, 0.5, 0.75, 1}) {
                         double[][] positions = {{point.x + gap, point.y - height * align}, {point.x - gap - width, point.y - height * align},
@@ -65,8 +73,13 @@ public final class NetworkMapLabelLayout {
             if (option == null) {
                 font.size(8);
                 var rows = NetworkMapSymbols.wrap(NetworkMapPainter.name(station.name(), russian), font, 90);
-                var placement = NetworkMapLabels.place(points.get(station.id()), rows.stream().mapToInt(font::width).max().orElse(0),
-                        rows.size() * (font.height() + 1), occupied, paths, bottom);
+                int width = rows.stream().mapToInt(font::width).max().orElse(0);
+                int height = rows.size() * (font.height() + 1);
+                if (station.id() == current) {
+                    width = Math.max(width + (int) Math.ceil(font.boldOffset()), font.width(NetworkMapSymbols.youAreHere(russian)) + 6);
+                    height += font.height() + 8;
+                }
+                var placement = NetworkMapLabels.place(points.get(station.id()), width, height, occupied, paths, bottom);
                 option = new Option(rows, placement.box(), 8, 0); occupied.add(option.box());
             }
             result.add(new NetworkMapSymbols.Label(station.id(), option.rows(), option.box(), option.size(), distance(points.get(station.id()), option.box()) > 28));

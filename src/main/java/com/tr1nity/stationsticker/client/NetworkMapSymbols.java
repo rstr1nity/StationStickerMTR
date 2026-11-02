@@ -22,6 +22,9 @@ public final class NetworkMapSymbols {
     public static int legendTop(NetworkMapData data) { return 1850 - (legendRows(data) - 1) * 26; }
 
     public static Plan plan(NetworkMapData data, Map<Long, Point2D.Double> points, NetworkMapFont font, boolean russian) {
+        return plan(data, points, font, russian, 0);
+    }
+    public static Plan plan(NetworkMapData data, Map<Long, Point2D.Double> points, NetworkMapFont font, boolean russian, long current) {
         font.density(data.stations().size() >= 250 ? 2 : 1);
         float width = lineWidth(data);
         Map<Long, Set<Integer>> colors = new HashMap<>();
@@ -59,7 +62,7 @@ public final class NetworkMapSymbols {
             // При экстремально плотном узле сохраняем номер в легенде, не рисуем поверх другой станции.
             if (found != null) { badges.add(found); occupied.add(found.bounds()); }
         }
-        List<Label> labels = NetworkMapLabelLayout.place(data, points, font, russian, occupied, obstacles, bottom);
+        List<Label> labels = NetworkMapLabelLayout.place(data, points, font, russian, occupied, obstacles, bottom, current);
         return new Plan(List.copyOf(badges), List.copyOf(labels), colors, transfers, width);
     }
 
@@ -98,7 +101,7 @@ public final class NetworkMapSymbols {
     }
 
     public static void draw(Graphics2D g, NetworkMapData data, Map<Long, Point2D.Double> points, long current, boolean russian, NetworkMapFont font) {
-        Plan plan = plan(data, points, font, russian);
+        Plan plan = plan(data, points, font, russian, current);
         float width = plan.width();
         var routes = NetworkMapGeometry.paths(data, points, width);
         for (var route : routes) {
@@ -130,9 +133,9 @@ public final class NetworkMapSymbols {
                 double radius = transferRadius(station.id(), plan, points);
                 g.setColor(PAPER); g.fill(new Ellipse2D.Double(p.x - radius, p.y - radius, radius * 2, radius * 2));
                 g.setStroke(new BasicStroke((float) Math.min(width > 3 ? 2.5 : 2, Math.max(0.75, radius / 2))));
-                for (int i = 0; i < colors.size(); i++) {
-                    g.setColor(new Color(colors.get(i)));
-                    g.draw(new Arc2D.Double(p.x - radius, p.y - radius, radius * 2, radius * 2, i * 360.0 / colors.size(), 360.0 / colors.size(), Arc2D.OPEN));
+                for (int i = 0; i < 180; i++) {
+                    g.setColor(transferColor(colors, i / 180.0));
+                    g.draw(new Arc2D.Double(p.x - radius, p.y - radius, radius * 2, radius * 2, i * 2, 2.2, Arc2D.OPEN));
                 }
             } else {
                 var mark = NetworkMapGeometry.marker(routes, colors.get(0), p);
@@ -144,18 +147,37 @@ public final class NetworkMapSymbols {
                 if (terminals.contains(station.id())) g.draw(new Line2D.Double(origin.x - normal.x * length, origin.y - normal.y * length, origin.x + normal.x * length, origin.y + normal.y * length));
                 else g.draw(new Line2D.Double(origin.x, origin.y, origin.x + normal.x * length * side, origin.y + normal.y * length * side));
             }
-            if (station.id() == current) {
-                g.setColor(new Color(0xD92E36));
-                Path2D arrow = new Path2D.Double(); arrow.moveTo(p.x - 3, p.y - 10); arrow.lineTo(p.x + 3, p.y - 10); arrow.lineTo(p.x, p.y - 5); arrow.closePath(); g.fill(arrow);
-            }
         }
         for (var badge : plan.badges()) drawBadge(g, font, badge.terminal().color(), badge.number(), badge.center().x, badge.center().y, badge.radius());
         for (var label : plan.labels()) {
             font.size(label.size()); g.setColor(PAPER); g.fill(label.box());
-            g.setColor(label.station() == current ? new Color(0xC92331) : new Color(0x292B30));
-            for (int i = 0; i < label.rows().size(); i++) font.draw(g, label.rows().get(i), label.box().getX() + 2, label.box().getY() + 2 + (i + 1) * (font.height() + 1) - 3);
+            g.setColor(new Color(0x292B30));
+            boolean here = label.station() == current;
+            for (int i = 0; i < label.rows().size(); i++) {
+                double baseline = label.box().getY() + 2 + (i + 1) * (font.height() + 1) - 3;
+                if (here) font.drawBold(g, label.rows().get(i), label.box().getX() + 2, baseline);
+                else font.draw(g, label.rows().get(i), label.box().getX() + 2, baseline);
+            }
+            if (here) {
+                double x = label.box().getX() + 2, y = label.box().getY() + 4 + label.rows().size() * (font.height() + 1);
+                g.setColor(new Color(0xB44B50));
+                g.fill(new Rectangle2D.Double(x, y, font.width(youAreHere(russian)) + 6, font.height() + 4));
+                g.setColor(Color.WHITE); font.draw(g, youAreHere(russian), x + 3, y + font.height());
+            }
         }
         legend(g, data, russian, font);
+    }
+
+    public static String youAreHere(boolean russian) { return russian ? "Вы здесь" : "You are here"; }
+    /** Замкнутый градиент без шва между последним и первым цветом. */
+    public static Color transferColor(List<Integer> colors, double turn) {
+        double position = (turn - Math.floor(turn)) * colors.size();
+        int index = (int) position;
+        Color a = new Color(colors.get(index)), b = new Color(colors.get((index + 1) % colors.size()));
+        double t = position - index;
+        return new Color((int) Math.round(a.getRed() * (1 - t) + b.getRed() * t),
+                (int) Math.round(a.getGreen() * (1 - t) + b.getGreen() * t),
+                (int) Math.round(a.getBlue() * (1 - t) + b.getBlue() * t));
     }
 
     public static double transferRadius(long station, Plan plan, Map<Long, Point2D.Double> points) {
