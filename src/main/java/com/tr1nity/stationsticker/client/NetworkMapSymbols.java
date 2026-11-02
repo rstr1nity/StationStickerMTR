@@ -58,32 +58,7 @@ public final class NetworkMapSymbols {
             // При экстремально плотном узле сохраняем номер в легенде, не рисуем поверх другой станции.
             if (found != null) { badges.add(found); occupied.add(found.bounds()); }
         }
-        List<Label> labels = new ArrayList<>();
-        List<NetworkMapData.Station> stations = new ArrayList<>(data.stations());
-        stations.sort(Comparator.<NetworkMapData.Station>comparingInt(s -> transfers.contains(s.id()) ? 0 : 1)
-                .thenComparingInt(s -> -nearCount(points.get(s.id()), points)).thenComparingLong(NetworkMapData.Station::id));
-        for (var station : stations) {
-            var p = points.get(station.id());
-            String text = NetworkMapPainter.name(station.name(), russian);
-            int preferred = data.stations().size() > 60 ? 8 : 16;
-            NetworkMapLabels.Placement placement = null;
-            List<String> rows = List.of(text);
-            int size = preferred;
-            for (int candidateSize : preferred == 8 ? new int[]{8} : new int[]{16, 8}) {
-                font.size(candidateSize);
-                rows = wrap(text, font, candidateSize == 8 ? 125 : 190);
-                int textWidth = rows.stream().mapToInt(font::width).max().orElse(0);
-                placement = NetworkMapLabels.nearby(p, textWidth, rows.size() * (font.height() + 1), occupied, obstacles, bottom);
-                size = candidateSize;
-                if (placement != null) break;
-            }
-            if (placement == null) {
-                font.size(8); size = 8; rows = wrap(text, font, 100);
-                placement = NetworkMapLabels.place(p, rows.stream().mapToInt(font::width).max().orElse(0), rows.size() * (font.height() + 1), occupied, obstacles, bottom);
-            }
-            occupied.add(placement.box());
-            labels.add(new Label(station.id(), rows, placement.box(), size, placement.leader()));
-        }
+        List<Label> labels = NetworkMapLabelLayout.place(data, points, font, russian, occupied, obstacles, bottom);
         return new Plan(List.copyOf(badges), List.copyOf(labels), colors, transfers, width);
     }
 
@@ -203,23 +178,47 @@ public final class NetworkMapSymbols {
         font.size(8);
         double brightness = ((color >> 16) & 255) * 0.2126 + ((color >> 8) & 255) * 0.7152 + (color & 255) * 0.0722;
         g.setColor(brightness > 155 ? new Color(0x202124) : Color.WHITE);
-        font.draw(g, number, x - font.width(number) / 2.0, y + 3);
+        double textWidth = font.width(number);
+        if (textWidth > radius * 2 - 4) {
+            var text = (Graphics2D) g.create();
+            try {
+                text.translate(Math.rint(x), Math.rint(y)); text.scale((radius * 2 - 4) / textWidth, 1);
+                font.draw(text, number, -textWidth / 2, 3);
+            } finally { text.dispose(); }
+        } else font.draw(g, number, x - textWidth / 2.0, y + 3);
+    }
+    public static final int LEGEND_RADIUS = 12;
+    public record LegendEntry(NetworkMapData.Line line, List<String> rows, double left, double y) {}
+    public static List<LegendEntry> legendEntries(NetworkMapData data, boolean russian, NetworkMapFont font) {
+        int columns = legendColumns(data), rows = legendRows(data);
+        int textLimit = Math.max(30, Math.min(400, (1080 - (columns - 1) * 32) / columns - LEGEND_RADIUS * 2 - 6));
+        font.size(8);
+        List<List<String>> texts = new ArrayList<>();
+        double[] widths = new double[columns];
+        for (int i = 0; i < data.lines().size(); i++) {
+            var wrapped = wrap(NetworkMapPainter.name(data.lines().get(i).name(), russian), font, textLimit - 8);
+            List<String> displayed = new ArrayList<>(wrapped.subList(0, Math.min(2, wrapped.size())));
+            if (wrapped.size() > 2) displayed.set(1, displayed.get(1) + "…");
+            texts.add(List.copyOf(displayed));
+            widths[i / rows] = Math.max(widths[i / rows], LEGEND_RADIUS * 2 + 6 + displayed.stream().mapToInt(font::width).max().orElse(0));
+        }
+        double total = Arrays.stream(widths).sum() + (columns - 1) * 32;
+        double left = 1024 - total / 2;
+        List<LegendEntry> entries = new ArrayList<>();
+        for (int column = 0; column < columns; column++) {
+            for (int row = 0; row < rows; row++) {
+                int i = column * rows + row;
+                if (i < data.lines().size()) entries.add(new LegendEntry(data.lines().get(i), texts.get(i), left, legendTop(data) + row * 26));
+            }
+            left += widths[column] + 32;
+        }
+        return List.copyOf(entries);
     }
     private static void legend(Graphics2D g, NetworkMapData data, boolean russian, NetworkMapFont font) {
-        int columns = legendColumns(data), rows = legendRows(data), columnWidth = Math.min(450, 1080 / columns);
-        font.size(8);
-        for (int i = 0; i < data.lines().size(); i++) {
-            var line = data.lines().get(i);
-            double x = 1024 - columns * columnWidth / 2.0 + i / rows * columnWidth, y = legendTop(data) + i % rows * 26;
-            int radius = Math.max(7, (font.width(line.number()) + 5) / 2);
-            drawBadge(g, font, line.color(), line.number(), x + radius, y, radius);
-            var text = wrap(NetworkMapPainter.name(line.name(), russian), font, Math.max(30, columnWidth - radius * 2 - 12));
+        for (var entry : legendEntries(data, russian, font)) {
+            drawBadge(g, font, entry.line().color(), entry.line().number(), entry.left() + LEGEND_RADIUS, entry.y(), LEGEND_RADIUS);
             g.setColor(new Color(0x303237));
-            for (int row = 0; row < Math.min(2, text.size()); row++) {
-                String label = text.get(row);
-                if (row == 1 && text.size() > 2) label += "…";
-                font.draw(g, label, x + radius * 2 + 6, y - 2 + row * 10);
-            }
+            for (int row = 0; row < entry.rows().size(); row++) font.draw(g, entry.rows().get(row), entry.left() + LEGEND_RADIUS * 2 + 6, entry.y() - 2 + row * 10);
         }
     }
 }
