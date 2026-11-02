@@ -22,6 +22,7 @@ public final class NetworkMapSymbols {
     public static int legendTop(NetworkMapData data) { return 1850 - (legendRows(data) - 1) * 26; }
 
     public static Plan plan(NetworkMapData data, Map<Long, Point2D.Double> points, NetworkMapFont font, boolean russian) {
+        font.density(data.stations().size() >= 250 ? 2 : 1);
         float width = lineWidth(data);
         Map<Long, Set<Integer>> colors = new HashMap<>();
         Set<Long> transfers = new HashSet<>();
@@ -190,6 +191,8 @@ public final class NetworkMapSymbols {
     public static final int LEGEND_RADIUS = 12;
     public record LegendEntry(NetworkMapData.Line line, List<String> rows, double left, double y) {}
     public static List<LegendEntry> legendEntries(NetworkMapData data, boolean russian, NetworkMapFont font) {
+        // Размер легенды независим от плотности текста самой схемы.
+        font.density(1);
         int columns = legendColumns(data), rows = legendRows(data);
         int textLimit = Math.max(30, Math.min(400, (1080 - (columns - 1) * 32) / columns - LEGEND_RADIUS * 2 - 6));
         font.size(8);

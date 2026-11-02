@@ -34,11 +34,12 @@ public final class NetworkMapWorldPreview {
             if (input == null) throw new java.io.IOException(id);
             return input;
         }, needed);
-        for (int spacing : new int[]{0, 1, 2}) {
+        for (int spacing : new int[]{NetworkMapPainter.spacingFor(network)}) {
             var points = NetworkMapPainter.layout(network, spacing);
             long start = System.nanoTime();
             var plan = NetworkMapSymbols.plan(network, points, font, false);
-            int overlaps = 0, badgeOverlaps = 0, distant = 0, markerOverlaps = 0;
+            int overlaps = 0, badgeOverlaps = 0, distant = 0, markerOverlaps = 0, leaders = 0;
+            double maxDistance = 0;
             var stationIds = new ArrayList<>(points.keySet());
             for (int i = 0; i < stationIds.size(); i++) for (int j = i + 1; j < stationIds.size(); j++) {
                 long a = stationIds.get(i), b = stationIds.get(j);
@@ -48,6 +49,8 @@ public final class NetworkMapWorldPreview {
             for (int i = 0; i < plan.labels().size(); i++) {
                 var label = plan.labels().get(i);
                 var p = points.get(label.station()); var box = label.box();
+                maxDistance = Math.max(maxDistance, NetworkMapLabelLayout.distance(p, box));
+                if (label.leader()) leaders++;
                 if (p.distance(Math.max(box.getMinX(), Math.min(p.x, box.getMaxX())), Math.max(box.getMinY(), Math.min(p.y, box.getMaxY()))) > 150) distant++;
                 for (int j = i + 1; j < plan.labels().size(); j++) if (label.box().intersects(plan.labels().get(j).box())) overlaps++;
                 for (var badge : plan.badges()) if (label.box().intersects(badge.bounds())) badgeOverlaps++;
@@ -58,8 +61,12 @@ public final class NetworkMapWorldPreview {
             long numberedEnds = NetworkMapGeometry.terminals(network).stream().filter(terminal -> network.lines().stream().anyMatch(line -> line.color() == terminal.color() && !line.number().isBlank())).count();
             System.out.printf("USER NETWORK %s %s: %d stations, %d lines, %d labels, %d/%d badges; label overlaps=%d, badge overlaps=%d, close transfer markers=%d, distant labels=%d, layout=%dms%n",
                     world, variant, network.stations().size(), network.lines().size(), plan.labels().size(), plan.badges().size(), numberedEnds, overlaps, badgeOverlaps, markerOverlaps, distant, (System.nanoTime() - start) / 1_000_000);
-            if (spacing == 1 && (overlaps > 0 || badgeOverlaps > 0)) throw new AssertionError("User network symbols/labels overlap: " + world);
+            if (overlaps > 0 || badgeOverlaps > 0 || markerOverlaps > 0) throw new AssertionError("User network symbols/labels overlap: " + world);
+            if (distant != 0 && world.equals("Rossonezh")) throw new AssertionError("Long leaders returned on the dense regression network");
+            System.out.println("LOCAL LABELS: leaders=" + leaders + " maxDistance=" + maxDistance + " enlarged=" + plan.labels().stream().filter(label -> label.size() >= 16).count());
             var image = NetworkMapPainter.paint(network, network.stations().get(0).id(), false, font, spacing);
+            int expectedSize = network.stations().size() >= 250 ? 4096 : 2048;
+            if (image.getWidth() != expectedSize || image.getHeight() != expectedSize) throw new AssertionError("Unexpected diagram texture size");
             javax.imageio.ImageIO.write(image, "PNG", new java.io.File("network-map-" + (world.equals("Rossonezh") ? "rossonezh-" : "user-") + variant + ".png")); image.flush();
         }
     }

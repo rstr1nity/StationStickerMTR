@@ -11,18 +11,22 @@ public final class NetworkMapPainter {
     public static final int SIZE = 2048;
     private static final Color PAPER = new Color(0xFAF8F1);
     private NetworkMapPainter() {}
+    public static int spacingFor(NetworkMapData data) { return data.stations().size() >= 250 ? 2 : data.stations().size() > 20 ? 1 : 0; }
 
     public static BufferedImage paint(NetworkMapData data, long currentStation, boolean russian) {
         return paint(data, currentStation, russian, NetworkMapFont.fallback());
     }
 
     public static BufferedImage paint(NetworkMapData data, long currentStation, boolean russian, NetworkMapFont font) {
-        return paint(data, currentStation, russian, font, data.stations().size() > 20 ? 1 : 0);
+        return paint(data, currentStation, russian, font, spacingFor(data));
     }
     public static BufferedImage paint(NetworkMapData data, long currentStation, boolean russian, NetworkMapFont font, int spacing) {
-        BufferedImage image = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_ARGB);
+        int density = data.stations().size() >= 250 ? 2 : 1;
+        font.density(1);
+        BufferedImage image = new BufferedImage(SIZE * density, SIZE * density, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         try {
+            g.scale(density, density);
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g.setColor(PAPER);
@@ -62,7 +66,7 @@ public final class NetworkMapPainter {
         return layout(data, NetworkMapFont.fallback(), true);
     }
     public static Map<Long, Point2D.Double> layout(NetworkMapData data, NetworkMapFont font, boolean russian) {
-        return layout(data, data.stations().size() > 20);
+        return layout(data, spacingFor(data));
     }
     public static Map<Long, Point2D.Double> layout(NetworkMapData data, boolean compact) {
         return layout(data, compact ? 1 : 0);
@@ -77,9 +81,10 @@ public final class NetworkMapPainter {
         double maxZ = coordinates.values().stream().mapToDouble(p -> p.y).max().orElse(0);
         double centerX = minX / 2 + maxX / 2, centerZ = minZ / 2 + maxZ / 2;
         double chartBottom = Math.min(1660, NetworkMapSymbols.legendTop(data) - 65);
-        double centerY = (320 + chartBottom) / 2, radiusY = (chartBottom - 320) / 2 - 30;
+        double centerY = (320 + chartBottom) / 2, radiusY = (chartBottom - 320) / 2 - 20;
+        double radiusX = data.stations().size() >= 60 ? 840 : 740;
         double extent = 0;
-        for (var p : coordinates.values()) extent = Math.max(extent, Math.hypot((p.x - centerX) / 740, (p.y - centerZ) / radiusY));
+        for (var p : coordinates.values()) extent = Math.max(extent, Math.hypot((p.x - centerX) / radiusX, (p.y - centerZ) / radiusY));
         double scale = extent > 0 ? 1 / extent : 1;
         coordinates.forEach((id, p) -> result.put(id, new Point2D.Double(1024 + (p.x - centerX) * scale, centerY + (p.y - centerZ) * scale)));
         return result;
