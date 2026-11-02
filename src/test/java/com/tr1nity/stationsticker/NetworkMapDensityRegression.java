@@ -6,6 +6,8 @@ import java.util.*;
 
 public final class NetworkMapDensityRegression {
     public static void run() {
+        verifyCurrentStationAndGradient();
+        verifyCircularDirections();
         verifyMarkers();
         verifyLegendAndNearbyLabels();
         var stations = List.of(new NetworkMapData.Station(1, "West", -200, 0),
@@ -53,6 +55,48 @@ public final class NetworkMapDensityRegression {
         double remoteGap = compressed.get(79L).x - compressed.get(78L).x;
         check(denseGap / remoteGap > 1.0 / (10000 - 78), "Compressing empty space gives the dense interval a larger share of the map");
         System.out.println("PASS: shared-terminal badge separation, transfer classification, wrapped names and monotone gap compression");
+    }
+    private static void verifyCircularDirections() {
+        var clockwise = org.mtr.core.data.Route.CircularState.CLOCKWISE;
+        var counter = org.mtr.core.data.Route.CircularState.ANTICLOCKWISE;
+        check(com.tr1nity.stationsticker.client.display.CircularDirections.title(clockwise).endsWith("|Clockwise"), "Use explicit MTR clockwise state");
+        check(com.tr1nity.stationsticker.client.display.CircularDirections.title(counter).endsWith("|Counterclockwise"), "Use explicit MTR anticlockwise state");
+        check(com.tr1nity.stationsticker.client.display.CircularDirections.title(org.mtr.core.data.Route.CircularState.NONE).isEmpty(), "Ordinary routes keep terminal title");
+        var a = new org.mtr.core.data.SimplifiedRoutePlatform(1, 11, "A", "");
+        var b = new org.mtr.core.data.SimplifiedRoutePlatform(2, 12, "B", "");
+        var c = new org.mtr.core.data.SimplifiedRoutePlatform(3, 13, "C", "");
+        var stops = List.of(a, b, c, a);
+        var next = com.tr1nity.stationsticker.client.display.CircularDirections.nextStops(stops, 2, true, 6);
+        check(next.size() == 2 && next.get(0) == a && next.get(1) == b, "Ring wraps once and skips duplicate closing station");
+        check(com.tr1nity.stationsticker.client.display.CircularDirections.nextStops(stops, 0, false, 6).equals(List.of(b, c)), "Normal route excludes terminal already shown in heading");
+        check(com.tr1nity.stationsticker.client.display.CircularDirections.nextStops(stops, 3, false, 6).isEmpty(), "Normal terminating route has no next stops");
+        System.out.println("PASS: explicit MTR circular directions, wrapped stop lists and unchanged ordinary termini");
+    }
+    private static void verifyCurrentStationAndGradient() {
+        var colors = List.of(0xFF0000, 0x00FF00, 0x0000FF);
+        check(NetworkMapSymbols.transferColor(colors, 0).getRGB() == new java.awt.Color(colors.get(0)).getRGB(), "Gradient preserves route colors");
+        var halfway = NetworkMapSymbols.transferColor(colors, 1.0 / 6);
+        check(halfway.getRed() > 100 && halfway.getGreen() > 100, "Interchange has blended colors between stops");
+        check(NetworkMapSymbols.transferColor(colors, 0).equals(NetworkMapSymbols.transferColor(colors, 1)), "Gradient closes without seam");
+        var network = new NetworkMapData(List.of(new NetworkMapData.Station(1, "Текущая|Current", 0, 0),
+                new NetworkMapData.Station(2, "Другая|Other", 100, 0)), List.of(new NetworkMapData.Edge(1, 2, 0xFF0000)), List.of(new NetworkMapData.Line(0xFF0000, "1", "Red")));
+        var points = NetworkMapPainter.layout(network);
+        for (boolean russian : new boolean[]{true, false}) {
+            var font = NetworkMapFont.fallback();
+            var plan = NetworkMapSymbols.plan(network, points, font, russian, 1);
+            var here = plan.labels().stream().filter(label -> label.station() == 1).findFirst().orElseThrow();
+            font.size(here.size());
+            check(here.box().getWidth() >= font.width(NetworkMapSymbols.youAreHere(russian)) + 10, "Reserve pill width in the placement solver");
+            check(here.box().getHeight() >= here.rows().size() * (font.height() + 1) + font.height() + 12, "Reserve pill height in the placement solver");
+            for (var other : plan.labels()) if (other.station() != 1) check(!other.box().intersects(here.box()), "Whole current-station composition avoids labels");
+            for (var badge : plan.badges()) check(!badge.bounds().intersects(here.box()), "Whole composition avoids endpoint badges");
+            for (var path : NetworkMapGeometry.paths(network, points, plan.width())) check(!new java.awt.BasicStroke(plan.width()).createStrokedShape(path.path()).intersects(here.box()), "Whole composition avoids routes");
+            var image = NetworkMapPainter.paint(network, 1, russian, font);
+            try { javax.imageio.ImageIO.write(image, "PNG", new java.io.File("network-map-you-are-here-" + (russian ? "ru" : "en") + ".png")); }
+            catch (java.io.IOException e) { throw new RuntimeException(e); }
+            finally { image.flush(); }
+        }
+        System.out.println("PASS: smooth cyclic interchange colors and reserved bilingual current-station labels");
     }
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }
     private static void verifyMarkers() {
