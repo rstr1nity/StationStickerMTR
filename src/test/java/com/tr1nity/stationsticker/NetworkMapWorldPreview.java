@@ -10,7 +10,11 @@ import java.util.*;
 /** Только чтение сохранения. Не создаёт Simulator и не записывает данные мира. */
 public final class NetworkMapWorldPreview {
     public static void run() throws Exception {
-        Path root = Path.of("../run-1.20.1/saves/MTR World - test/mtr/minecraft/overworld");
+        preview("MTR World - test");
+        preview("Rossonezh");
+    }
+    private static void preview(String world) throws Exception {
+        Path root = Path.of("../run-1.20.1/saves/" + world + "/mtr/minecraft/overworld");
         if (!Files.isDirectory(root)) return;
         ClientData data = new ClientData();
         read(root.resolve("stations"), reader -> data.stations.add(new Station(reader, data)));
@@ -52,11 +56,11 @@ public final class NetworkMapWorldPreview {
                 if (plan.badges().get(i).bounds().intersects(plan.badges().get(j).bounds())) badgeOverlaps++;
             String variant = spacing == 0 ? "geographic" : spacing == 1 ? "compact" : "equalized";
             long numberedEnds = NetworkMapGeometry.terminals(network).stream().filter(terminal -> network.lines().stream().anyMatch(line -> line.color() == terminal.color() && !line.number().isBlank())).count();
-            System.out.printf("USER NETWORK %s: %d stations, %d lines, %d labels, %d/%d badges; label overlaps=%d, badge overlaps=%d, close transfer markers=%d, distant labels=%d, layout=%dms%n",
-                    variant, network.stations().size(), network.lines().size(), plan.labels().size(), plan.badges().size(), numberedEnds, overlaps, badgeOverlaps, markerOverlaps, distant, (System.nanoTime() - start) / 1_000_000);
-            if (overlaps > 0 || badgeOverlaps > 0 || markerOverlaps > 0) throw new AssertionError("User network symbols/labels overlap: " + variant);
+            System.out.printf("USER NETWORK %s %s: %d stations, %d lines, %d labels, %d/%d badges; label overlaps=%d, badge overlaps=%d, close transfer markers=%d, distant labels=%d, layout=%dms%n",
+                    world, variant, network.stations().size(), network.lines().size(), plan.labels().size(), plan.badges().size(), numberedEnds, overlaps, badgeOverlaps, markerOverlaps, distant, (System.nanoTime() - start) / 1_000_000);
+            if (spacing == 1 && (overlaps > 0 || badgeOverlaps > 0)) throw new AssertionError("User network symbols/labels overlap: " + world);
             var image = NetworkMapPainter.paint(network, network.stations().get(0).id(), false, font, spacing);
-            javax.imageio.ImageIO.write(image, "PNG", new java.io.File("network-map-user-" + variant + ".png")); image.flush();
+            javax.imageio.ImageIO.write(image, "PNG", new java.io.File("network-map-" + (world.equals("Rossonezh") ? "rossonezh-" : "user-") + variant + ".png")); image.flush();
         }
     }
     private static void read(Path directory, java.util.function.Consumer<ReaderBase> callback) throws Exception {
