@@ -25,6 +25,9 @@ public final class NetworkMapSymbols {
         return plan(data, points, font, russian, 0);
     }
     public static Plan plan(NetworkMapData data, Map<Long, Point2D.Double> points, NetworkMapFont font, boolean russian, long current) {
+        return plan(data, points, font, russian, current, false);
+    }
+    public static Plan plan(NetworkMapData data, Map<Long, Point2D.Double> points, NetworkMapFont font, boolean russian, long current, boolean schematic) {
         font.density(data.stations().size() >= 250 ? 2 : 1);
         float width = lineWidth(data);
         Map<Long, Set<Integer>> colors = new HashMap<>();
@@ -37,7 +40,7 @@ public final class NetworkMapSymbols {
             }
         }
         colors.forEach((id, values) -> { if (values.size() > 1) transfers.add(id); });
-        List<Shape> obstacles = obstacles(data, points, width);
+        List<Shape> obstacles = obstacles(data, points, width, schematic);
         List<Rectangle2D> occupied = new ArrayList<>();
         int marker = width > 3 ? 10 : 7;
         points.values().forEach(p -> occupied.add(new Rectangle2D.Double(p.x - marker, p.y - marker, marker * 2, marker * 2)));
@@ -77,9 +80,9 @@ public final class NetworkMapSymbols {
             if (Point2D.distance(x, y, 1024, 1024) > 930) return false;
         return occupied.stream().noneMatch(box::intersects) && paths.stream().noneMatch(path -> path.intersects(box));
     }
-    private static List<Shape> obstacles(NetworkMapData data, Map<Long, Point2D.Double> points, float width) {
+    private static List<Shape> obstacles(NetworkMapData data, Map<Long, Point2D.Double> points, float width, boolean schematic) {
         List<Shape> result = new ArrayList<>();
-        for (var path : NetworkMapGeometry.paths(data, points, width)) result.add(new BasicStroke(width + 5).createStrokedShape(path.path()));
+        for (var path : NetworkMapGeometry.paths(data, points, width, schematic)) result.add(new BasicStroke(width + 5).createStrokedShape(path.path()));
         for (var edge : data.edges()) if (edge.color() < 0) result.add(new BasicStroke(width + 7).createStrokedShape(new Line2D.Double(points.get(edge.from()), points.get(edge.to()))));
         return result;
     }
@@ -101,9 +104,12 @@ public final class NetworkMapSymbols {
     }
 
     public static void draw(Graphics2D g, NetworkMapData data, Map<Long, Point2D.Double> points, long current, boolean russian, NetworkMapFont font) {
-        Plan plan = plan(data, points, font, russian, current);
+        draw(g, data, points, current, russian, font, false);
+    }
+    public static void draw(Graphics2D g, NetworkMapData data, Map<Long, Point2D.Double> points, long current, boolean russian, NetworkMapFont font, boolean schematic) {
+        Plan plan = plan(data, points, font, russian, current, schematic);
         float width = plan.width();
-        var routes = NetworkMapGeometry.paths(data, points, width);
+        var routes = NetworkMapGeometry.paths(data, points, width, schematic);
         for (var route : routes) {
             g.setColor(new Color(route.color())); g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)); g.draw(route.path());
         }

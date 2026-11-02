@@ -28,6 +28,12 @@ public class NetworkMapPartBlock extends Block {
         return NetworkMapBlock.shape(state.getValue(NetworkMapBlock.FACING), state.getValue(HORIZONTAL) - 1, state.getValue(ROW));
     }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.INVISIBLE; }
+    @Override public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+            net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        BlockPos main = mainPos(pos, state);
+        BlockState mainState = level.getBlockState(main);
+        return mainState.getBlock() instanceof NetworkMapBlock block ? block.use(mainState, level, main, player, hand, hit) : net.minecraft.world.InteractionResult.PASS;
+    }
     @Override public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         BlockState main = level.getBlockState(mainPos(pos, state));
         return main.getBlock() instanceof NetworkMapBlock ? new ItemStack(main.getBlock()) : ItemStack.EMPTY;

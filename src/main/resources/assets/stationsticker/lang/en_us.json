@@ -64,5 +64,7 @@
   "gui.stationsticker.display.sound": "Arrival chime",
   "block.stationsticker.network_map": "Round Metro Network Map",
   "display.stationsticker.network_map.loading": "Loading metro network…",
+  "display.stationsticker.network_map.mode.world": "Network map: world layout",
+  "display.stationsticker.network_map.mode.schematic": "Network map: schematic layout",
   "itemGroup.stationsticker_tab": "Station Stickers"
 }

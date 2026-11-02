@@ -63,10 +63,20 @@ public final class NetworkMapGeometry {
         return paths(data, positions, 8);
     }
     public static List<LinePath> paths(NetworkMapData data, Map<Long, Point2D.Double> positions, float width) {
+        return paths(data, positions, width, false);
+    }
+    public static List<LinePath> paths(NetworkMapData data, Map<Long, Point2D.Double> positions, float width, boolean schematic) {
         List<LinePath> result = new ArrayList<>();
         Map<String, SortedSet<Integer>> shared = new HashMap<>();
         for (var edge : data.edges()) if (edge.color() >= 0) shared.computeIfAbsent(key(edge.from(), edge.to()), k -> new TreeSet<>()).add(edge.color());
         graph(data).forEach((color, line) -> {
+            if (schematic) for (var ring : NetworkMapSchematic.rings(data)) if (ring.color() == color) {
+                var circle = NetworkMapSchematic.circle(ring, positions);
+                if (circle != null) {
+                    Path2D path = new Path2D.Double(); path.append(circle, false); result.add(new LinePath(color, path));
+                    ring.stations().forEach(line::remove);
+                }
+            }
             Set<String> visited = new HashSet<>();
             List<Long> starts = new ArrayList<>(line.keySet());
             starts.sort(Comparator.comparingInt(id -> line.get(id).size() == 2 ? 1 : 0));
@@ -84,17 +94,34 @@ public final class NetworkMapGeometry {
                     double dx = -(b.y - a.y) / length * shift * sign, dy = (b.x - a.x) / length * shift * sign;
                     add(points, a.x + dx, a.y + dy);
                     double diagonal = Math.min(Math.abs(b.x - a.x), Math.abs(b.y - a.y));
-                    add(points, a.x + Math.copySign(diagonal, b.x - a.x) + dx, a.y + Math.copySign(diagonal, b.y - a.y) + dy);
+                    if (!schematic) add(points, a.x + Math.copySign(diagonal, b.x - a.x) + dx, a.y + Math.copySign(diagonal, b.y - a.y) + dy);
                     add(points, b.x + dx, b.y + dy);
                     if (line.get(to).size() != 2) break;
                     long next = from;
                     for (long neighbor : line.get(to)) if (neighbor != from) { next = neighbor; break; }
                     from = to; to = next;
                 }
-                if (points.size() > 1) result.add(new LinePath(color, rounded(points, Math.max(8, width * 3))));
+                if (points.size() > 1) result.add(new LinePath(color, schematic ? smooth(points) : rounded(points, Math.max(8, width * 3))));
             }
         });
         return result;
+    }
+    private static Path2D smooth(List<Point2D.Double> points) {
+        Path2D path = new Path2D.Double();
+        path.moveTo(points.get(0).x, points.get(0).y);
+        // Кубическая интерполяция проходит через станции, сохраняя общую касательную в узлах.
+        for (int i = 0; i + 1 < points.size(); i++) {
+            var a = points.get(i); var b = points.get(i + 1);
+            var before = points.get(Math.max(0, i - 1)); var after = points.get(Math.min(points.size() - 1, i + 2));
+            double length = a.distance(b);
+            double first = Math.max(0.001, before.distance(b)), second = Math.max(0.001, a.distance(after));
+            double firstControl = Math.min(length, i == 0 ? length : before.distance(a)) / 3;
+            double secondControl = Math.min(length, i + 2 >= points.size() ? length : b.distance(after)) / 3;
+            // Короткий соседний перегон не должен создавать длинную петлю касательной.
+            path.curveTo(a.x + (b.x - before.x) / first * firstControl, a.y + (b.y - before.y) / first * firstControl,
+                    b.x - (after.x - a.x) / second * secondControl, b.y - (after.y - a.y) / second * secondControl, b.x, b.y);
+        }
+        return path;
     }
     private static void add(List<Point2D.Double> points, double x, double y) {
         if (points.isEmpty() || points.get(points.size() - 1).distance(x, y) > 0.1) points.add(new Point2D.Double(x, y));
