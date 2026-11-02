@@ -12,17 +12,19 @@ public final class NetworkMapLabelLayout {
     private final Map<Long, List<Option>> options = new LinkedHashMap<>();
     private final Map<Long, Option> chosen = new LinkedHashMap<>();
     private int attempts;
+    private boolean minimumOnly;
     private NetworkMapLabelLayout() {}
 
     public static List<NetworkMapSymbols.Label> place(NetworkMapData data, Map<Long, Point2D.Double> points,
             NetworkMapFont font, boolean russian, List<Rectangle2D> fixed, List<Shape> paths, int bottom) {
         var solver = new NetworkMapLabelLayout();
+        solver.minimumOnly = data.stations().size() > 60;
         List<Rectangle2D> pathBounds = paths.stream().map(Shape::getBounds2D).toList();
         for (var station : data.stations()) {
             var point = points.get(station.id());
             List<Option> candidates = new ArrayList<>();
             Set<String> seen = new HashSet<>();
-            for (int size : data.stations().size() > 60 ? new int[]{8} : new int[]{16, 8}) {
+            for (int size : new int[]{16, 8}) {
                 font.size(size);
                 for (int wrap : size == 8 ? new int[]{160, 110, 75, 50} : new int[]{190, 120}) {
                     var rows = NetworkMapSymbols.wrap(NetworkMapPainter.name(station.name(), russian), font, wrap);
@@ -69,12 +71,27 @@ public final class NetworkMapLabelLayout {
             }
             result.add(new NetworkMapSymbols.Label(station.id(), option.rows(), option.box(), option.size(), distance(points.get(station.id()), option.box()) > 28));
         }
+        // Сначала всем обеспечиваем близкое место мелким шрифтом; затем увеличиваем
+        // подписи там, где это не отнимает место у остальных станций.
+        for (int i = 0; i < result.size(); i++) {
+            var label = result.get(i);
+            if (label.size() >= 16) continue;
+            long station = label.station();
+            occupied.remove(label.box());
+            var replacement = solver.options.get(station).stream()
+                    .filter(option -> option.size() == 16 && distance(points.get(station), option.box()) <= 28)
+                    .filter(option -> occupied.stream().noneMatch(box -> box.intersects(option.box())))
+                    .min(Comparator.comparingDouble(Option::cost)).orElse(null);
+            if (replacement != null) label = new NetworkMapSymbols.Label(label.station(), replacement.rows(), replacement.box(), replacement.size(), false);
+            result.set(i, label); occupied.add(label.box());
+        }
         return result;
     }
 
     private boolean assign(long id, int depth, Set<Long> locked) {
         if (!locked.add(id)) return false;
         for (var option : options.get(id)) {
+            if (minimumOnly && option.size() != 8) continue;
             if (++attempts > 4000) break;
             List<Long> conflicts = new ArrayList<>();
             for (var entry : chosen.entrySet()) if (entry.getKey() != id && entry.getValue().box().intersects(option.box())) conflicts.add(entry.getKey());

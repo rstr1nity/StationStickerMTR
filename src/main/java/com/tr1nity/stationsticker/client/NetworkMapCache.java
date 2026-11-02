@@ -18,6 +18,7 @@ public final class NetworkMapCache {
     private static long generation;
     private static NetworkMapData data;
     private static final LinkedHashMap<String, ResourceLocation> TEXTURES = new LinkedHashMap<>(16, 0.75f, true);
+    private static final Map<String, Long> TEXTURE_BYTES = new HashMap<>();
     private static final Set<String> GENERATING = new HashSet<>();
     private static final Map<String, Long> FAILED_UNTIL = new HashMap<>();
     private NetworkMapCache() {}
@@ -25,7 +26,7 @@ public final class NetworkMapCache {
     public static void reset() {
         generation++;
         TEXTURES.values().forEach(id -> Minecraft.getInstance().getTextureManager().release(id));
-        TEXTURES.clear(); GENERATING.clear(); FAILED_UNTIL.clear(); data = null; requested = 0; connection = null; dimension = "";
+        TEXTURES.clear(); TEXTURE_BYTES.clear(); GENERATING.clear(); FAILED_UNTIL.clear(); data = null; requested = 0; connection = null; dimension = "";
     }
     private static void ensureWorld() {
         Minecraft mc = Minecraft.getInstance();
@@ -39,7 +40,7 @@ public final class NetworkMapCache {
         if (!dimension.equals(world)) return;
         if (!snapshot.equals(data)) {
             TEXTURES.values().forEach(id -> Minecraft.getInstance().getTextureManager().release(id));
-            TEXTURES.clear(); GENERATING.clear(); FAILED_UNTIL.clear(); generation++; data = snapshot;
+            TEXTURES.clear(); TEXTURE_BYTES.clear(); GENERATING.clear(); FAILED_UNTIL.clear(); generation++; data = snapshot;
         }
     }
     public static ResourceLocation texture(BlockPos pos) {
@@ -88,12 +89,15 @@ public final class NetworkMapCache {
             }
             DynamicTexture texture = null;
             try {
+                long bytes = (long) image.getWidth() * image.getHeight() * 4;
                 texture = new DynamicTexture(image);
                 ResourceLocation id = Minecraft.getInstance().getTextureManager().register("stationsticker_network_map", texture);
                 TEXTURES.put(key, id);
-                while (TEXTURES.size() > 8) {
+                TEXTURE_BYTES.put(key, bytes);
+                while (TEXTURES.size() > 8 || TEXTURE_BYTES.values().stream().mapToLong(Long::longValue).sum() > 128L * 1024 * 1024) {
                     var iterator = TEXTURES.entrySet().iterator();
-                    Minecraft.getInstance().getTextureManager().release(iterator.next().getValue()); iterator.remove();
+                    var oldest = iterator.next(); TEXTURE_BYTES.remove(oldest.getKey());
+                    Minecraft.getInstance().getTextureManager().release(oldest.getValue()); iterator.remove();
                 }
             } catch (Exception e) {
                 if (texture != null) texture.close();

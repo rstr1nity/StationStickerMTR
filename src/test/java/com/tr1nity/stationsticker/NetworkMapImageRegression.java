@@ -30,6 +30,12 @@ public final class NetworkMapImageRegression {
             }
         } finally { image.flush(); }
         System.out.println("PASS: original Out of stack space reproduced; direct 2048x2048 transfer succeeds with correct colors and alpha");
+        var large = new BufferedImage(4096, 4096, BufferedImage.TYPE_INT_ARGB);
+        large.setRGB(4095, 4095, 0x80CC2233);
+        try (var actual = NetworkMapImages.create(large)) {
+            if (actual.getWidth() != 4096 || actual.getPixelRGBA(4095, 4095) != 0x803322CC) throw new AssertionError("4096px transfer failed");
+        } finally { large.flush(); }
+        System.out.println("PASS: 4096px texture uses direct native pixels without the LWJGL stack");
         NetworkMapStyleRegression.run();
     }
 }

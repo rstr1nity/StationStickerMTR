@@ -21,6 +21,10 @@ public final class NetworkMapDensityRegression {
         var integerGlyphs = new java.awt.geom.Area(font.outline("Station 1124", 10, 20));
         integerGlyphs.exclusiveOr(new java.awt.geom.Area(font.outline("Station 1124", 10.5, 20.5)));
         check(integerGlyphs.isEmpty(), "Half-pixel centering must not distort bitmap glyphs");
+        int normalWidth = font.width("Station");
+        font.density(2);
+        check(Math.abs(font.width("Station") * 2 - normalWidth) <= 1, "Dense text keeps the same glyphs at half the logical width");
+        font.density(1);
         var plan = NetworkMapSymbols.plan(network, points, font, false);
         check(plan.badges().size() == 4, "All four numbered ends remain visible, including two on the same station");
         check(plan.transfers().containsAll(Set.of(2L, 3L, 4L)), "Shared routes and linked MTR stations both use interchange symbols");
@@ -52,10 +56,14 @@ public final class NetworkMapDensityRegression {
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }
     private static void verifyLegendAndNearbyLabels() {
         var font = NetworkMapFont.fallback();
+        font.size(8);
+        int normalWidth = font.width("Station");
         List<NetworkMapData.Line> lines = new ArrayList<>();
         for (int i = 0; i < 25; i++) lines.add(new NetworkMapData.Line(i, i == 0 ? "1124" : "1", i < 12 ? "A" : "A much longer route name " + i));
         var data = new NetworkMapData(List.of(), List.of(), lines);
+        font.density(2);
         var legend = NetworkMapSymbols.legendEntries(data, false, font);
+        check(font.width("Station") == normalWidth, "Legend text must ignore diagram density");
         double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
         font.size(8);
         for (var entry : legend) {

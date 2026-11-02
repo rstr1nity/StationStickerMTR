@@ -18,6 +18,8 @@ public final class NetworkMapFont {
     private final Map<Integer, Glyph> glyphs;
     private final Map<Integer, Glyph> missing = new HashMap<>();
     private int size = 24;
+    private int density = 1;
+    public void density(int density) { this.density = Math.max(1, density); }
     private NetworkMapFont(Map<Integer, Glyph> glyphs) { this.glyphs = Map.copyOf(glyphs); }
 
     public static NetworkMapFont load(Resources resources, Set<Integer> needed) throws IOException {
@@ -114,27 +116,27 @@ public final class NetworkMapFont {
     }
     public void size(int size) { this.size = Math.max(8, size); }
     private int scale() { return Math.max(1, Math.round(size / 8f)); }
-    public int height() { return 9 * scale(); }
+    public int height() { return (int) Math.ceil(9.0 * scale() / density); }
     public int width(String text) {
         float width = 0;
         for (int code : text.codePoints().toArray()) width += code == 32 ? 4 : glyph(code).advance;
-        return Math.round(width * scale());
+        return (int) Math.ceil(width * scale() / density);
     }
     public Shape outline(String text, double x, double baseline) {
         // Полупиксельный якорь с rint на каждой границе чередовал ширины 0/2 вместо 1.
-        x = Math.rint(x); baseline = Math.rint(baseline);
+        x = Math.rint(x * density) / density; baseline = Math.rint(baseline * density) / density;
         Path2D result = new Path2D.Double();
         for (int code : text.codePoints().toArray()) {
-            if (code == 32) { x += 4 * scale(); continue; }
+            if (code == 32) { x += 4.0 * scale() / density; continue; }
             Glyph glyph = glyph(code);
             for (int y = 0; y < glyph.pixels.length; y++) for (int px = 0; px < glyph.pixels[y].length; px++) {
                 if (glyph.pixels[y][px]) {
-                    double x0 = Math.rint(x + px * glyph.unit * scale()), y0 = Math.rint(baseline - glyph.ascent * scale() + y * glyph.unit * scale());
-                    double x1 = Math.rint(x + (px + 1) * glyph.unit * scale()), y1 = Math.rint(baseline - glyph.ascent * scale() + (y + 1) * glyph.unit * scale());
+                    double x0 = Math.rint(x * density + px * glyph.unit * scale()) / density, y0 = Math.rint(baseline * density - glyph.ascent * scale() + y * glyph.unit * scale()) / density;
+                    double x1 = Math.rint(x * density + (px + 1) * glyph.unit * scale()) / density, y1 = Math.rint(baseline * density - glyph.ascent * scale() + (y + 1) * glyph.unit * scale()) / density;
                     result.append(new Rectangle2D.Double(x0, y0, x1 - x0, y1 - y0), false);
                 }
             }
-            x += glyph.advance * scale();
+            x += glyph.advance * scale() / density;
         }
         return result;
     }
