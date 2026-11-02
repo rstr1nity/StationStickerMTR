@@ -116,7 +116,8 @@ public final class DirectionSignBoard {
     }
 
     private static boolean isBoarding(Side side) {
-        return side.index < side.route.getPlatforms().size() - 1;
+        return side.index < side.route.getPlatforms().size() - 1 ||
+                (!CircularDirections.title(side.route.getCircularState()).isEmpty() && side.route.getPlatforms().size() > 1);
     }
 
     private static boolean better(Side candidate, double distance, Side current, double currentDistance) {
@@ -145,6 +146,8 @@ public final class DirectionSignBoard {
 
         List<SimplifiedRoutePlatform> stops = side.route.getPlatforms();
         String terminal = stops.get(stops.size() - 1).getStationName();
+        String circularTitle = CircularDirections.title(side.route.getCircularState());
+        if (!circularTitle.isEmpty()) terminal = circularTitle;
         String number = RouteNumbers.forRoute(side.route);
         float centerY = NAME_SCALE * 7 / 2 + 1;
 
@@ -171,10 +174,11 @@ public final class DirectionSignBoard {
         float columnWidth = (x1 - x0) / columns;
         int capacity = columns * LIST_ROWS;
         int shown = 0;
-        for (int i = side.index + 1; i < stops.size() - 1 && shown < capacity; i++, shown++) {
+        for (var stop : CircularDirections.nextStops(stops, side.index, !circularTitle.isEmpty(), capacity)) {
             float itemX = x0 + (shown / LIST_ROWS) * columnWidth;
             float itemY = LIST_Y + (shown % LIST_ROWS) * LIST_ROW;
-            drawStop(canvas, stops.get(i), side.route.getColor(), itemX, itemY, columnWidth - GAP);
+            drawStop(canvas, stop, side.route.getColor(), itemX, itemY, columnWidth - GAP);
+            shown++;
         }
     }
 
