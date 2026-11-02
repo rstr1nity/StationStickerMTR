@@ -6,6 +6,7 @@ import java.util.*;
 
 public final class NetworkMapDensityRegression {
     public static void run() {
+        verifyMarkers();
         verifyLegendAndNearbyLabels();
         var stations = List.of(new NetworkMapData.Station(1, "West", -200, 0),
                 new NetworkMapData.Station(2, "Middle", 0, 0),
@@ -54,6 +55,21 @@ public final class NetworkMapDensityRegression {
         System.out.println("PASS: shared-terminal badge separation, transfer classification, wrapped names and monotone gap compression");
     }
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }
+    private static void verifyMarkers() {
+        var corner = new java.awt.geom.Point2D.Double(100, 0);
+        var curve = NetworkMapGeometry.rounded(List.of(new java.awt.geom.Point2D.Double(0, 0), corner, new java.awt.geom.Point2D.Double(100, 100)), 24);
+        var routes = List.of(new NetworkMapGeometry.LinePath(1, curve));
+        var marker = NetworkMapGeometry.marker(routes, 1, corner);
+        check(marker.point().distance(corner) > 1, "Regression fixture must round away from the original vertex");
+        check(new java.awt.BasicStroke(0.5f).createStrokedShape(curve).contains(marker.point()), "Tick origin must lie on the actual rounded route");
+        check(Math.abs(Math.abs(marker.normal().x) - Math.abs(marker.normal().y)) < 0.15, "Bend tick follows local curve normal, not the interstation chord");
+        var end = NetworkMapGeometry.marker(routes, 1, new java.awt.geom.Point2D.Double(100, 100));
+        check(end.point().distance(100, 100) < 0.01 && Math.abs(end.normal().y) < 0.01, "Terminal cap is attached and perpendicular to the route end");
+        var other = new java.awt.geom.Path2D.Double(); other.moveTo(100, -10); other.lineTo(100, 10);
+        var filtered = NetworkMapGeometry.marker(List.of(new NetworkMapGeometry.LinePath(2, other), routes.get(0)), 1, corner);
+        check(filtered.point().equals(marker.point()), "Nearby routes of another color cannot capture a station tick");
+        System.out.println("PASS: ticks and terminal caps attach to rounded curves with the local normal and correct route color");
+    }
     private static void verifyLegendAndNearbyLabels() {
         var font = NetworkMapFont.fallback();
         font.size(8);

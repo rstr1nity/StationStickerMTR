@@ -100,7 +100,8 @@ public final class NetworkMapSymbols {
     public static void draw(Graphics2D g, NetworkMapData data, Map<Long, Point2D.Double> points, long current, boolean russian, NetworkMapFont font) {
         Plan plan = plan(data, points, font, russian);
         float width = plan.width();
-        for (var route : NetworkMapGeometry.paths(data, points, width)) {
+        var routes = NetworkMapGeometry.paths(data, points, width);
+        for (var route : routes) {
             g.setColor(new Color(route.color())); g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)); g.draw(route.path());
         }
         // Белый коридор с нейтральным контуром означает переход между отдельными станциями.
@@ -134,13 +135,14 @@ public final class NetworkMapSymbols {
                     g.draw(new Arc2D.Double(p.x - radius, p.y - radius, radius * 2, radius * 2, i * 360.0 / colors.size(), 360.0 / colors.size(), Arc2D.OPEN));
                 }
             } else {
-                var normal = normal(data, points, station.id());
+                var mark = NetworkMapGeometry.marker(routes, colors.get(0), p);
+                var origin = mark.point(); var normal = mark.normal();
                 var label = byStation.get(station.id());
                 double side = label == null || (label.box().getCenterX() - p.x) * normal.x + (label.box().getCenterY() - p.y) * normal.y >= 0 ? 1 : -1;
                 double length = width > 3 ? 7 : 5;
                 g.setStroke(new BasicStroke(width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND)); g.setColor(new Color(colors.get(0)));
-                if (terminals.contains(station.id())) g.draw(new Line2D.Double(p.x - normal.x * length, p.y - normal.y * length, p.x + normal.x * length, p.y + normal.y * length));
-                else g.draw(new Line2D.Double(p.x, p.y, p.x + normal.x * length * side, p.y + normal.y * length * side));
+                if (terminals.contains(station.id())) g.draw(new Line2D.Double(origin.x - normal.x * length, origin.y - normal.y * length, origin.x + normal.x * length, origin.y + normal.y * length));
+                else g.draw(new Line2D.Double(origin.x, origin.y, origin.x + normal.x * length * side, origin.y + normal.y * length * side));
             }
             if (station.id() == current) {
                 g.setColor(new Color(0xD92E36));
@@ -156,14 +158,6 @@ public final class NetworkMapSymbols {
         legend(g, data, russian, font);
     }
 
-    private static Point2D.Double normal(NetworkMapData data, Map<Long, Point2D.Double> points, long station) {
-        for (var edge : data.edges()) if (edge.color() >= 0 && (edge.from() == station || edge.to() == station)) {
-            var a = points.get(station); var b = points.get(edge.from() == station ? edge.to() : edge.from());
-            double distance = a.distance(b);
-            if (distance > 0) return new Point2D.Double(-(b.y - a.y) / distance, (b.x - a.x) / distance);
-        }
-        return new Point2D.Double(0, 1);
-    }
     public static double transferRadius(long station, Plan plan, Map<Long, Point2D.Double> points) {
         double radius = plan.width() > 3 ? 8 : 5.5;
         for (long other : plan.transfers()) if (other != station) {

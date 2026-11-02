@@ -7,7 +7,41 @@ import java.util.*;
 public final class NetworkMapGeometry {
     public record LinePath(int color, Path2D path) {}
     public record Terminal(long station, int color, long neighbor) {}
+    public record Marker(Point2D.Double point, Point2D.Double normal) {}
+
     private NetworkMapGeometry() {}
+
+    public static Marker marker(List<LinePath> routes, int color, Point2D.Double station) {
+        double best = Double.POSITIVE_INFINITY;
+        Marker result = new Marker(station, new Point2D.Double(0, 1));
+        for (var route : routes) if (route.color() == color) {
+            var iterator = route.path().getPathIterator(null, 0.1);
+            double[] values = new double[6];
+            double x = 0, y = 0, startX = 0, startY = 0;
+            while (!iterator.isDone()) {
+                int type = iterator.currentSegment(values);
+                if (type == PathIterator.SEG_MOVETO) { x = startX = values[0]; y = startY = values[1]; }
+                else if (type == PathIterator.SEG_LINETO || type == PathIterator.SEG_CLOSE) {
+                    double nx = type == PathIterator.SEG_CLOSE ? startX : values[0];
+                    double ny = type == PathIterator.SEG_CLOSE ? startY : values[1];
+                    double dx = nx - x, dy = ny - y, lengthSquared = dx * dx + dy * dy;
+                    if (lengthSquared > 0) {
+                        double t = Math.max(0, Math.min(1, ((station.x - x) * dx + (station.y - y) * dy) / lengthSquared));
+                        var point = new Point2D.Double(x + t * dx, y + t * dy);
+                        double distance = point.distanceSq(station);
+                        if (distance < best) {
+                            best = distance;
+                            double length = Math.sqrt(lengthSquared);
+                            result = new Marker(point, new Point2D.Double(-dy / length, dx / length));
+                        }
+                    }
+                    x = nx; y = ny;
+                }
+                iterator.next();
+            }
+        }
+        return result;
+    }
 
     public static Map<Integer, Map<Long, Set<Long>>> graph(NetworkMapData data) {
         Map<Integer, Map<Long, Set<Long>>> graph = new TreeMap<>();
