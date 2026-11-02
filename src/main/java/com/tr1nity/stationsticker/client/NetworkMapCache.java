@@ -63,7 +63,7 @@ public final class NetworkMapCache {
             Set<Integer> characters = new HashSet<>();
             snapshot.stations().forEach(s -> s.name().codePoints().forEach(characters::add));
             snapshot.lines().forEach(line -> (line.name() + line.number()).codePoints().forEach(characters::add));
-            "СХЕМА МЕТРО METRO NETWORK Station Sticker Нет доступных линий MTR No MTR lines available0123456789…".codePoints().forEach(characters::add);
+            "СХЕМА МЕТРО METRO NETWORK Station Sticker Вы здесь You are here Нет доступных линий MTR No MTR lines available0123456789…".codePoints().forEach(characters::add);
             NetworkMapFont font;
             try {
                 font = NetworkMapFont.load(id -> Minecraft.getInstance().getResourceManager().open(new ResourceLocation(id)), characters);

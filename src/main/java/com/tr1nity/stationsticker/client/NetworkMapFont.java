@@ -122,6 +122,11 @@ public final class NetworkMapFont {
         for (int code : text.codePoints().toArray()) width += code == 32 ? 4 : glyph(code).advance;
         return (int) Math.ceil(width * scale() / density);
     }
+    public double boldOffset() { return 1.0 / density; }
+    public void drawBold(Graphics2D g, String text, double x, double baseline) {
+        draw(g, text, x, baseline);
+        draw(g, text, x + boldOffset(), baseline);
+    }
     public Shape outline(String text, double x, double baseline) {
         // Полупиксельный якорь с rint на каждой границе чередовал ширины 0/2 вместо 1.
         x = Math.rint(x * density) / density; baseline = Math.rint(baseline * density) / density;

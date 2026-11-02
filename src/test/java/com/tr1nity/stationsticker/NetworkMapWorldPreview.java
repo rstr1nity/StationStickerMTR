@@ -27,7 +27,7 @@ public final class NetworkMapWorldPreview {
         Set<Integer> needed = new HashSet<>();
         network.stations().forEach(s -> s.name().codePoints().forEach(needed::add));
         network.lines().forEach(s -> (s.name() + s.number()).codePoints().forEach(needed::add));
-        "СХЕМА МЕТРО METRO NETWORK Station Sticker …0123456789".codePoints().forEach(needed::add);
+        "СХЕМА МЕТРО METRO NETWORK Station Sticker Вы здесь You are here …0123456789".codePoints().forEach(needed::add);
         var font = NetworkMapFont.load(id -> {
             String[] path = id.split(":", 2);
             var input = NetworkMapWorldPreview.class.getResourceAsStream("/assets/" + path[0] + "/" + path[1]);
@@ -37,7 +37,7 @@ public final class NetworkMapWorldPreview {
         for (int spacing : new int[]{NetworkMapPainter.spacingFor(network)}) {
             var points = NetworkMapPainter.layout(network, spacing);
             long start = System.nanoTime();
-            var plan = NetworkMapSymbols.plan(network, points, font, false);
+            var plan = NetworkMapSymbols.plan(network, points, font, false, network.stations().get(0).id());
             int overlaps = 0, badgeOverlaps = 0, distant = 0, markerOverlaps = 0, leaders = 0;
             double maxDistance = 0;
             var stationIds = new ArrayList<>(points.keySet());
