@@ -12,6 +12,7 @@ public final class NetworkMapStyleRegression {
     public static void run() throws Exception {
         verifyUnifontArchive();
         verifyGeography();
+        NetworkMapSchematicRegression.run();
         NetworkMapDensityRegression.run();
         NetworkMapWorldPreview.run();
         check(NetworkMapPainter.name("中文|Завод|Factory||note", true).equals("Завод"), "Russian preference");

@@ -54,7 +54,9 @@ public final class NetworkMapCache {
         var station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(pos.getX(), pos.getY(), pos.getZ()));
         long stationId = station == null ? 0 : station.getId();
         String language = Minecraft.getInstance().getLanguageManager().getSelected();
-        String key = stationId + ":" + language;
+        var state = Minecraft.getInstance().level.getBlockState(pos);
+        boolean schematic = state.hasProperty(com.tr1nity.stationsticker.block.NetworkMapBlock.SCHEMATIC) && state.getValue(com.tr1nity.stationsticker.block.NetworkMapBlock.SCHEMATIC);
+        String key = stationId + ":" + language + ":" + schematic;
         ResourceLocation found = TEXTURES.get(key);
         if (found != null || GENERATING.size() >= 2 || FAILED_UNTIL.getOrDefault(key, 0L) > now || !GENERATING.add(key)) return found;
         NetworkMapData snapshot = data;
@@ -71,7 +73,7 @@ public final class NetworkMapCache {
                 org.mtr.mod.Init.LOGGER.warn("Could not load Minecraft bitmap font for network map", error);
                 font = NetworkMapFont.fallback();
             }
-            var image = NetworkMapPainter.paint(snapshot, stationId, language.startsWith("ru"), font);
+            var image = NetworkMapPainter.paint(snapshot, stationId, language.startsWith("ru"), font, schematic ? 3 : NetworkMapPainter.spacingFor(snapshot));
             try {
                 // Не декодируем PNG через MemoryStack: для большой схемы его не хватает.
                 return NetworkMapImages.create(image);

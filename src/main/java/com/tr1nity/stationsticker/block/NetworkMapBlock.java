@@ -24,6 +24,7 @@ import java.util.Map;
 // Напольный стенд: 3 клетки по ширине, 4 по высоте; основной блок внизу по центру.
 public class NetworkMapBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty SCHEMATIC = net.minecraft.world.level.block.state.properties.BooleanProperty.create("schematic");
     public static final float RADIUS = 1.45f;
     public static final float CENTER_Y = 2;
     public static final float BASE_HALF_WIDTH = 1.18f;
@@ -31,7 +32,7 @@ public class NetworkMapBlock extends BaseEntityBlock {
     public static final float BASE_HALF_DEPTH = 0.22f;
     public NetworkMapBlock() {
         super(Properties.of().strength(1).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.BLOCK));
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(SCHEMATIC, false));
     }
     public static BlockPos offset(Direction facing, int h, int row) {
         return BlockPos.ZERO.relative(WideDisplayBlock.partDirection(facing), h).above(row);
@@ -45,7 +46,17 @@ public class NetworkMapBlock extends BaseEntityBlock {
         }
         return result;
     }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING); }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, SCHEMATIC); }
+    @Override public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos,
+            net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        if (!player.mayBuild() || !player.getItemInHand(hand).is(org.mtr.mod.Items.BRUSH.get().data)) return net.minecraft.world.InteractionResult.PASS;
+        if (!level.isClientSide) {
+            boolean schematic = !state.getValue(SCHEMATIC);
+            level.setBlock(pos, state.setValue(SCHEMATIC, schematic), Block.UPDATE_ALL);
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("display.stationsticker.network_map.mode." + (schematic ? "schematic" : "world")), true);
+        }
+        return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
+    }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
         if (context.getClickedFace() != Direction.UP) return null;
         Direction facing = context.getHorizontalDirection().getOpposite();

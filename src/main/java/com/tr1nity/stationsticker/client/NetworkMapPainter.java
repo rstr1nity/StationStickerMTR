@@ -57,7 +57,7 @@ public final class NetworkMapPainter {
                 return image;
             }
             Map<Long, Point2D.Double> points = layout(data, spacing);
-            NetworkMapSymbols.draw(g, data, points, currentStation, russian, font);
+            NetworkMapSymbols.draw(g, data, points, currentStation, russian, font, spacing == 3);
             return image;
         } finally { g.dispose(); }
     }
@@ -72,6 +72,7 @@ public final class NetworkMapPainter {
         return layout(data, compact ? 1 : 0);
     }
     public static Map<Long, Point2D.Double> layout(NetworkMapData data, int spacing) {
+        if (spacing == 3) return NetworkMapSchematic.coordinates(data);
         Map<Long, Point2D.Double> result = new LinkedHashMap<>();
         if (data.stations().isEmpty()) return result;
         var coordinates = NetworkMapSpacing.coordinates(data, spacing);

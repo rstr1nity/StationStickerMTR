@@ -77,6 +77,16 @@ public class NetworkMapGameTests {
             block.setPlacedBy(level, main, state, null, ItemStack.EMPTY);
             var parts = NetworkMapBlock.parts(main, facing);
             helper.assertTrue(parts.size() == 11, "Stand must occupy 3x4 cells including main");
+            var player = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(level);
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(org.mtr.mod.Items.BRUSH.get().data));
+            var clicked = parts.keySet().iterator().next();
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(clicked), facing, clicked, false);
+            var partState = level.getBlockState(clicked);
+            partState.getBlock().use(partState, level, clicked, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+            helper.assertTrue(level.getBlockState(main).getValue(NetworkMapBlock.SCHEMATIC), "Brush on a stand part switches its owner to schematic mode");
+            helper.assertTrue(level.getBlockEntity(main) != null, "Mode switch preserves the block entity");
+            block.use(level.getBlockState(main), level, main, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+            helper.assertTrue(!level.getBlockState(main).getValue(NetworkMapBlock.SCHEMATIC), "Second brush click restores original mode");
             for (var part : parts.entrySet()) {
                 helper.assertTrue(NetworkMapPartBlock.mainPos(part.getKey(), part.getValue()).equals(main), "Every stand part resolves its owner");
                 var shape = level.getBlockState(part.getKey()).getShape(level, part.getKey());

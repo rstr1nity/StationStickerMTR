@@ -64,5 +64,7 @@
   "gui.stationsticker.display.sound": "Сигнал прибытия",
   "block.stationsticker.network_map": "Круглый стенд со схемой метро",
   "display.stationsticker.network_map.loading": "Загрузка схемы метро…",
+  "display.stationsticker.network_map.mode.world": "Схема метро: расположение в мире",
+  "display.stationsticker.network_map.mode.schematic": "Схема метро: схематическая раскладка",
   "itemGroup.stationsticker_tab": "Станционные стикеры"
 }

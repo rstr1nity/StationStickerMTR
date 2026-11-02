@@ -8,7 +8,9 @@ public record NetworkMapData(List<Station> stations, List<Edge> edges, List<Line
     public static final NetworkMapData EMPTY = new NetworkMapData(List.of(), List.of(), List.of());
     public record Station(long id, String name, double x, double z) {}
     public record Edge(long from, long to, int color) {}
-    public record Line(int color, String number, String name) {}
+    public record Line(int color, String number, String name, boolean circular) {
+        public Line(int color, String number, String name) { this(color, number, name, false); }
+    }
 
     public NetworkMapData {
         stations = List.copyOf(stations);
@@ -19,12 +21,12 @@ public record NetworkMapData(List<Station> stations, List<Edge> edges, List<Line
     public NetworkMapData(FriendlyByteBuf buf) {
         this(buf.readList(b -> new Station(b.readLong(), b.readUtf(256), b.readDouble(), b.readDouble())),
                 buf.readList(b -> new Edge(b.readLong(), b.readLong(), b.readInt())),
-                buf.readList(b -> new Line(b.readInt(), b.readUtf(64), b.readUtf(256))));
+                buf.readList(b -> new Line(b.readInt(), b.readUtf(64), b.readUtf(256), b.readBoolean())));
     }
 
     public void write(FriendlyByteBuf buf) {
         buf.writeCollection(stations, (b, s) -> { b.writeLong(s.id); b.writeUtf(s.name, 256); b.writeDouble(s.x); b.writeDouble(s.z); });
         buf.writeCollection(edges, (b, e) -> { b.writeLong(e.from); b.writeLong(e.to); b.writeInt(e.color); });
-        buf.writeCollection(lines, (b, l) -> { b.writeInt(l.color); b.writeUtf(l.number, 64); b.writeUtf(l.name, 256); });
+        buf.writeCollection(lines, (b, l) -> { b.writeInt(l.color); b.writeUtf(l.number, 64); b.writeUtf(l.name, 256); b.writeBoolean(l.circular); });
     }
 }

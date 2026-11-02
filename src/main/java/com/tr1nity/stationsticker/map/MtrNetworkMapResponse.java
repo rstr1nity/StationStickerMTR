@@ -45,6 +45,10 @@ public final class MtrNetworkMapResponse {
             }
             int color = route.getColor() & 0xFFFFFF;
             lines.putIfAbsent(color, new NetworkMapData.Line(color, truncate(route.getRouteNumber(), 64), truncate(route.getName(), 256)));
+            if (route.getCircularState() != Route.CircularState.NONE) {
+                var line = lines.get(color);
+                lines.put(color, new NetworkMapData.Line(color, line.number(), line.name(), true));
+            }
             for (int i = 1; i < stops.size(); i++) {
                 long a = Math.min(stops.get(i - 1), stops.get(i));
                 long b = Math.max(stops.get(i - 1), stops.get(i));

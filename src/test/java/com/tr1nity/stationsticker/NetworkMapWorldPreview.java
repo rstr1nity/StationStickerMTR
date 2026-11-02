@@ -34,10 +34,10 @@ public final class NetworkMapWorldPreview {
             if (input == null) throw new java.io.IOException(id);
             return input;
         }, needed);
-        for (int spacing : new int[]{NetworkMapPainter.spacingFor(network)}) {
+        for (int spacing : new int[]{NetworkMapPainter.spacingFor(network), 3}) {
             var points = NetworkMapPainter.layout(network, spacing);
             long start = System.nanoTime();
-            var plan = NetworkMapSymbols.plan(network, points, font, false, network.stations().get(0).id());
+            var plan = NetworkMapSymbols.plan(network, points, font, false, network.stations().get(0).id(), spacing == 3);
             int overlaps = 0, badgeOverlaps = 0, distant = 0, markerOverlaps = 0, leaders = 0;
             double maxDistance = 0;
             var stationIds = new ArrayList<>(points.keySet());
@@ -57,12 +57,13 @@ public final class NetworkMapWorldPreview {
             }
             for (int i = 0; i < plan.badges().size(); i++) for (int j = i + 1; j < plan.badges().size(); j++)
                 if (plan.badges().get(i).bounds().intersects(plan.badges().get(j).bounds())) badgeOverlaps++;
-            String variant = spacing == 0 ? "geographic" : spacing == 1 ? "compact" : "equalized";
+            String variant = spacing == 3 ? "schematic" : spacing == 0 ? "geographic" : spacing == 1 ? "compact" : "equalized";
             long numberedEnds = NetworkMapGeometry.terminals(network).stream().filter(terminal -> network.lines().stream().anyMatch(line -> line.color() == terminal.color() && !line.number().isBlank())).count();
             System.out.printf("USER NETWORK %s %s: %d stations, %d lines, %d labels, %d/%d badges; label overlaps=%d, badge overlaps=%d, close transfer markers=%d, distant labels=%d, layout=%dms%n",
                     world, variant, network.stations().size(), network.lines().size(), plan.labels().size(), plan.badges().size(), numberedEnds, overlaps, badgeOverlaps, markerOverlaps, distant, (System.nanoTime() - start) / 1_000_000);
             if (overlaps > 0 || badgeOverlaps > 0 || markerOverlaps > 0) throw new AssertionError("User network symbols/labels overlap: " + world);
-            if (distant != 0 && world.equals("Rossonezh")) throw new AssertionError("Long leaders returned on the dense regression network");
+            if (spacing != 3 && distant != 0 && world.equals("Rossonezh")) throw new AssertionError("Long leaders returned on the dense regression network");
+            if (spacing == 3) System.out.println("SCHEMATIC: " + NetworkMapSchematic.rings(network).size() + " simple MTR rings");
             System.out.println("LOCAL LABELS: leaders=" + leaders + " maxDistance=" + maxDistance + " enlarged=" + plan.labels().stream().filter(label -> label.size() >= 16).count());
             var image = NetworkMapPainter.paint(network, network.stations().get(0).id(), false, font, spacing);
             int expectedSize = network.stations().size() >= 250 ? 4096 : 2048;
