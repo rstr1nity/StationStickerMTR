@@ -6,6 +6,7 @@ import java.util.*;
 
 public final class NetworkMapDensityRegression {
     public static void run() {
+        verifyLegendAndNearbyLabels();
         var stations = List.of(new NetworkMapData.Station(1, "West", -200, 0),
                 new NetworkMapData.Station(2, "Middle", 0, 0),
                 new NetworkMapData.Station(3, "Interchange", 200, 0),
@@ -16,6 +17,10 @@ public final class NetworkMapDensityRegression {
                 List.of(new NetworkMapData.Line(0xCC2233, "1", "Red"), new NetworkMapData.Line(0x228833, "LR2", "Green")));
         var points = NetworkMapPainter.layout(network);
         var font = NetworkMapFont.fallback();
+        font.size(8);
+        var integerGlyphs = new java.awt.geom.Area(font.outline("Station 1124", 10, 20));
+        integerGlyphs.exclusiveOr(new java.awt.geom.Area(font.outline("Station 1124", 10.5, 20.5)));
+        check(integerGlyphs.isEmpty(), "Half-pixel centering must not distort bitmap glyphs");
         var plan = NetworkMapSymbols.plan(network, points, font, false);
         check(plan.badges().size() == 4, "All four numbered ends remain visible, including two on the same station");
         check(plan.transfers().containsAll(Set.of(2L, 3L, 4L)), "Shared routes and linked MTR stations both use interchange symbols");
@@ -45,4 +50,31 @@ public final class NetworkMapDensityRegression {
         System.out.println("PASS: shared-terminal badge separation, transfer classification, wrapped names and monotone gap compression");
     }
     private static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }
+    private static void verifyLegendAndNearbyLabels() {
+        var font = NetworkMapFont.fallback();
+        List<NetworkMapData.Line> lines = new ArrayList<>();
+        for (int i = 0; i < 25; i++) lines.add(new NetworkMapData.Line(i, i == 0 ? "1124" : "1", i < 12 ? "A" : "A much longer route name " + i));
+        var data = new NetworkMapData(List.of(), List.of(), lines);
+        var legend = NetworkMapSymbols.legendEntries(data, false, font);
+        double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
+        font.size(8);
+        for (var entry : legend) {
+            min = Math.min(min, entry.left());
+            max = Math.max(max, entry.left() + NetworkMapSymbols.LEGEND_RADIUS * 2 + 6 + entry.rows().stream().mapToInt(font::width).max().orElse(0));
+        }
+        check(Math.abs((min + max) / 2 - 1024) < 0.01, "Legend content, including circles and unequal column widths, must center on the block");
+        check(NetworkMapSymbols.LEGEND_RADIUS * 2 < 26, "Uniform legend circles must fit the row pitch");
+        List<NetworkMapData.Station> stations = new ArrayList<>();
+        Map<Long, java.awt.geom.Point2D.Double> points = new LinkedHashMap<>();
+        for (long i = 0; i < 4; i++) {
+            stations.add(new NetworkMapData.Station(i, "Station " + i, 0, 0));
+            points.put(i, new java.awt.geom.Point2D.Double(1000 + i % 2 * 20, 800 + i / 2 * 20));
+        }
+        var labels = NetworkMapLabelLayout.place(new NetworkMapData(stations, List.of(), List.of()), points, font, false, List.of(), List.of(), 1530);
+        for (int i = 0; i < labels.size(); i++) {
+            check(NetworkMapLabelLayout.distance(points.get(labels.get(i).station()), labels.get(i).box()) <= 28, "Nearby free space must be used before long leaders");
+            for (int j = i + 1; j < labels.size(); j++) check(!labels.get(i).box().intersects(labels.get(j).box()), "Joint label assignment cannot create overlaps");
+        }
+        System.out.println("PASS: uniformly sized legend circles, actual-content centering and joint nearby-label placement");
+    }
 }

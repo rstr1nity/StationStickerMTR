@@ -121,6 +121,8 @@ public final class NetworkMapFont {
         return Math.round(width * scale());
     }
     public Shape outline(String text, double x, double baseline) {
+        // Полупиксельный якорь с rint на каждой границе чередовал ширины 0/2 вместо 1.
+        x = Math.rint(x); baseline = Math.rint(baseline);
         Path2D result = new Path2D.Double();
         for (int code : text.codePoints().toArray()) {
             if (code == 32) { x += 4 * scale(); continue; }
