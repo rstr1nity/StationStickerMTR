@@ -29,8 +29,11 @@ public final class NetworkMapSpacing {
         }
         // Широкие пустоты сжимаются; плотные полосы получают больше места. Маленький
         // разброс координат платформ не превращается в большой ступенчатый сдвиг.
-        double span = sorted.get(sorted.size() - 1) - sorted.get(0);
-        double band = Math.max(1, span / Math.max(6, Math.sqrt(values.size())));
+        List<Double> gaps = new ArrayList<>();
+        for (int i = 1; i < sorted.size(); i++) gaps.add(sorted.get(i) - sorted.get(i - 1));
+        Collections.sort(gaps);
+        // Порог не зависит от крайних станций: один дальний пригород не сжимает весь центр.
+        double band = Math.max(1, gaps.get(gaps.size() / 2) * 4);
         double position = 0;
         result.put(sorted.get(0), position);
         for (int i = 1; i < sorted.size(); i++) {
@@ -41,7 +44,9 @@ public final class NetworkMapSpacing {
                 double distance = (value - middle) / band;
                 density += Math.exp(-distance * distance / 2);
             }
-            double shortened = gap > band ? (strength > 1 ? band : band * (1 + Math.log(gap / band))) : gap;
+            double shortened = band * -Math.expm1(-gap / band);
+            // Нижняя добавка расширяет тесные интервалы плавно, без скачка у почти равных координат.
+            shortened += band * 0.2 * gap / (gap + band * 0.05);
             position += shortened * (1 + Math.min(strength > 1 ? 8 : 5, (strength > 1 ? 6 : 3) * density / Math.sqrt(values.size())));
             result.put(sorted.get(i), position);
         }
