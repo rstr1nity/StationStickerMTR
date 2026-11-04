@@ -26,7 +26,7 @@ public final class VerticalLineRenderer implements BlockEntityRenderer<VerticalL
         if(previous!=null && (entity.getLevel().getGameTime()+pos.asLong())%40!=0) return previous.texture();
         var data=VerticalLineData.at(pos,entity.getBlockState().getValue(VerticalLineBlock.ROUTE));
         if(previous!=null && Objects.equals(data,previous.data())) return previous.texture();
-        Set<Integer> chars=new HashSet<>();"MTR↑".codePoints().forEach(chars::add);
+        Set<Integer> chars=new HashSet<>();"MTR↑По часовой стрелке Против часовой стрелки Посадки нет Clockwise Counterclockwise No boarding".codePoints().forEach(chars::add);
         if(data!=null){data.heading().codePoints().forEach(chars::add);data.number().codePoints().forEach(chars::add);data.stops().forEach(s->{(s.name()+s.secondary()).codePoints().forEach(chars::add);s.transfers().forEach(t->t.number().codePoints().forEach(chars::add));});data.legend().forEach(t->(t.name()+t.number()).codePoints().forEach(chars::add));}
         try{
             var font=NetworkMapFont.load(id->Minecraft.getInstance().getResourceManager().open(new ResourceLocation(id)),chars);
@@ -42,11 +42,11 @@ public final class VerticalLineRenderer implements BlockEntityRenderer<VerticalL
     @Override public void render(VerticalLineBlockEntity e,float tick,PoseStack poses,MultiBufferSource buffers,int light,int overlay){
         poses.pushPose();poses.translate(.5,0,.5);poses.mulPose(Axis.YP.rotationDegrees(-e.getBlockState().getValue(VerticalLineBlock.FACING).toYRot()));
         panel(poses,buffers,WHITE,-.46f,0,.46f,.55f,.22f,0xFF202124,light);
-        panel(poses,buffers,WHITE,-.46f,.5f,.46f,3.95f,.08f,0xFF303237,light);
+        panel(poses,buffers,WHITE,-.46f,.5f,.46f,2.95f,.08f,0xFF303237,light);
         ResourceLocation texture=texture(e);
         for(int side=0;side<2;side++){
             poses.pushPose();if(side==1)poses.mulPose(Axis.YP.rotationDegrees(180));
-            surface(buffers.getBuffer(RenderType.text(texture)),poses.last().pose(),-.425f,.59f,.425f,3.91f,.081f,0xFFFFFFFF,LightTexture.FULL_BRIGHT,.11f);
+            surface(buffers.getBuffer(RenderType.text(texture)),poses.last().pose(),-.425f,.59f,.425f,2.91f,.081f,0xFFFFFFFF,LightTexture.FULL_BRIGHT,.11f);
             poses.popPose();
         }
         poses.popPose();

@@ -14,16 +14,22 @@ public final class VerticalLineImageRegression {
         List<VerticalLineData.Stop> stops=new ArrayList<>();
         for(int i=0;i<names.length;i++)stops.add(new VerticalLineData.Stop(names[i],"",i==3,i<3,i==3?List.of(ring):i==1?List.of(blue):List.of()));
         var data=new VerticalLineData(main.color(),main.number(),"Котельники",List.copyOf(stops),List.of(main,ring,blue));
-        Set<Integer> needed=new HashSet<>();("↑MTRКотельники"+Arrays.toString(names)+ring.name()+blue.name()+main.name()+"0123456789").codePoints().forEach(needed::add);
+        Set<Integer> needed=new HashSet<>();("По часовой стрелке↑MTRКотельники"+Arrays.toString(names)+ring.name()+blue.name()+main.name()+"0123456789").codePoints().forEach(needed::add);
         var font=NetworkMapFont.load(id->{var path=id.split(":",2);var input=VerticalLineImageRegression.class.getResourceAsStream("/assets/"+path[0]+"/"+path[1]);if(input==null)throw new IOException(id);return input;},needed);
         var image=VerticalLinePainter.paint(data,font);
-        if(image.getWidth()!=512||image.getHeight()!=1792)throw new AssertionError("Wrong panel aspect");
+        if(image.getWidth()!=512||image.getHeight()!=1344)throw new AssertionError("Wrong panel aspect");
         // Ring transfer must extend to both sides of the main line.
-        double y=210+3*((1792-65-2*30-75-210)/11.0);
+        double y=190+3*((1344-65-2*30-75-190)/11.0);
         boolean left=false,right=false;
-        for(int py=(int)y-30;py<y+30;py++)for(int x=20;x<492;x++)if((image.getRGB(x,py)&0xFFFFFF)==ring.color()){if(x<100)left=true;if(x>350)right=true;}
+        for(int py=(int)y-40;py<y+40;py++)for(int x=20;x<492;x++)if((image.getRGB(x,py)&0xFFFFFF)==ring.color()){if(x<100)left=true;if(x>350)right=true;}
         if(!left||!right)throw new AssertionError("Ring arc missing on a side");
         ImageIO.write(image,"PNG",new File("vertical-line-preview.png"));image.flush();
+        var ringRows=VerticalLineData.ringStops(stops,3);
+        if(!ringRows.get(0).current() || ringRows.stream().anyMatch(VerticalLineData.Stop::passed) || ringRows.size()!=stops.size()) throw new AssertionError("Ring must begin at current stop without passed stations");
+        var circular=new VerticalLineData(main.color(),"7","Таганская",ringRows,List.of(main,ring),"По часовой стрелке",true);
+        var ringImage=VerticalLinePainter.paint(circular,font);
+        if ((ringImage.getRGB(160, 1344-65-30-75)&0xFFFFFF)!=0xFAF8F1) throw new AssertionError("Ring end has a terminus bar through its circle");
+        ImageIO.write(ringImage,"PNG",new File("vertical-line-ring-preview.png"));ringImage.flush();
         var empty=VerticalLinePainter.paint(null,font);empty.flush();
         savedWorld();
         System.out.println("PASS: vertical panel, real Minecraft font, ring arc across the station, empty state");

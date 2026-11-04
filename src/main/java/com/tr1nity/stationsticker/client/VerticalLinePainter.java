@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.List;
 
 public final class VerticalLinePainter {
-    public static final int WIDTH = 512, HEIGHT = 1792;
+    public static final int WIDTH = 512, HEIGHT = 1344;
     private static final Color PAPER = new Color(0xFAF8F1), INK = new Color(0x25272B);
     private VerticalLinePainter() {}
     public static BufferedImage paint(VerticalLineData data, NetworkMapFont font) {
@@ -18,13 +18,14 @@ public final class VerticalLinePainter {
         font.density(1);
         if (data == null || data.stops().isEmpty()) { text(g,font,"MTR",40,100,24,INK); g.dispose(); return image; }
         badge(g,font,data.color(),data.number(),55,85,25);
-        text(g,font,"↑",96,57,16,INK);
+        if (data.direction().isEmpty()) text(g,font,"↑",96,57,16,INK);
+        else fitted(g,font,data.direction(),96,48,12,WIDTH-130,INK);
         fitted(g,font,data.heading(),96,92,28,WIDTH-130,INK);
         g.setColor(new Color(0xAAAAAA)); g.drawLine(32,142,WIDTH-32,142);
         // Reserve a separate lower region for the transfer legend.
         int legendRows = (data.legend().size()+1)/2;
         double legendTop = HEIGHT-65-legendRows*30;
-        double start = 210, end = legendTop-75;
+        double start = 190, end = legendTop-75;
         double step = (end-start)/Math.max(1,data.stops().size()-1);
         int fontSize = step < 32 ? 8 : step < 50 ? 12 : 16;
         int x = 160;
@@ -34,15 +35,15 @@ public final class VerticalLinePainter {
             if (i+1<data.stops().size()) { g.setColor(line); g.setStroke(new BasicStroke(7)); g.draw(new Line2D.Double(x,y,x,y+step)); }
             int arc=0;
             for (var transfer:stop.transfers()) if(transfer.circular()) {
-                g.setColor(new Color(transfer.color())); g.setStroke(new BasicStroke(2.5f));
-                g.draw(new QuadCurve2D.Double(20,y-20-arc*7,x,y+20-arc*7,WIDTH-20,y-20-arc*7)); arc++;
+                g.setColor(new Color(transfer.color())); g.setStroke(new BasicStroke(4.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.draw(new QuadCurve2D.Double(20,y-27-arc*10,WIDTH/2.0,y+27-arc*10,WIDTH-20,y-27-arc*10)); arc++;
             }
             g.setColor(line); g.setStroke(new BasicStroke(5));
-            if(stop.current() || !stop.transfers().isEmpty()) {
+            if(stop.current() || !stop.transfers().isEmpty() || data.circular() && (i==0 || i==data.stops().size()-1)) {
                 g.setColor(PAPER); g.fill(new Ellipse2D.Double(x-9,y-9,18,18));
                 g.setColor(line); g.draw(new Ellipse2D.Double(x-9,y-9,18,18));
             } else g.draw(new Line2D.Double(x,y,x+13,y));
-            if(i==0 || i==data.stops().size()-1) g.draw(new Line2D.Double(x-10,y,x+10,y));
+            if(!data.circular() && (i==0 || i==data.stops().size()-1)) g.draw(new Line2D.Double(x-10,y,x+10,y));
             double gap=Math.min(23,120.0/Math.max(1,stop.transfers().size()));
             double bx=x-25;
             for(var transfer:stop.transfers()) { badge(g,font,transfer.color(),transfer.number(),bx,y,(int)Math.min(9,gap/2-1)); bx-=gap; }
@@ -57,7 +58,9 @@ public final class VerticalLinePainter {
                 g.setColor(PAPER); g.fill(new Rectangle2D.Double(x+20,top-font.height()+1,Math.min(WIDTH-x-40,width+12),rows.size()*font.height()+5));
             }
             if(stop.current()) {
-                g.setColor(new Color(data.color()));g.fill(new Rectangle2D.Double(x+19,top-font.height()+1,WIDTH-x-39,rows.size()*font.height()+9));
+                font.size(size);
+                int nameWidth=rows.stream().mapToInt(font::width).max().orElse(0);
+                g.setColor(new Color(data.color()));g.fill(new Rectangle2D.Double(x+19,top-font.height()+1,Math.min(WIDTH-x-39,nameWidth+12),rows.size()*font.height()+9));
             }
             for(String row:rows) {
                 fitted(g,font,row,x+25,top,size,WIDTH-x-55,stop.current()?Color.WHITE:stop.passed()?new Color(0x888888):INK);

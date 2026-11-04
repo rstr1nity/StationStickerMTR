@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// Напольный стенд: 1 клетка по ширине, 4 по высоте; основной блок внизу по центру.
+// Напольный стенд: 1 клетка по ширине, 3 по высоте; основной блок внизу по центру.
 public class VerticalLineBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final net.minecraft.world.level.block.state.properties.IntegerProperty ROUTE = net.minecraft.world.level.block.state.properties.IntegerProperty.create("route", 0, 63);
@@ -34,7 +34,7 @@ public class VerticalLineBlock extends BaseEntityBlock {
     }
     public static Map<BlockPos, BlockState> parts(BlockPos pos, Direction facing) {
         Map<BlockPos, BlockState> result = new LinkedHashMap<>();
-        for (int row = 0; row < 4; row++) for (int h = 0; h <= 0; h++) {
+        for (int row = 0; row < 3; row++) for (int h = 0; h <= 0; h++) {
             if (row != 0 || h != 0) result.put(pos.offset(offset(facing, h, row)),
                     ModBlocks.VERTICAL_LINE_PART.get().defaultBlockState().setValue(FACING, facing)
                             .setValue(VerticalLinePartBlock.HORIZONTAL, h + 1).setValue(VerticalLinePartBlock.ROW, row));
@@ -65,7 +65,7 @@ public class VerticalLineBlock extends BaseEntityBlock {
         if (!level.isClientSide) parts(pos, state.getValue(FACING)).forEach((part, partState) -> level.setBlock(part, partState, Block.UPDATE_ALL));
     }
     @Override public void onRemove(BlockState state, Level level, BlockPos pos, BlockState target, boolean moving) {
-        if (!state.is(target.getBlock())) for (BlockPos part : parts(pos, state.getValue(FACING)).keySet()) {
+        if (!state.is(target.getBlock())) for (BlockPos part : java.util.List.of(pos.above(), pos.above(2), pos.above(3))) {
             BlockState occupied = level.getBlockState(part);
             if (occupied.getBlock() instanceof VerticalLinePartBlock && VerticalLinePartBlock.mainPos(part, occupied).equals(pos)) {
                 level.setBlock(part, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
@@ -77,8 +77,9 @@ public class VerticalLineBlock extends BaseEntityBlock {
         return shape(state.getValue(FACING), 0, 0);
     }
     public static VoxelShape shape(Direction facing, int h, int row) {
+        if (row >= 3) return Shapes.empty();
         return box(facing, 0.04, 0, row == 0 ? 0.28 : 0.42, 0.96,
-                row == 3 ? 0.95 : 1, row == 0 ? 0.72 : 0.58);
+                row == 2 ? 0.95 : 1, row == 0 ? 0.72 : 0.58);
     }
     private static VoxelShape box(Direction facing, double x0, double y0, double z0, double x1, double y1, double z1) {
         return switch (facing) {
