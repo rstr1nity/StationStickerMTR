@@ -41,6 +41,11 @@ public final class VerticalLineImageRegression {
         var circular=new VerticalLineData(main.color(),"7","Таганская",ringRows,List.of(main,ring),"По часовой стрелке",true,1);
         var ringImage=VerticalLinePainter.paint(circular,font);
         if ((ringImage.getRGB(160, 1344-65-30-75)&0xFFFFFF)!=0xFAF8F1) throw new AssertionError("Ring end has a terminus bar through its circle");
+        font.size(12);
+        int arrowX=96+Math.min(512-96-38,font.width(circular.direction()))+13;
+        int arrowInk=0;
+        for(int py=30;py<56;py++)for(int px=arrowX-12;px<=arrowX+12;px++)if((ringImage.getRGB(px,py)&0xFFFFFF)==0x25272B)arrowInk++;
+        if(arrowInk<15)throw new AssertionError("Circular direction arrow must follow the caption on its right");
         ImageIO.write(ringImage,"PNG",new File("vertical-line-ring-preview.png"));ringImage.flush();
         var reverse=new VerticalLineData(main.color(),"7","Таганская",ringRows,List.of(main,ring),"Против часовой стрелки",true,-1);
         var reverseImage=VerticalLinePainter.paint(reverse,font);ImageIO.write(reverseImage,"PNG",new File("vertical-line-ring-counterclockwise.png"));reverseImage.flush();
