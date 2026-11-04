@@ -130,3 +130,11 @@ if (project.hasProperty(modsDirProperty)) {
 
     build.finalizedBy copyToMods
 }
+
+// Standalone preview of the vertical diagram using Minecraft bitmap resources.
+tasks.register('checkVerticalLineImage', JavaExec) {
+    dependsOn testClasses
+    workingDir project.file('build')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.tr1nity.stationsticker.VerticalLineImageRegression'
+}

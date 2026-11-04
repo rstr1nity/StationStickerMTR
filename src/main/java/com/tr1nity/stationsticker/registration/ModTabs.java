@@ -25,6 +25,7 @@ public class ModTabs {
                         output.accept(ModBlocks.NAV_SIGN.get());
                         output.accept(ModBlocks.INFO_DISPLAY.get());
                         output.accept(ModBlocks.NETWORK_MAP.get());
+                        output.accept(ModBlocks.VERTICAL_LINE.get());
                     })
                     .build());
 }

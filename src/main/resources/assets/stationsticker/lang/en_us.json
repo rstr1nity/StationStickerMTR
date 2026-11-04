@@ -66,5 +66,6 @@
   "display.stationsticker.network_map.loading": "Loading metro network…",
   "display.stationsticker.network_map.mode.world": "Network map: world layout",
   "display.stationsticker.network_map.mode.schematic": "Network map: schematic layout",
-  "itemGroup.stationsticker_tab": "Station Stickers"
+  "itemGroup.stationsticker_tab": "Station Stickers",
+  "block.stationsticker.vertical_line": "Vertical line diagram"
 }
