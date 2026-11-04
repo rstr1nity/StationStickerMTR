@@ -51,12 +51,14 @@ public final class VerticalLineRenderer implements BlockEntityRenderer<VerticalL
     }
     @Override public void render(VerticalLineBlockEntity e,float tick,PoseStack poses,MultiBufferSource buffers,int light,int overlay){
         poses.pushPose();poses.translate(.5,0,.5);poses.mulPose(Axis.YP.rotationDegrees(-e.getBlockState().getValue(VerticalLineBlock.FACING).toYRot()));
-        panel(poses,buffers,WHITE,-.46f,0,.46f,.55f,.22f,0xFF202124,light);
-        panel(poses,buffers,WHITE,-.46f,.5f,.46f,2.95f,.08f,0xFF303237,light);
+        boolean wall=e.getBlockState().getValue(VerticalLineBlock.WALL);
+        if(wall)poses.translate(0,0,-.41);
+        if(!wall)panel(poses,buffers,WHITE,-.46f,0,.46f,.55f,.22f,0xFF202124,light);
+        panel(poses,buffers,WHITE,-.46f,wall?.05f:.5f,.46f,2.95f,.08f,0xFF303237,light);
         ResourceLocation texture=texture(e);
-        for(int side=0;side<2;side++){
+        for(int side=0;side<(wall?1:2);side++){
             poses.pushPose();if(side==1)poses.mulPose(Axis.YP.rotationDegrees(180));
-            surface(buffers.getBuffer(RenderType.text(texture)),poses.last().pose(),-.425f,.59f,.425f,2.91f,.081f,0xFFFFFFFF,LightTexture.FULL_BRIGHT,.11f);
+            surface(buffers.getBuffer(RenderType.text(texture)),poses.last().pose(),-.425f,wall?.09f:.59f,.425f,2.91f,.081f,0xFFFFFFFF,LightTexture.FULL_BRIGHT,.11f);
             poses.popPose();
         }
         poses.popPose();

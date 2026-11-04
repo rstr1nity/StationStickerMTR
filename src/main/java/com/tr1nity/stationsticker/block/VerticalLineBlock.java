@@ -23,11 +23,12 @@ import java.util.Map;
 
 // Напольный стенд: 1 клетка по ширине, 3 по высоте; основной блок внизу по центру.
 public class VerticalLineBlock extends BaseEntityBlock {
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty WALL = net.minecraft.world.level.block.state.properties.BooleanProperty.create("wall");
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final net.minecraft.world.level.block.state.properties.IntegerProperty ROUTE = net.minecraft.world.level.block.state.properties.IntegerProperty.create("route", 0, 63);
     public VerticalLineBlock() {
         super(Properties.of().strength(1).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.BLOCK));
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(ROUTE, 0));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(ROUTE, 0).setValue(WALL, false));
     }
     public static BlockPos offset(Direction facing, int h, int row) {
         return BlockPos.ZERO.relative(WideDisplayBlock.partDirection(facing), h).above(row);
@@ -41,7 +42,7 @@ public class VerticalLineBlock extends BaseEntityBlock {
         }
         return result;
     }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, ROUTE); }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, ROUTE, WALL); }
     @Override public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos,
             net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
         if (!player.mayBuild() || !player.getItemInHand(hand).is(org.mtr.mod.Items.BRUSH.get().data)) return net.minecraft.world.InteractionResult.PASS;
@@ -49,18 +50,19 @@ public class VerticalLineBlock extends BaseEntityBlock {
         return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
     }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
-        if (context.getClickedFace() != Direction.UP) return null;
-        Direction facing = context.getHorizontalDirection().getOpposite();
+        if (context.getClickedFace() == Direction.DOWN) return null;
+        boolean wall = context.getClickedFace().getAxis().isHorizontal();
+        Direction facing = wall ? context.getClickedFace() : context.getHorizontalDirection().getOpposite();
         Level level = context.getLevel();
         for (BlockPos pos : parts(context.getClickedPos(), facing).keySet()) {
             if (!level.isLoaded(pos) || level.isOutsideBuildHeight(pos) || !level.getWorldBorder().isWithinBounds(pos)
                     || !level.getBlockState(pos).canBeReplaced(context)) return null;
         }
-        return defaultBlockState().setValue(FACING, facing);
+        return defaultBlockState().setValue(FACING, facing).setValue(WALL, wall);
     }
     @Override public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity player, ItemStack stack) {
         super.setPlacedBy(level, pos, state, player, stack);
-        if (!level.isClientSide) parts(pos, state.getValue(FACING)).forEach((part, partState) -> level.setBlock(part, partState, Block.UPDATE_ALL));
+        if (!level.isClientSide) parts(pos, state.getValue(FACING)).forEach((part, partState) -> level.setBlock(part, partState.setValue(WALL,state.getValue(WALL)), Block.UPDATE_ALL));
     }
     @Override public void onRemove(BlockState state, Level level, BlockPos pos, BlockState target, boolean moving) {
         if (!state.is(target.getBlock())) for (BlockPos part : java.util.List.of(pos.above(), pos.above(2), pos.above(3))) {
@@ -72,10 +74,14 @@ public class VerticalLineBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, target, moving);
     }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shape(state.getValue(FACING), 0, 0);
+        return shape(state.getValue(FACING), 0, 0, state.getValue(WALL));
     }
     public static VoxelShape shape(Direction facing, int h, int row) {
+        return shape(facing,h,row,false);
+    }
+    public static VoxelShape shape(Direction facing,int h,int row,boolean wall) {
         if (row >= 3) return Shapes.empty();
+        if (wall) return box(facing,0.04, row==0 ? 0.05 : 0,0.01,0.96,row==2 ? 0.95 : 1,0.17);
         return box(facing, 0.04, 0, row == 0 ? 0.28 : 0.42, 0.96,
                 row == 2 ? 0.95 : 1, row == 0 ? 0.72 : 0.58);
     }

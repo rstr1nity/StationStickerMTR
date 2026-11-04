@@ -107,8 +107,8 @@ public class NetworkMapGameTests {
         var level = helper.getLevel();
         BlockPos main = helper.absolutePos(new BlockPos(8, 1, 8));
         com.tr1nity.stationsticker.block.VerticalLineBlock block = ModBlocks.VERTICAL_LINE.get();
-        for (Direction facing : Direction.Plane.HORIZONTAL) {
-            var state = block.defaultBlockState().setValue(com.tr1nity.stationsticker.block.VerticalLineBlock.FACING, facing);
+        for (boolean wall : new boolean[]{false,true}) for (Direction facing : Direction.Plane.HORIZONTAL) {
+            var state = block.defaultBlockState().setValue(com.tr1nity.stationsticker.block.VerticalLineBlock.FACING, facing).setValue(com.tr1nity.stationsticker.block.VerticalLineBlock.WALL,wall);
             level.setBlockAndUpdate(main, state);
             block.setPlacedBy(level, main, state, null, ItemStack.EMPTY);
             var parts = com.tr1nity.stationsticker.block.VerticalLineBlock.parts(main, facing);
