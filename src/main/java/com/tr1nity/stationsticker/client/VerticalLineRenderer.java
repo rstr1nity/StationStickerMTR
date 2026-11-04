@@ -30,7 +30,17 @@ public final class VerticalLineRenderer implements BlockEntityRenderer<VerticalL
         if(data!=null){data.heading().codePoints().forEach(chars::add);data.number().codePoints().forEach(chars::add);data.stops().forEach(s->{(s.name()+s.secondary()).codePoints().forEach(chars::add);s.transfers().forEach(t->t.number().codePoints().forEach(chars::add));});data.legend().forEach(t->(t.name()+t.number()).codePoints().forEach(chars::add));}
         try{
             var font=NetworkMapFont.load(id->Minecraft.getInstance().getResourceManager().open(new ResourceLocation(id)),chars);
-            var image=VerticalLinePainter.paint(data,font);
+            Map<String,java.awt.image.BufferedImage> icons=new HashMap<>();
+            if(data!=null)for(var stop:data.stops())for(String id:stop.icons())if(!icons.containsKey(id)){
+                var sign=com.tr1nity.stationsticker.client.display.MtrSigns.get(id);if(sign==null)continue;
+                try(var input=Minecraft.getInstance().getResourceManager().open(sign.texture())){
+                    var source=javax.imageio.ImageIO.read(input);if(source==null)continue;
+                    var icon=new java.awt.image.BufferedImage(32,32,java.awt.image.BufferedImage.TYPE_INT_ARGB);var g=icon.createGraphics();
+                    g.setColor(new java.awt.Color(sign.background(),true));g.fillRect(0,0,32,32);
+                    g.drawImage(source,sign.flip()?32:0,0,sign.flip()?0:32,32,0,0,source.getWidth(),source.getHeight(),null);g.dispose();source.flush();icons.put(id,icon);
+                }catch(java.io.IOException ignored){}
+            }
+            var image=VerticalLinePainter.paint(data,font,icons);icons.values().forEach(java.awt.image.BufferedImage::flush);
             var nativeImage=NetworkMapImages.create(image);image.flush();
             var texture=Minecraft.getInstance().getTextureManager().register("stationsticker_vertical_line",new DynamicTexture(nativeImage));
             if(previous!=null)Minecraft.getInstance().getTextureManager().release(previous.texture());

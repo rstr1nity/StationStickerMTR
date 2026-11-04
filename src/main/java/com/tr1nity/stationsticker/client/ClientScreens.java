@@ -13,6 +13,10 @@ public final class ClientScreens {
     private ClientScreens() {
     }
 
+    public static void openVerticalLine(BlockPos pos) {
+        var mc=Minecraft.getInstance();
+        if(mc.level!=null && mc.level.getBlockEntity(pos) instanceof com.tr1nity.stationsticker.block.entity.VerticalLineBlockEntity entity)mc.setScreen(new VerticalLineScreen(entity));
+    }
     public static void openNavSign(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.level.getBlockEntity(pos) instanceof NavSignBlockEntity sign) {

@@ -9,7 +9,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 // Сетевой канал мода. Версия протокола меняется при изменении формата пакетов.
 public final class ModNetwork {
 
-    private static final String PROTOCOL_VERSION = "7";
+    private static final String PROTOCOL_VERSION = "8";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(StationStickerMod.MOD_ID, "main"),
@@ -20,6 +20,9 @@ public final class ModNetwork {
 
     public static void register() {
         int id = 0;
+        CHANNEL.messageBuilder(VerticalLineSettingsPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(VerticalLineSettingsPacket::encode).decoder(VerticalLineSettingsPacket::new)
+                .consumerMainThread(VerticalLineSettingsPacket::handle).add();
         CHANNEL.messageBuilder(NetworkMapRequestPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(NetworkMapRequestPacket::encode).decoder(NetworkMapRequestPacket::new)
                 .consumerMainThread(NetworkMapRequestPacket::handle).add();
