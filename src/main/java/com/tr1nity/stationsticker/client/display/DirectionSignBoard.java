@@ -48,7 +48,7 @@ public final class DirectionSignBoard {
     private static final String KEY = "display.stationsticker.arrival.";
 
     // Направление с платформы: маршрут и индекс остановки; последний индекс означает конечную.
-    private record Side(SimplifiedRoute route, int index) {
+    private record Side(SimplifiedRoute route, int index, long platformId) {
     }
 
     private DirectionSignBoard() {
@@ -57,7 +57,7 @@ public final class DirectionSignBoard {
     // mainPos - основной блок, partAxis - в какую сторону от него стоят части, width - ширина в клетках,
     // rightAxis - «вправо» для зрителя этой стороны экрана (у обратной стороны подвесного экрана - против partAxis)
     public static void render(SlideCanvas canvas, BlockPos mainPos, Direction partAxis, int width, Direction rightAxis, boolean ceiling) {
-        Station station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(mainPos.getX(), mainPos.getY(), mainPos.getZ()));
+        Station station = com.tr1nity.stationsticker.client.PlatformLocator.findStationAt(mainPos);
         if (station == null) return;
 
         // Центр экрана в мировых координатах: середина отрезка клеток
@@ -70,7 +70,7 @@ public final class DirectionSignBoard {
         double nearestDistance = Double.MAX_VALUE;
         boolean selectedBelow = false;
         for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
-            if (platform.area != station) continue;
+            if ((platform.area == null || platform.area.getId() != station.getId())) continue;
             Side candidate = sideOf(platform.getId(), null);
             if (candidate == null) continue;
             double dx = platform.getMidPosition().getX() + 0.5 - centerX;
@@ -91,7 +91,7 @@ public final class DirectionSignBoard {
         double leftDistance = Double.MAX_VALUE;
         double rightDistance = Double.MAX_VALUE;
         for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
-            if (platform.area != station) continue;
+            if ((platform.area == null || platform.area.getId() != station.getId())) continue;
             if (selectedBelow && platform.getMidPosition().getY() >= mainPos.getY()) continue;
             Side candidate = sideOf(platform.getId(), lineColor);
             if (candidate == null) continue;
@@ -111,13 +111,12 @@ public final class DirectionSignBoard {
 
         float halfWidth = canvas.width / 2;
         canvas.rect(halfWidth - 0.3f, 1, 0.6f, DESIGN_HEIGHT - 2, DIVIDER_COLOR);
-        if (leftSide != null) drawSide(canvas, leftSide, 0, halfWidth - GAP * 2, false);
-        if (rightSide != null) drawSide(canvas, rightSide, halfWidth + GAP * 2, canvas.width, true);
+        if (leftSide != null) drawPlatform(canvas, leftSide, 0, halfWidth - GAP * 2, false);
+        if (rightSide != null) drawPlatform(canvas, rightSide, halfWidth + GAP * 2, canvas.width, true);
     }
 
     private static boolean isBoarding(Side side) {
-        return side.index < side.route.getPlatforms().size() - 1 ||
-                (!CircularDirections.title(side.route.getCircularState()).isEmpty() && side.route.getPlatforms().size() > 1);
+        return com.tr1nity.stationsticker.client.NavigationRoutes.boarding(side.route,side.index);
     }
 
     private static boolean better(Side candidate, double distance, Side current, double currentDistance) {
@@ -127,18 +126,31 @@ public final class DirectionSignBoard {
     @Nullable
     private static Side sideOf(long platformId, @Nullable Integer color) {
         Side terminating = null;
-        for (SimplifiedRoute route : MinecraftClientData.getInstance().simplifiedRoutes) {
+        for (SimplifiedRoute route : com.tr1nity.stationsticker.client.NavigationRoutes.atPlatform(platformId)) {
             if (color != null && route.getColor() != color) continue;
             int index = route.getPlatformIndex(platformId);
             if (index < 0) continue;
-            Side side = new Side(route, index);
+            Side side = new Side(route, index, platformId);
             if (isBoarding(side)) return side;
             terminating = side;
         }
         return terminating;
     }
+    private static void drawPlatform(SlideCanvas canvas,Side chosen,float x0,float x1,boolean right){
+        var groups=new java.util.LinkedHashMap<String,java.util.List<Side>>();
+        com.tr1nity.stationsticker.client.NavigationRoutes.destinations(new java.util.ArrayList<>(MinecraftClientData.getInstance().simplifiedRoutes),chosen.platformId)
+                .forEach((key,routes)->{var variants=new java.util.ArrayList<Side>();routes.forEach(r->variants.add(new Side(r,r.getPlatformIndex(chosen.platformId),chosen.platformId)));groups.put(key,variants);});
+        if(groups.isEmpty()){drawNoBoarding(canvas,x0,x1,right);return;}
+        float column=(x1-x0)/groups.size();int i=0;
+        for(var variants:groups.values()){
+            float left=x0+i*column;
+            if(i>0)canvas.rect(left-1,1,.3f,DESIGN_HEIGHT-2,DIVIDER_COLOR);
+            drawSide(canvas,variants,left,left+column-GAP,right);i++;
+        }
+    }
     // Половина экрана от x0 до x1; rightSide - стрелка и заголовок у правого края
-    private static void drawSide(SlideCanvas canvas, Side side, float x0, float x1, boolean rightSide) {
+    private static void drawSide(SlideCanvas canvas, java.util.List<Side> variants, float x0, float x1, boolean rightSide) {
+        Side side=variants.get(0);
         if (!isBoarding(side)) {
             drawNoBoarding(canvas, x0, x1, rightSide);
             return;
@@ -174,7 +186,11 @@ public final class DirectionSignBoard {
         float columnWidth = (x1 - x0) / columns;
         int capacity = columns * LIST_ROWS;
         int shown = 0;
-        for (var stop : CircularDirections.nextStops(stops, side.index, !circularTitle.isEmpty(), capacity)) {
+        var next=new java.util.LinkedHashMap<Long,SimplifiedRoutePlatform>();
+        for(var variant:variants)for(var stop:CircularDirections.nextStops(variant.route.getPlatforms(),variant.index,!circularTitle.isEmpty(),capacity))next.putIfAbsent(stop.getStationId(),stop);
+        if(variants.size()>1){columns=Math.max(columns,Math.min(4,(next.size()+LIST_ROWS-1)/LIST_ROWS));columnWidth=(x1-x0)/columns;capacity=columns*LIST_ROWS;}
+        for (var stop : next.values()) {
+            if(shown>=capacity)break;
             float itemX = x0 + (shown / LIST_ROWS) * columnWidth;
             float itemY = LIST_Y + (shown % LIST_ROWS) * LIST_ROW;
             drawStop(canvas, stop, side.route.getColor(), itemX, itemY, columnWidth - GAP);

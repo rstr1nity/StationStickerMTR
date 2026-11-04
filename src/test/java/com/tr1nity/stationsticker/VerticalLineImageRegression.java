@@ -67,6 +67,7 @@ public final class VerticalLineImageRegression {
         directEdges.add(new com.tr1nity.stationsticker.map.NetworkMapData.Edge(1,4,blue.color()));
         if(VerticalLineData.walking(new com.tr1nity.stationsticker.map.NetworkMapData(List.of(),directEdges,List.of()),1,blue.color())) throw new AssertionError("Direct interchange must override walking interchange of the same color");
         VerticalLineAdvancedRegression.run(font);
+        NavigationConsistencyRegression.run(font);
         savedWorld();
         System.out.println("PASS: vertical panel, real Minecraft font, ring arc across the station, empty state");
     }

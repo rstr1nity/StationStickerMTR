@@ -80,7 +80,7 @@ public class SPBDynamicTextureCache implements IGui {
         final long dataVersion = generateDataVersion(platformId);
 
         // 2. Включаем эту версию в ключ
-        String key = String.format("spb_route_map_v3_%s_%s_%s_%s_%s_%s", platformId, dataVersion, vertical, flip, aspectRatio, transparentWhite);
+        String key = String.format("spb_route_map_v3_%s_%s_%s_%s_%s_%s", platformId, dataVersion, vertical, flip, aspectRatio, transparentWhite) + ":" + Config.getClient().getDynamicTextureResolution() + ":" + net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();
 
         // 3. Вызываем ваш генератор
         return getResource(key, () -> SPBRouteMapGenerator.generateRouteMap(platformId, vertical, flip, aspectRatio, transparentWhite),
@@ -93,33 +93,7 @@ public class SPBDynamicTextureCache implements IGui {
      * Если этот хэш изменится, значит, схему нужно перерисовать.
      */
     private long generateDataVersion(long platformId) {
-        long hash = 1;
-        final MinecraftClientData clientData = MinecraftClientData.getInstance();
-        if (clientData == null) return 0;
-
-        final Platform platform = clientData.platformIdMap.get(platformId);
-        if (platform == null) return 0;
-
-        hash = 31 * hash + platform.getName().hashCode();
-        if (platform.area != null) {
-            hash = 31 * hash + platform.area.getName().hashCode();
-            hash = 31 * hash + platform.area.getColor();
-        }
-
-        // Проверяем все маршруты, которые проходят через эту платформу
-        for (SimplifiedRoute route : clientData.simplifiedRoutes) {
-            if (route.getPlatformIndex(platformId) >= 0) {
-                hash = 31 * hash + route.getName().hashCode();
-                hash = 31 * hash + route.getColor();
-                hash = 31 * hash + route.getCircularState().hashCode();
-
-                // Хэшируем все названия станций в маршруте, чтобы отловить его изменение
-                for (SimplifiedRoutePlatform srp : route.getPlatforms()) {
-                    hash = 31 * hash + srp.getStationName().hashCode();
-                }
-            }
-        }
-        return hash;
+        long hash=0xcbf29ce484222325L;for(char c:NavigationRoutes.signature(platformId).toCharArray()){hash^=c;hash*=0x100000001b3L;}return hash;
     }
     // ================== КОНЕЦ ИЗМЕНЕНИЙ ==================
 

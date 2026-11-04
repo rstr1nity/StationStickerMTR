@@ -23,6 +23,7 @@ public final class VerticalLineScreen extends Screen {
     private int count(){return Math.max(1,(height-125)/26);}
     private org.mtr.core.data.SimplifiedRoute selected(){return routes.stream().filter(r->r.getId()==routeId).findFirst().orElse(routes.isEmpty()?null:routes.get(Math.floorMod(entity.getBlockState().getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE),routes.size())));}
     @Override protected void init(){
+        routes=List.of();
         var platform=PlatformLocator.findPlatformAt(entity.getBlockPos());
         if(platform!=null){var all=VerticalLineData.routes(platform.area.getId(),platform.getId());var boarding=all.stream().filter(r->VerticalLineData.canBoard(r,platform.area.getId())).toList();routes=boarding.isEmpty()?all:boarding;}
         var route=selected();if(route!=null)routeId=route.getId();
@@ -49,7 +50,16 @@ public final class VerticalLineScreen extends Screen {
         button(tr("Сохранить","Save"),left+100,height-52,124,()->{ModNetwork.CHANNEL.sendToServer(new VerticalLineSettingsPacket(entity.getBlockPos(),new VerticalLineSettings(routeId,icons)));onClose();});
         button(tr("Отмена","Cancel"),left+236,height-52,124,this::onClose);
     }
+    private int ticks;
+    private String routeSignature="";
+    @Override public void tick(){
+        if(++ticks%20!=0)return;
+        var platform=PlatformLocator.findPlatformAt(entity.getBlockPos());
+        String signature=platform==null?"":NavigationRoutes.signature(platform.getId());
+        if(!signature.equals(routeSignature)){routeSignature=signature;rebuildWidgets();}
+    }
     @Override public void render(GuiGraphics g,int x,int y,float partial){renderBackground(g);g.drawCenteredString(font,tr("Вертикальная схема линии","Vertical line diagram"),width/2,15,0xFFFFFF);super.render(g,x,y,partial);
+        if(routes.isEmpty())g.drawCenteredString(font,tr("Нет маршрутов: проверьте область станции MTR","No routes: check the MTR station area"),width/2,75,0xCCCCCC);
         if(stations){var route=selected();if(route!=null){int left=(width-360)/2;for(int row=0;row<count();row++){int index=page*count()+row;if(index>=route.getPlatforms().size())break;var ids=icons.getOrDefault(route.getPlatforms().get(index).getStationId(),List.of());for(int i=0;i<ids.size();i++)if(!ids.get(i).isEmpty())IconPickerScreen.drawIcon(g,ids.get(i),left+238+i*44,67+row*26,16);}}}
     }
     @Override public boolean isPauseScreen(){return false;}
