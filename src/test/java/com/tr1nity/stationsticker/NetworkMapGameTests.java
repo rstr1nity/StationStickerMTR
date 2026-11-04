@@ -119,10 +119,21 @@ public class NetworkMapGameTests {
             var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(clicked), facing, clicked, false);
             var partState = level.getBlockState(clicked);
             partState.getBlock().use(partState, level, clicked, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
-            helper.assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 1, "Brush on a stand part selects the next route");
+            helper.assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 0, "Brush opens client settings without cycling a server route");
             helper.assertTrue(level.getBlockEntity(main) != null, "Mode switch preserves the block entity");
             block.use(level.getBlockState(main), level, main, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
-            helper.assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 2, "Second brush click selects another route");
+            helper.assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 0, "Menu changes require an explicit settings packet");
+            var vertical=(com.tr1nity.stationsticker.block.entity.VerticalLineBlockEntity)level.getBlockEntity(main);
+            var settings=new com.tr1nity.stationsticker.block.VerticalLineSettings(321,java.util.Map.of(123L,java.util.List.of("test:train","test:accessible")));
+            vertical.applySettings(settings);
+            var saved=vertical.getUpdateTag();vertical.load(saved);
+            helper.assertTrue(vertical.settings().equals(settings),"Stable route id and per-station icons survive NBT synchronization");
+            var bytes=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+            try{
+                new com.tr1nity.stationsticker.network.VerticalLineSettingsPacket(main,settings).encode(bytes);
+                var decoded=new com.tr1nity.stationsticker.network.VerticalLineSettingsPacket(bytes);
+                helper.assertTrue(decoded.pos().equals(main) && decoded.settings().equals(settings),"Vertical settings packet roundtrip");
+            }finally{bytes.release();}
             for (var part : parts.entrySet()) {
                 helper.assertTrue(com.tr1nity.stationsticker.block.VerticalLinePartBlock.mainPos(part.getKey(), part.getValue()).equals(main), "Every stand part resolves its owner");
                 var shape = level.getBlockState(part.getKey()).getShape(level, part.getKey());

@@ -45,9 +45,7 @@ public class VerticalLineBlock extends BaseEntityBlock {
     @Override public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos,
             net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
         if (!player.mayBuild() || !player.getItemInHand(hand).is(org.mtr.mod.Items.BRUSH.get().data)) return net.minecraft.world.InteractionResult.PASS;
-        if (!level.isClientSide) {
-            level.setBlock(pos, state.cycle(ROUTE), Block.UPDATE_ALL);
-        }
+        if (level.isClientSide) net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> com.tr1nity.stationsticker.client.ClientScreens.openVerticalLine(pos));
         return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
     }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) {

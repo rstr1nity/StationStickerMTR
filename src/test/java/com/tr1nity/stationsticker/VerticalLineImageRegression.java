@@ -44,6 +44,15 @@ public final class VerticalLineImageRegression {
         ImageIO.write(ringImage,"PNG",new File("vertical-line-ring-preview.png"));ringImage.flush();
         var reverse=new VerticalLineData(main.color(),"7","Таганская",ringRows,List.of(main,ring),"Против часовой стрелки",true,-1);
         var reverseImage=VerticalLinePainter.paint(reverse,font);ImageIO.write(reverseImage,"PNG",new File("vertical-line-ring-counterclockwise.png"));reverseImage.flush();
+        var icon=new java.awt.image.BufferedImage(16,16,java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        var ig=icon.createGraphics();ig.setColor(java.awt.Color.RED);ig.fillRect(0,0,16,16);ig.dispose();
+        var iconRows=new ArrayList<>(stops);var original=iconRows.get(3);
+        iconRows.set(3,new VerticalLineData.Stop(original.name(),original.secondary(),true,false,original.transfers(),42,List.of("test:train")));
+        var iconData=new VerticalLineData(data.color(),data.number(),data.heading(),iconRows,data.legend());
+        var iconImage=VerticalLinePainter.paint(iconData,font,Map.of("test:train",icon));
+        int redPixels=0;for(int py=430;py<470;py++)for(int px=180;px<512;px++)if((iconImage.getRGB(px,py)&0xFFFFFF)==0xFF0000)redPixels++;
+        if(redPixels==0)throw new AssertionError("Station icon was not rendered beside name");
+        ImageIO.write(iconImage,"PNG",new File("vertical-line-station-icons.png"));iconImage.flush();icon.flush();
         var empty=VerticalLinePainter.paint(null,font);empty.flush();
         var network=new com.tr1nity.stationsticker.map.NetworkMapData(List.of(),List.of(
                 new com.tr1nity.stationsticker.map.NetworkMapData.Edge(1,2,-1),

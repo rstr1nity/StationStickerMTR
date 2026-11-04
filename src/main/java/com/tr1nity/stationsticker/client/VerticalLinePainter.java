@@ -11,6 +11,9 @@ public final class VerticalLinePainter {
     private static final Color PAPER = new Color(0xFAF8F1), INK = new Color(0x25272B);
     private VerticalLinePainter() {}
     public static BufferedImage paint(VerticalLineData data, NetworkMapFont font) {
+        return paint(data,font,Map.of());
+    }
+    public static BufferedImage paint(VerticalLineData data, NetworkMapFont font, Map<String,BufferedImage> icons) {
         BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
         var g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -63,21 +66,28 @@ public final class VerticalLinePainter {
             }
             String name=stop.name(); int size=fontSize;
             font.size(size);
-            List<String> rows=wrap(name,font,WIDTH-x-48);
-            while(rows.size()>2 && size>8) {size-=4; font.size(size); rows=wrap(name,font,WIDTH-x-48);}
+            var stopIcons=stop.icons().stream().filter(id -> !id.isBlank()).limit(3).toList();
+            int iconSize=Math.max(10,fontSize), iconWidth=stopIcons.size()*(iconSize+5);
+            int textWidth=WIDTH-x-55-iconWidth;
+            List<String> rows=wrap(name,font,textWidth);
+            while(rows.size()>2 && size>8) {size-=4; font.size(size); rows=wrap(name,font,textWidth);}
             double top=y-(rows.size()*font.height())/2.0+font.height()-3;
             if(!stop.current()) {
                 font.size(size);
                 int width=rows.stream().mapToInt(font::width).max().orElse(0);
-                g.setColor(PAPER); g.fill(new Rectangle2D.Double(x+20,top-font.height()+1,Math.min(WIDTH-x-40,width+12),rows.size()*font.height()+5));
+                g.setColor(PAPER); g.fill(new Rectangle2D.Double(x+20,top-font.height()+1,Math.min(textWidth+12,width+12),rows.size()*font.height()+5));
             }
             if(stop.current()) {
                 font.size(size);
                 int nameWidth=rows.stream().mapToInt(font::width).max().orElse(0);
-                g.setColor(new Color(data.color()));g.fill(new Rectangle2D.Double(x+19,top-font.height()+1,Math.min(WIDTH-x-39,nameWidth+12),rows.size()*font.height()+9));
+                g.setColor(new Color(data.color()));g.fill(new Rectangle2D.Double(x+19,top-font.height()+1,Math.min(textWidth+12,nameWidth+12),rows.size()*font.height()+9));
             }
+            double iconY=top-font.height()+3;
+            font.size(size);
+            double iconX=x+30+Math.min(textWidth,rows.stream().mapToInt(font::width).max().orElse(0));
+            for(String id:stopIcons){var icon=icons.get(id);if(icon!=null)g.drawImage(icon,(int)iconX,(int)iconY,iconSize,iconSize,null);iconX+=iconSize+5;}
             for(String row:rows) {
-                fitted(g,font,row,x+25,top,size,WIDTH-x-55,stop.current()?Color.WHITE:stop.passed()?new Color(0x888888):INK);
+                fitted(g,font,row,x+25,top,size,textWidth,stop.current()?Color.WHITE:stop.passed()?new Color(0x888888):INK);
                 top+=font.height();
             }
             if(!stop.secondary().isBlank() && step>=65) fitted(g,font,stop.secondary(),x+25,top+2,8,WIDTH-x-55,new Color(0x777777));

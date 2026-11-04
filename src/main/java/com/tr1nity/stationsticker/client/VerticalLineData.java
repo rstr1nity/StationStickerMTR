@@ -17,18 +17,19 @@ public record VerticalLineData(int color, String number, String heading, List<St
     public record Transfer(int color, String number, String name, boolean circular, boolean walking) {
         public Transfer(int color, String number, String name, boolean circular) { this(color, number, name, circular, false); }
     }
-    public record Stop(String name, String secondary, boolean current, boolean passed, List<Transfer> transfers) {}
+    public record Stop(String name, String secondary, boolean current, boolean passed, List<Transfer> transfers, long stationId, List<String> icons) {
+        public Stop(String name,String secondary,boolean current,boolean passed,List<Transfer> transfers){this(name,secondary,current,passed,transfers,0,List.of());}
+    }
     public static VerticalLineData at(BlockPos pos, int selection) {
         var network = NetworkMapCache.snapshot(pos);
         var platform = PlatformLocator.findPlatformAt(pos);
         if (platform == null) return null;
-        var candidates = MinecraftClientData.getInstance().simplifiedRoutes.stream()
-                .filter(r -> r.getPlatforms().stream().anyMatch(stop -> stop.getStationId() == platform.area.getId()))
-                .sorted(Comparator.comparingInt((SimplifiedRoute r) -> r.getPlatformIndex(platform.getId()) >= 0 ? 0 : 1).thenComparingLong(SimplifiedRoute::getId)).toList();
+        var candidates = routes(platform.area.getId(), platform.getId());
         if (candidates.isEmpty()) return null;
         var boarding = candidates.stream().filter(r -> canBoard(r, platform.area.getId())).toList();
         var routes = boarding.isEmpty() ? candidates : boarding;
-        var route = routes.get(selection % routes.size());
+        var settings = net.minecraft.client.Minecraft.getInstance().level.getBlockEntity(pos) instanceof com.tr1nity.stationsticker.block.entity.VerticalLineBlockEntity entity ? entity.settings() : com.tr1nity.stationsticker.block.VerticalLineSettings.DEFAULT;
+        var route = routes.stream().filter(r -> r.getId() == settings.routeId()).findFirst().orElse(routes.get(selection % routes.size()));
         int current = 0;
         for (int i = 0; i < route.getPlatforms().size(); i++) if (route.getPlatforms().get(i).getStationId() == platform.area.getId()) { current = i; break; }
         var stops = route.getPlatforms();
@@ -49,7 +50,7 @@ public record VerticalLineData(int color, String number, String heading, List<St
             });
             legend.putAll(transfers);
             rows.add(new Stop(StationNames.primary(stop.getStationName()), StationNames.secondary(stop.getStationName()),
-                    i == current, i < current, List.copyOf(transfers.values())));
+                    i == current, i < current, List.copyOf(transfers.values()), stop.getStationId(), settings.icons().getOrDefault(stop.getStationId(),List.of())));
         }
         String circular = CircularDirections.title(route.getCircularState());
         String heading = circular.isEmpty() ? rows.get(rows.size() - 1).name() : rows.get(current).name();
@@ -60,6 +61,11 @@ public record VerticalLineData(int color, String number, String heading, List<St
         String direction = circular.isEmpty() ? (boarding.isEmpty() ? StationNames.forCurrentLanguage("Посадки нет|No boarding") : "") : StationNames.forCurrentLanguage(circular);
         legend.put(route.getColor(), new Transfer(route.getColor(), RouteNumbers.forRoute(route), StationNames.forCurrentLanguage(route.getName()), !circular.isEmpty()));
         return new VerticalLineData(route.getColor(), RouteNumbers.forRoute(route), heading, List.copyOf(rows), List.copyOf(legend.values()), direction, !circular.isEmpty(), circular.isEmpty() ? 0 : route.getCircularState() == org.mtr.core.data.Route.CircularState.CLOCKWISE ? 1 : -1);
+    }
+    public static List<SimplifiedRoute> routes(long station,long platformId) {
+        return MinecraftClientData.getInstance().simplifiedRoutes.stream()
+                .filter(r -> r.getPlatforms().stream().anyMatch(stop -> stop.getStationId() == station))
+                .sorted(Comparator.comparingInt((SimplifiedRoute r) -> r.getPlatformIndex(platformId) >= 0 ? 0 : 1).thenComparingLong(SimplifiedRoute::getId)).toList();
     }
     /** Explicit MTR station links only; a direct interchange of the same color wins. */
     public static boolean walking(com.tr1nity.stationsticker.map.NetworkMapData network, long station, int color) {
@@ -72,7 +78,7 @@ public record VerticalLineData(int color, String number, String heading, List<St
         }
         return network.edges().stream().anyMatch(e -> e.color() == color && (linked.contains(e.from()) || linked.contains(e.to())));
     }
-    private static boolean canBoard(SimplifiedRoute route, long station) {
+    public static boolean canBoard(SimplifiedRoute route, long station) {
         if (!CircularDirections.title(route.getCircularState()).isEmpty()) return true;
         for (int i = 0; i + 1 < route.getPlatforms().size(); i++)
             if (route.getPlatforms().get(i).getStationId() == station) return true;
@@ -86,7 +92,7 @@ public record VerticalLineData(int color, String number, String heading, List<St
         current %= count;
         for (int offset = 0; offset < count; offset++) {
             var stop = stops.get((current + offset) % count);
-            result.add(new Stop(stop.name(), stop.secondary(), offset == 0, false, stop.transfers()));
+            result.add(new Stop(stop.name(), stop.secondary(), offset == 0, false, stop.transfers(), stop.stationId(), stop.icons()));
         }
         return List.copyOf(result);
     }
