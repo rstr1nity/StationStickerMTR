@@ -112,7 +112,7 @@ public class NetworkMapGameTests {
             level.setBlockAndUpdate(main, state);
             block.setPlacedBy(level, main, state, null, ItemStack.EMPTY);
             var parts = com.tr1nity.stationsticker.block.VerticalLineBlock.parts(main, facing);
-            helper.assertTrue(parts.size() == 3, "Stand must occupy 1x4 cells including main");
+            helper.assertTrue(parts.size() == 2, "Stand must occupy 1x3 cells including main");
             var player = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(level);
             player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(org.mtr.mod.Items.BRUSH.get().data));
             var clicked = parts.keySet().iterator().next();

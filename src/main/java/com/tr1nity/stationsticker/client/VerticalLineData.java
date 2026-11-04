@@ -7,16 +7,21 @@ import net.minecraft.core.BlockPos;
 import java.util.*;
 
 /** Ordered MTR stops, never reconstructed from geographic proximity. */
-public record VerticalLineData(int color, String number, String heading, List<Stop> stops, List<Transfer> legend) {
+public record VerticalLineData(int color, String number, String heading, List<Stop> stops, List<Transfer> legend, String direction, boolean circular) {
+    public VerticalLineData(int color, String number, String heading, List<Stop> stops, List<Transfer> legend) {
+        this(color, number, heading, stops, legend, "", false);
+    }
     public record Transfer(int color, String number, String name, boolean circular) {}
     public record Stop(String name, String secondary, boolean current, boolean passed, List<Transfer> transfers) {}
     public static VerticalLineData at(BlockPos pos, int selection) {
         var platform = PlatformLocator.findPlatformAt(pos);
         if (platform == null) return null;
-        var routes = MinecraftClientData.getInstance().simplifiedRoutes.stream()
+        var candidates = MinecraftClientData.getInstance().simplifiedRoutes.stream()
                 .filter(r -> r.getPlatforms().stream().anyMatch(stop -> stop.getStationId() == platform.area.getId()))
                 .sorted(Comparator.comparingInt((SimplifiedRoute r) -> r.getPlatformIndex(platform.getId()) >= 0 ? 0 : 1).thenComparingLong(SimplifiedRoute::getId)).toList();
-        if (routes.isEmpty()) return null;
+        if (candidates.isEmpty()) return null;
+        var boarding = candidates.stream().filter(r -> canBoard(r, platform.area.getId())).toList();
+        var routes = boarding.isEmpty() ? candidates : boarding;
         var route = routes.get(selection % routes.size());
         int current = 0;
         for (int i = 0; i < route.getPlatforms().size(); i++) if (route.getPlatforms().get(i).getStationId() == platform.area.getId()) { current = i; break; }
@@ -40,8 +45,31 @@ public record VerticalLineData(int color, String number, String heading, List<St
                     i == current, i < current, List.copyOf(transfers.values())));
         }
         String circular = CircularDirections.title(route.getCircularState());
-        String heading = circular.isEmpty() ? rows.get(rows.size() - 1).name() : StationNames.forCurrentLanguage(circular);
+        String heading = circular.isEmpty() ? rows.get(rows.size() - 1).name() : rows.get(current).name();
+        if (!circular.isEmpty()) {
+            if (stops.size() > 1 && stops.get(0).getStationId() == stops.get(stops.size()-1).getStationId()) rows.remove(rows.size()-1);
+            rows = ringStops(rows, current);
+        }
+        String direction = circular.isEmpty() ? (boarding.isEmpty() ? StationNames.forCurrentLanguage("Посадки нет|No boarding") : "") : StationNames.forCurrentLanguage(circular);
         legend.put(route.getColor(), new Transfer(route.getColor(), RouteNumbers.forRoute(route), StationNames.forCurrentLanguage(route.getName()), !circular.isEmpty()));
-        return new VerticalLineData(route.getColor(), RouteNumbers.forRoute(route), heading, List.copyOf(rows), List.copyOf(legend.values()));
+        return new VerticalLineData(route.getColor(), RouteNumbers.forRoute(route), heading, List.copyOf(rows), List.copyOf(legend.values()), direction, !circular.isEmpty());
+    }
+    private static boolean canBoard(SimplifiedRoute route, long station) {
+        if (!CircularDirections.title(route.getCircularState()).isEmpty()) return true;
+        for (int i = 0; i + 1 < route.getPlatforms().size(); i++)
+            if (route.getPlatforms().get(i).getStationId() == station) return true;
+        return false;
+    }
+    /** Start a ring at the current stop and omit MTR's repeated closing stop. */
+    public static List<Stop> ringStops(List<Stop> stops, int current) {
+        List<Stop> result = new ArrayList<>();
+        int count = stops.size();
+        if (count == 0) return result;
+        current %= count;
+        for (int offset = 0; offset < count; offset++) {
+            var stop = stops.get((current + offset) % count);
+            result.add(new Stop(stop.name(), stop.secondary(), offset == 0, false, stop.transfers()));
+        }
+        return List.copyOf(result);
     }
 }
