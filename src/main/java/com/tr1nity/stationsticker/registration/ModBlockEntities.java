@@ -20,6 +20,10 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("network_map", () -> BlockEntityType.Builder.of(
                     com.tr1nity.stationsticker.block.entity.NetworkMapBlockEntity::new, ModBlocks.NETWORK_MAP.get()).build(null));
 
+    public static final RegistryObject<BlockEntityType<com.tr1nity.stationsticker.block.entity.VerticalLineBlockEntity>> VERTICAL_LINE =
+            BLOCK_ENTITIES.register("vertical_line", () -> BlockEntityType.Builder.of(
+                    com.tr1nity.stationsticker.block.entity.VerticalLineBlockEntity::new, ModBlocks.VERTICAL_LINE.get()).build(null));
+
     public static final RegistryObject<BlockEntityType<StationStickerBlockEntity>> STATION_STICKER =
             BLOCK_ENTITIES.register("station_sticker",
                     () -> BlockEntityType.Builder.of(

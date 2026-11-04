@@ -66,5 +66,6 @@
   "display.stationsticker.network_map.loading": "Загрузка схемы метро…",
   "display.stationsticker.network_map.mode.world": "Схема метро: расположение в мире",
   "display.stationsticker.network_map.mode.schematic": "Схема метро: схематическая раскладка",
-  "itemGroup.stationsticker_tab": "Станционные стикеры"
+  "itemGroup.stationsticker_tab": "Станционные стикеры",
+  "block.stationsticker.vertical_line": "Вертикальная схема линии"
 }

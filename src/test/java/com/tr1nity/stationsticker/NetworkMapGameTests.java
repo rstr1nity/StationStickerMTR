@@ -103,6 +103,42 @@ public class NetworkMapGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void verticalStandCleanupAndShapes(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos main = helper.absolutePos(new BlockPos(8, 1, 8));
+        com.tr1nity.stationsticker.block.VerticalLineBlock block = ModBlocks.VERTICAL_LINE.get();
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            var state = block.defaultBlockState().setValue(com.tr1nity.stationsticker.block.VerticalLineBlock.FACING, facing);
+            level.setBlockAndUpdate(main, state);
+            block.setPlacedBy(level, main, state, null, ItemStack.EMPTY);
+            var parts = com.tr1nity.stationsticker.block.VerticalLineBlock.parts(main, facing);
+            helper.assertTrue(parts.size() == 3, "Stand must occupy 1x4 cells including main");
+            var player = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(level);
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(org.mtr.mod.Items.BRUSH.get().data));
+            var clicked = parts.keySet().iterator().next();
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(clicked), facing, clicked, false);
+            var partState = level.getBlockState(clicked);
+            partState.getBlock().use(partState, level, clicked, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+            helper.assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 1, "Brush on a stand part selects the next route");
+            helper.assertTrue(level.getBlockEntity(main) != null, "Mode switch preserves the block entity");
+            block.use(level.getBlockState(main), level, main, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+            helper.assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 2, "Second brush click selects another route");
+            for (var part : parts.entrySet()) {
+                helper.assertTrue(com.tr1nity.stationsticker.block.VerticalLinePartBlock.mainPos(part.getKey(), part.getValue()).equals(main), "Every stand part resolves its owner");
+                var shape = level.getBlockState(part.getKey()).getShape(level, part.getKey());
+                if (!shape.isEmpty()) {
+                    var box = shape.bounds();
+                    helper.assertTrue(box.minX >= 0 && box.maxX <= 1 && box.minY >= 0 && box.maxY <= 1 && box.minZ >= 0 && box.maxZ <= 1, "Shapes must stay inside their cell");
+                }
+            }
+            level.destroyBlock(parts.keySet().iterator().next(), false);
+            helper.assertTrue(level.getBlockState(main).isAir(), "Breaking a stand part destroys the stand");
+            for (BlockPos pos : parts.keySet()) helper.assertTrue(level.getBlockState(pos).isAir(), "No invisible stand parts left");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void mapImageAndProjection(GameTestHelper helper) throws Exception {
         NetworkMapData map = new NetworkMapData(List.of(
                 new NetworkMapData.Station(1, "Площадь|Square", -100, 100),
