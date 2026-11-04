@@ -22,10 +22,10 @@ public class VerticalLinePartBlock extends Block {
         return pos.subtract(VerticalLineBlock.offset(state.getValue(VerticalLineBlock.FACING), state.getValue(HORIZONTAL) - 1, state.getValue(ROW)));
     }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(VerticalLineBlock.FACING, HORIZONTAL, ROW);
+        builder.add(VerticalLineBlock.FACING, HORIZONTAL, ROW, VerticalLineBlock.WALL);
     }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return VerticalLineBlock.shape(state.getValue(VerticalLineBlock.FACING), state.getValue(HORIZONTAL) - 1, state.getValue(ROW));
+        return VerticalLineBlock.shape(state.getValue(VerticalLineBlock.FACING), state.getValue(HORIZONTAL) - 1, state.getValue(ROW), state.getValue(VerticalLineBlock.WALL));
     }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.INVISIBLE; }
     @Override public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
