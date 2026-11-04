@@ -32,12 +32,18 @@ public final class VerticalLineImageRegression {
         }
         if(dashes==0)throw new AssertionError("Walking interchange has no gray dashed connector");
         ImageIO.write(image,"PNG",new File("vertical-line-preview.png"));image.flush();
+        // Initial current station is a ring, never a terminus bar across its centre.
+        var firstData=new VerticalLineData(data.color(),data.number(),data.heading(),List.of(new VerticalLineData.Stop("Начало","",true,false,List.of()), new VerticalLineData.Stop("Конец","",false,false,List.of())),List.of());
+        var firstImage=VerticalLinePainter.paint(firstData,font);
+        if((firstImage.getRGB(160,190)&0xFFFFFF)!=0xFAF8F1)throw new AssertionError("Initial station circle crossed by terminus bar");firstImage.flush();
         var ringRows=VerticalLineData.ringStops(stops,3);
         if(!ringRows.get(0).current() || ringRows.stream().anyMatch(VerticalLineData.Stop::passed) || ringRows.size()!=stops.size()) throw new AssertionError("Ring must begin at current stop without passed stations");
-        var circular=new VerticalLineData(main.color(),"7","Таганская",ringRows,List.of(main,ring),"По часовой стрелке",true);
+        var circular=new VerticalLineData(main.color(),"7","Таганская",ringRows,List.of(main,ring),"По часовой стрелке",true,1);
         var ringImage=VerticalLinePainter.paint(circular,font);
         if ((ringImage.getRGB(160, 1344-65-30-75)&0xFFFFFF)!=0xFAF8F1) throw new AssertionError("Ring end has a terminus bar through its circle");
         ImageIO.write(ringImage,"PNG",new File("vertical-line-ring-preview.png"));ringImage.flush();
+        var reverse=new VerticalLineData(main.color(),"7","Таганская",ringRows,List.of(main,ring),"Против часовой стрелки",true,-1);
+        var reverseImage=VerticalLinePainter.paint(reverse,font);ImageIO.write(reverseImage,"PNG",new File("vertical-line-ring-counterclockwise.png"));reverseImage.flush();
         var empty=VerticalLinePainter.paint(null,font);empty.flush();
         var network=new com.tr1nity.stationsticker.map.NetworkMapData(List.of(),List.of(
                 new com.tr1nity.stationsticker.map.NetworkMapData.Edge(1,2,-1),

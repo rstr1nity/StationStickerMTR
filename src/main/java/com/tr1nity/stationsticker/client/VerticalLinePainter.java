@@ -20,6 +20,7 @@ public final class VerticalLinePainter {
         badge(g,font,data.color(),data.number(),55,85,25);
         if (data.direction().isEmpty()) text(g,font,"↑",96,57,16,INK);
         else fitted(g,font,data.direction(),96,48,12,WIDTH-130,INK);
+        if (data.circular() && data.rotation()!=0) circularArrow(g,75,42,data.rotation());
         fitted(g,font,data.heading(),96,92,28,WIDTH-130,INK);
         g.setColor(new Color(0xAAAAAA)); g.drawLine(32,142,WIDTH-32,142);
         // Reserve a separate lower region for the transfer legend.
@@ -39,11 +40,12 @@ public final class VerticalLinePainter {
                 g.draw(new QuadCurve2D.Double(20,y-27-arc*10,WIDTH/2.0,y+27-arc*10,WIDTH-20,y-27-arc*10)); arc++;
             }
             g.setColor(line); g.setStroke(new BasicStroke(5));
-            if(stop.current() || stop.transfers().stream().anyMatch(t -> !t.walking()) || data.circular() && (i==0 || i==data.stops().size()-1)) {
+            boolean stationRing=stop.current() || stop.transfers().stream().anyMatch(t -> !t.walking()) || data.circular() && (i==0 || i==data.stops().size()-1);
+            if(stationRing) {
                 g.setColor(PAPER); g.fill(new Ellipse2D.Double(x-9,y-9,18,18));
                 g.setColor(line); g.draw(new Ellipse2D.Double(x-9,y-9,18,18));
             } else g.draw(new Line2D.Double(x,y,x+13,y));
-            if(!data.circular() && (i==0 || i==data.stops().size()-1)) g.draw(new Line2D.Double(x-10,y,x+10,y));
+            if(!data.circular() && !stationRing && (i==0 || i==data.stops().size()-1)) g.draw(new Line2D.Double(x-10,y,x+10,y));
             double units=stop.transfers().stream().mapToInt(t -> t.walking() ? 38 : 23).sum();
             double compression=Math.min(1,120.0/Math.max(1,units));
             double bx=x, previousRadius=9;
@@ -87,6 +89,20 @@ public final class VerticalLinePainter {
             fitted(g,font,line.name(),x0+15,y+3,8,200,INK);
         }
         g.dispose(); return image;
+    }
+    private static void circularArrow(Graphics2D g, double x, double y, int direction) {
+        double radius=9, angle=0;
+        var path=new Path2D.Double();
+        for(int i=0;i<=40;i++){
+            angle=-Math.PI/2+direction*i/40.0*Math.PI*1.55;
+            double px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
+            if(i==0)path.moveTo(px,py);else path.lineTo(px,py);
+        }
+        g.setColor(INK);g.setStroke(new BasicStroke(2.5f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));g.draw(path);
+        double px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
+        double tx=-Math.sin(angle)*direction,ty=Math.cos(angle)*direction;
+        var tip=new Path2D.Double();tip.moveTo(px+tx*4,py+ty*4);
+        tip.lineTo(px-tx*3-ty*4,py-ty*3+tx*4);tip.lineTo(px-tx*3+ty*4,py-ty*3-tx*4);tip.closePath();g.fill(tip);
     }
     private static List<String> wrap(String name, NetworkMapFont font, int max) {
         List<String> rows=new ArrayList<>(); String row="";

@@ -7,9 +7,12 @@ import net.minecraft.core.BlockPos;
 import java.util.*;
 
 /** Ordered MTR stops, never reconstructed from geographic proximity. */
-public record VerticalLineData(int color, String number, String heading, List<Stop> stops, List<Transfer> legend, String direction, boolean circular) {
+public record VerticalLineData(int color, String number, String heading, List<Stop> stops, List<Transfer> legend, String direction, boolean circular, int rotation) {
+    public VerticalLineData(int color, String number, String heading, List<Stop> stops, List<Transfer> legend, String direction, boolean circular) {
+        this(color, number, heading, stops, legend, direction, circular, 0);
+    }
     public VerticalLineData(int color, String number, String heading, List<Stop> stops, List<Transfer> legend) {
-        this(color, number, heading, stops, legend, "", false);
+        this(color, number, heading, stops, legend, "", false, 0);
     }
     public record Transfer(int color, String number, String name, boolean circular, boolean walking) {
         public Transfer(int color, String number, String name, boolean circular) { this(color, number, name, circular, false); }
@@ -56,7 +59,7 @@ public record VerticalLineData(int color, String number, String heading, List<St
         }
         String direction = circular.isEmpty() ? (boarding.isEmpty() ? StationNames.forCurrentLanguage("Посадки нет|No boarding") : "") : StationNames.forCurrentLanguage(circular);
         legend.put(route.getColor(), new Transfer(route.getColor(), RouteNumbers.forRoute(route), StationNames.forCurrentLanguage(route.getName()), !circular.isEmpty()));
-        return new VerticalLineData(route.getColor(), RouteNumbers.forRoute(route), heading, List.copyOf(rows), List.copyOf(legend.values()), direction, !circular.isEmpty());
+        return new VerticalLineData(route.getColor(), RouteNumbers.forRoute(route), heading, List.copyOf(rows), List.copyOf(legend.values()), direction, !circular.isEmpty(), circular.isEmpty() ? 0 : route.getCircularState() == org.mtr.core.data.Route.CircularState.CLOCKWISE ? 1 : -1);
     }
     /** Explicit MTR station links only; a direct interchange of the same color wins. */
     public static boolean walking(com.tr1nity.stationsticker.map.NetworkMapData network, long station, int color) {
