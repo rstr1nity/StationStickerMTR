@@ -31,7 +31,8 @@ public record NetworkMapRequestPacket(BlockPos pos) {
         if (player == null) return;
         ServerLevel level = player.serverLevel();
         if (!level.isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > 64 * 64
-                || !(level.getBlockState(pos).getBlock() instanceof NetworkMapBlock)) return;
+                || (!(level.getBlockState(pos).getBlock() instanceof NetworkMapBlock)
+                && !(level.getBlockState(pos).getBlock() instanceof com.tr1nity.stationsticker.block.VerticalLineBlock))) return;
         Cached cached = CACHE.computeIfAbsent(level, unused -> new Cached());
         long now = System.currentTimeMillis();
         cached.lastRequest.entrySet().removeIf(entry -> now - entry.getValue() > 60_000);
