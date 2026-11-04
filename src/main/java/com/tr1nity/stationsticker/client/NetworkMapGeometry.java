@@ -104,6 +104,27 @@ public final class NetworkMapGeometry {
                 if (points.size() > 1) result.add(new LinePath(color, schematic ? smooth(points) : rounded(points, Math.max(8, width * 3))));
             }
         });
+        return schematic?result:alignOverlappingRuns(result,width);
+    }
+    private record Run(int color,double y,double left,double right){}
+    // Merge only near-coincident, same-color horizontal runs that already overlap visually.
+    private static List<LinePath> alignOverlappingRuns(List<LinePath> paths,float width){
+        List<Run> runs=new ArrayList<>();
+        for(var path:paths){var it=path.path().getPathIterator(null);double[] v=new double[6];double x=0,y=0;
+            while(!it.isDone()){int type=it.currentSegment(v);if(type==PathIterator.SEG_LINETO && Math.abs(v[1]-y)<.0001 && Math.abs(v[0]-x)>width*8)runs.add(new Run(path.color(),y,Math.min(x,v[0]),Math.max(x,v[0])));
+                if(type==PathIterator.SEG_MOVETO||type==PathIterator.SEG_LINETO){x=v[0];y=v[1];}else if(type==PathIterator.SEG_QUADTO){x=v[2];y=v[3];}else if(type==PathIterator.SEG_CUBICTO){x=v[4];y=v[5];}it.next();}
+        }
+        int[] parent=new int[runs.size()];for(int i=0;i<parent.length;i++)parent[i]=i;
+        for(int i=0;i<runs.size();i++)for(int j=i+1;j<runs.size();j++){var a=runs.get(i);var b=runs.get(j);
+            if(a.color()!=b.color())continue;double delta=Math.abs(a.y()-b.y());
+            if(delta<.0001 || delta<width*1.25 && Math.min(a.right(),b.right())-Math.max(a.left(),b.left())>width*8){int x=i,y=j;while(parent[x]!=x)x=parent[x];while(parent[y]!=y)y=parent[y];parent[y]=x;}
+        }
+        Map<Integer,double[]> sums=new HashMap<>();for(int i=0;i<runs.size();i++){int root=i;while(parent[root]!=root)root=parent[root];var sum=sums.computeIfAbsent(root,k->new double[2]);sum[0]+=runs.get(i).y();sum[1]++;}
+        Map<Integer,Map<Double,Double>> levels=new HashMap<>();for(int i=0;i<runs.size();i++){int root=i;while(parent[root]!=root)root=parent[root];var sum=sums.get(root);levels.computeIfAbsent(runs.get(i).color(),c->new HashMap<>()).put(runs.get(i).y(),sum[0]/sum[1]);}
+        List<LinePath> result=new ArrayList<>();for(var original:paths){var mapping=levels.getOrDefault(original.color(),Map.of());var path=new Path2D.Double();var it=original.path().getPathIterator(null);double[] v=new double[6];
+            while(!it.isDone()){int type=it.currentSegment(v);int count=type==PathIterator.SEG_CUBICTO?6:type==PathIterator.SEG_QUADTO?4:2;for(int i=1;i<count;i+=2)v[i]=mapping.getOrDefault(v[i],v[i]);
+                switch(type){case PathIterator.SEG_MOVETO->path.moveTo(v[0],v[1]);case PathIterator.SEG_LINETO->path.lineTo(v[0],v[1]);case PathIterator.SEG_QUADTO->path.quadTo(v[0],v[1],v[2],v[3]);case PathIterator.SEG_CUBICTO->path.curveTo(v[0],v[1],v[2],v[3],v[4],v[5]);case PathIterator.SEG_CLOSE->path.closePath();}it.next();}
+            result.add(new LinePath(original.color(),path));}
         return result;
     }
     private static Path2D smooth(List<Point2D.Double> points) {
