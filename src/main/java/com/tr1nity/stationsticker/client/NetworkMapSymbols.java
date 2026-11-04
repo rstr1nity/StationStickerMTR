@@ -110,9 +110,12 @@ public final class NetworkMapSymbols {
         Plan plan = plan(data, points, font, russian, current, schematic);
         float width = plan.width();
         var routes = NetworkMapGeometry.paths(data, points, width, schematic);
-        for (var route : routes) {
-            g.setColor(new Color(route.color())); g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)); g.draw(route.path());
+        Map<Integer,java.awt.geom.Area> ink=new TreeMap<>();
+        for(var route:routes){
+            var stroke=new BasicStroke(width,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND);
+            ink.computeIfAbsent(route.color(),color->new java.awt.geom.Area()).add(new java.awt.geom.Area(stroke.createStrokedShape(route.path())));
         }
+        ink.forEach((color,shape)->{g.setColor(new Color(color));g.fill(shape);});
         // Белый коридор с нейтральным контуром означает переход между отдельными станциями.
         for (var edge : data.edges()) if (edge.color() < 0) {
             var path = new Line2D.Double(points.get(edge.from()), points.get(edge.to()));
