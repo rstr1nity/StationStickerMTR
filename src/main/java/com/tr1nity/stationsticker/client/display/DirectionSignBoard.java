@@ -144,12 +144,12 @@ public final class DirectionSignBoard {
         float column=(x1-x0)/groups.size();int i=0;
         for(var variants:groups.values()){
             float left=x0+i*column;
-            if(i>0)canvas.rect(left-1,1,.3f,DESIGN_HEIGHT-2,DIVIDER_COLOR);
-            drawSide(canvas,variants,left,left+column-GAP,right);i++;
+            if(i>0)canvas.rect(left,1,.3f,DESIGN_HEIGHT-2,DIVIDER_COLOR);
+            drawSide(canvas,variants,left,left+column-(groups.size()>1?0:GAP),right,groups.size()>1);i++;
         }
     }
     // Половина экрана от x0 до x1; rightSide - стрелка и заголовок у правого края
-    private static void drawSide(SlideCanvas canvas, java.util.List<Side> variants, float x0, float x1, boolean rightSide) {
+    private static void drawSide(SlideCanvas canvas, java.util.List<Side> variants, float x0, float x1, boolean rightSide, boolean centered) {
         Side side=variants.get(0);
         if (!isBoarding(side)) {
             drawNoBoarding(canvas, x0, x1, rightSide);
@@ -165,6 +165,27 @@ public final class DirectionSignBoard {
 
         String[] arrow = rightSide ? Pictograms.mirror(Pictograms.ARROW_LEFT) : Pictograms.ARROW_LEFT;
         float arrowWidth = arrow[0].length() * ARROW_SCALE;
+        // Each destination owns a column. Measure its whole composition before placing it,
+        // so another destination starts inside its column rather than against the divider.
+        int columns = Math.max(1, (int) ((x1 - x0) / COLUMN_WIDTH));
+        int capacity = columns * LIST_ROWS;
+        var next=new java.util.LinkedHashMap<Long,SimplifiedRoutePlatform>();
+        for(var variant:variants)for(var stop:CircularDirections.nextStops(variant.route.getPlatforms(),variant.index,!circularTitle.isEmpty(),capacity))next.putIfAbsent(stop.getStationId(),stop);
+        if(variants.size()>1){columns=Math.max(columns,Math.min(4,(next.size()+LIST_ROWS-1)/LIST_ROWS));capacity=columns*LIST_ROWS;}
+        if(centered){
+            columns=Math.min(columns,Math.max(1,(next.size()+LIST_ROWS-1)/LIST_ROWS));
+            capacity=columns*LIST_ROWS;
+            float available=Math.max(1,x1-x0-2*GAP);
+            float headingWidth=arrowWidth+2*GAP+2*LINE_RADIUS+Math.max(canvas.textWidth(StationNames.primary(terminal),NAME_SCALE),canvas.textWidth(StationNames.secondary(terminal),SECONDARY_SCALE));
+            float listColumnWidth=0;
+            for(var stop:next.values()){
+                var colors=new java.util.HashSet<Integer>();stop.forEach((color,names)->{if(color!=side.route.getColor())colors.add(color);});
+                float dotsWidth=colors.size()*(DOT_RADIUS*2+.8f);
+                listColumnWidth=Math.max(listColumnWidth,Math.max(canvas.textWidth(StationNames.primary(stop.getStationName()),LIST_NAME_SCALE)+dotsWidth+1,canvas.textWidth(StationNames.secondary(stop.getStationName()),LIST_SECONDARY_SCALE)));
+            }
+            float contentWidth=Math.min(available,Math.max(headingWidth,columns*(listColumnWidth+GAP)));
+            float center=(x0+x1)/2;x0=center-contentWidth/2;x1=center+contentWidth/2;
+        }
         float arrowX = rightSide ? x1 - arrowWidth : x0;
         Pictograms.draw(canvas, arrow, arrowX, centerY - arrow.length * ARROW_SCALE / 2, ARROW_SCALE, TEXT_COLOR, false);
 
@@ -182,13 +203,8 @@ public final class DirectionSignBoard {
         }
 
         // Следующие станции по столбцам сверху вниз, слева направо; конечная уже в заголовке
-        int columns = Math.max(1, (int) ((x1 - x0) / COLUMN_WIDTH));
         float columnWidth = (x1 - x0) / columns;
-        int capacity = columns * LIST_ROWS;
         int shown = 0;
-        var next=new java.util.LinkedHashMap<Long,SimplifiedRoutePlatform>();
-        for(var variant:variants)for(var stop:CircularDirections.nextStops(variant.route.getPlatforms(),variant.index,!circularTitle.isEmpty(),capacity))next.putIfAbsent(stop.getStationId(),stop);
-        if(variants.size()>1){columns=Math.max(columns,Math.min(4,(next.size()+LIST_ROWS-1)/LIST_ROWS));columnWidth=(x1-x0)/columns;capacity=columns*LIST_ROWS;}
         for (var stop : next.values()) {
             if(shown>=capacity)break;
             float itemX = x0 + (shown / LIST_ROWS) * columnWidth;
