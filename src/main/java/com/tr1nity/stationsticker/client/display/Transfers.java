@@ -112,11 +112,11 @@ public final class Transfers {
     // Ближайшая платформа станции, где стоит блок; вне станций - ближайшая в радиусе NEAR_STATION_RADIUS
     @Nullable
     private static Platform nearestPlatform(BlockPos pos) {
-        Station station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(pos.getX(), pos.getY(), pos.getZ()));
+        Station station = com.tr1nity.stationsticker.client.PlatformLocator.findStationAt(pos);
         Platform nearest = null;
         double nearestDistance = station == null ? NEAR_STATION_RADIUS * NEAR_STATION_RADIUS : Double.MAX_VALUE;
         for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
-            if (station != null && platform.area != station) continue;
+            if (station != null && (platform.area == null || platform.area.getId() != station.getId())) continue;
             double distance = distanceSquared(platform, pos);
             if (distance < nearestDistance) {
                 nearest = platform;

@@ -18,13 +18,16 @@ public final class PlatformLocator {
     // и «первая в радиусе» могла оказаться платформой другого направления
     @Nullable
     public static Platform findPlatformAt(BlockPos pos) {
-        Station station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(pos.getX(), pos.getY(), pos.getZ()));
+        Station station = findStationAt(pos);
         if (station == null) return null;
 
+        return findPlatformIn(MinecraftClientData.getInstance().platforms,station,pos);
+    }
+    public static Platform findPlatformIn(java.util.Collection<Platform> platforms,Station station,BlockPos pos){
         Platform nearest = null;
         long nearestDistance = Long.MAX_VALUE;
-        for (Platform platform : MinecraftClientData.getInstance().platformIdMap.values()) {
-            if (platform.area != station) continue;
+        for (Platform platform : platforms) {
+            if (platform.area == null || platform.area.getId() != station.getId()) continue;
             long distance = distanceSquared(platform, pos);
             if (distance < nearestDistance) {
                 nearest = platform;
@@ -34,6 +37,16 @@ public final class PlatformLocator {
         return nearest;
     }
 
+    @Nullable
+    public static Station findStationAt(BlockPos pos) {
+        // Sample the occupied column of a three-block stand and the one-block sign margin.
+        // No unbounded nearest-station fallback: do not silently select another station.
+        for(int y:new int[]{0,1,2,3,-1})for(int[] offset:new int[][]{{0,0},{1,0},{-1,0},{0,1},{0,-1}}){
+            var station=InitClient.findStation(new org.mtr.mapping.holder.BlockPos(pos.getX()+offset[0],pos.getY()+y,pos.getZ()+offset[1]));
+            if(station!=null)return station;
+        }
+        return null;
+    }
     private static long distanceSquared(Platform platform, BlockPos pos) {
         long dx = platform.getMidPosition().getX() - pos.getX();
         long dy = platform.getMidPosition().getY() - pos.getY();

@@ -12,11 +12,17 @@ public final class VerticalLineAdvancedRegression {
         var main=List.of(stop(1,"Начало",false),stop(2,"Текущая",true),stop(3,"Развилка",false),stop(4,"Ветка А",false),stop(5,"Конечная А",false));
         var alternative=List.of(main.get(0),main.get(1),main.get(2),stop(6,"Ветка Б",false),stop(7,"Конечная Б",false));
         var reversed=new ArrayList<>(main);Collections.reverse(reversed);
-        var paths=VerticalLineBranches.compatible(main,List.of(alternative,reversed,List.of(stop(9,"Чужая",false)),List.of(main.get(1),main.get(2),stop(8,"Объезд",false),main.get(4))));
-        if(paths.size()!=1)throw new AssertionError("Reverse, disconnected, rejoining routes must not form a false branch");
+        var paths=VerticalLineBranches.compatible(main,List.of(alternative,reversed,List.of(stop(9,"Чужая",false))));
+        if(paths.size()!=1)throw new AssertionError("Reverse and disconnected routes must not form a false branch");
         var afterFork=new ArrayList<>(main);afterFork.set(1,stop(2,"Узел",false));afterFork.set(3,stop(4,"Здесь на ветке",true));
         for(int i=0;i<3;i++){var s=afterFork.get(i);afterFork.set(i,new VerticalLineData.Stop(s.name(),s.secondary(),false,true,s.transfers(),s.stationId(),s.icons()));}
         if(VerticalLineBranches.compatible(afterFork,List.of(alternative)).size()!=1)throw new AssertionError("Alternative branch must remain visible after the current station left the common trunk");
+        var rejoin=List.of(main.get(0),main.get(1),main.get(2),stop(8,"Объезд",false),main.get(4));
+        var rejoinPaths=VerticalLineBranches.compatible(main,List.of(rejoin));
+        var merged=VerticalLineBranches.layout(main,rejoinPaths);
+        if(rejoinPaths.size()!=1||merged.points().size()!=6||merged.points().stream().filter(p->p.stop().stationId()==5).count()!=1)throw new AssertionError("Rejoining branch must share one final station");
+        var rejoinModel=new VerticalLineData(0x9556A1,"7","Конечная А",main,List.of(),"",false,0,rejoinPaths);
+        var rejoinImage=VerticalLinePainter.paint(rejoinModel,font);ImageIO.write(rejoinImage,"PNG",new File("vertical-line-rejoin.png"));rejoinImage.flush();
         var layout=VerticalLineBranches.layout(main,paths);
         if(layout.points().size()!=7||layout.leaves()!=2||layout.points().stream().filter(p->p.stop().stationId()==3).count()!=1)throw new AssertionError("Common trunk must be drawn once");
         if(layout.points().stream().filter(p->p.stop().stationId()==6||p.stop().stationId()==7).anyMatch(p->p.stop().passed()))throw new AssertionError("Both directly reachable future branches must remain colored");
@@ -45,6 +51,6 @@ public final class VerticalLineAdvancedRegression {
         var dense=new VerticalLineData(0x167AA3,"3","Terminal",longStops,List.of());
         var longImage=VerticalLinePainter.paint(dense,font,icons);if(longImage.getWidth()!=1024 || longImage.getHeight()!=2688)throw new AssertionError("Dense labels need a higher resolution bitmap");ImageIO.write(longImage,"PNG",new File("vertical-line-long-icons.png"));longImage.flush();icons.values().forEach(BufferedImage::flush);
         try{VerticalLineIconImages.read(new ByteArrayInputStream(new byte[]{1,2}),0,false);throw new AssertionError("Invalid image accepted");}catch(IOException expected){}
-        System.out.println("PASS: shared MTR branch topology, reversed/disconnected/rejoining route rejection, 64 long stops, actual MTR PNG, ZIP override transparency/background/flip, invalid image");
+        System.out.println("PASS: shared MTR branch topology, ordered rejoin support, reversed/disconnected route rejection, 64 long stops, actual MTR PNG, ZIP override transparency/background/flip, invalid image");
     }
 }

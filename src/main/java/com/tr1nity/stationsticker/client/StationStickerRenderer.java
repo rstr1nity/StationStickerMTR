@@ -68,10 +68,7 @@ public class StationStickerRenderer implements BlockEntityRenderer<StationSticke
     }
 
     private Station findStationAt(BlockPos pos) {
-        return MinecraftClientData.getInstance().stations.stream()
-                .filter(station -> station.inArea(new Position(pos.getX(), pos.getY(), pos.getZ())))
-                .findFirst()
-                .orElse(null);
+        return PlatformLocator.findStationAt(pos);
     }
     // Направление вдоль линии стикеров: индекс в линии растёт в эту сторону
     private Direction getLineDirection(BlockState state, Direction facing) {

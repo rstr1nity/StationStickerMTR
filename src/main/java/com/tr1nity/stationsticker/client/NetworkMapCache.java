@@ -56,7 +56,7 @@ public final class NetworkMapCache {
         snapshot(pos);
         long now = System.currentTimeMillis();
         if (data == null) return null;
-        var station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(pos.getX(), pos.getY(), pos.getZ()));
+        var station = com.tr1nity.stationsticker.client.PlatformLocator.findStationAt(pos);
         long stationId = station == null ? 0 : station.getId();
         String language = Minecraft.getInstance().getLanguageManager().getSelected();
         var state = Minecraft.getInstance().level.getBlockState(pos);

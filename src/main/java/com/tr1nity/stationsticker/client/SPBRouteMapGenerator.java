@@ -142,7 +142,7 @@ public class SPBRouteMapGenerator implements IGui {
                     for (int stationIndex = 0; stationIndex < simplifiedRoute.getPlatforms().size(); stationIndex++) {
                         final StationPosition stationPosition = routeStationPositions.get(stationIndex - currentIndex);
                         if (stationIndex < simplifiedRoute.getPlatforms().size() - 1) {
-                            drawLine(nativeImage, stationPosition, routeStationPositions.get(stationIndex + 1 - currentIndex), widthScale, heightScale, xOffset, yOffset, stationIndex < currentIndex ? ARGB_LIGHT_GRAY : ARGB_BLACK | simplifiedRoute.getColor());
+                            drawLine(nativeImage, stationPosition, routeStationPositions.get(stationIndex + 1 - currentIndex), widthScale, heightScale, xOffset, yOffset, NavigationRoutes.passed(stationIndex,currentIndex) ? ARGB_LIGHT_GRAY : ARGB_BLACK | simplifiedRoute.getColor());
                         }
 
                         final SimplifiedRoutePlatform simplifiedRoutePlatform = simplifiedRoute.getPlatforms().get(stationIndex);
@@ -165,7 +165,8 @@ public class SPBRouteMapGenerator implements IGui {
                     final int y = Math.round((stationPositionGrouped.stationPosition.y + yOffset) * scale * heightScale);
                     final int lines = stationPositionGrouped.stationPosition.isCommon ? colorIndices[colorIndices.length - 1] : 0;
                     final boolean currentStation = stationPositionGrouped.stationOffset == 0;
-                    final boolean passed = stationPositionGrouped.stationOffset < 0;
+                    final long stationId=Long.parseLong(key.substring(key.lastIndexOf("||")+2));
+                    final boolean passed=NavigationRoutes.stationPassed(routeDetails.stream().map(detail->detail.left()).toList(),platformId,stationId);
 
                     final IntArrayList interchangeColors = stationPositionGrouped.interchangeColors;
 
@@ -329,9 +330,9 @@ public class SPBRouteMapGenerator implements IGui {
     private static IntArrayList getRouteStream(long platformId, BiConsumer<SimplifiedRoute, Integer> nonTerminatingCallback) {
         final IntArrayList colors = new IntArrayList();
         final IntArrayList terminatingColors = new IntArrayList();
-        MinecraftClientData.getInstance().simplifiedRoutes.stream().filter(simplifiedRoute -> simplifiedRoute.getPlatformIndex(platformId) >= 0 && !simplifiedRoute.getName().isEmpty()).sorted().forEach(simplifiedRoute -> {
+        NavigationRoutes.atPlatform(platformId).stream().filter(simplifiedRoute -> !simplifiedRoute.getName().isEmpty()).sorted().forEach(simplifiedRoute -> {
             final int currentStationIndex = simplifiedRoute.getPlatformIndex(platformId);
-            if (currentStationIndex < simplifiedRoute.getPlatforms().size() - 1) {
+            if (NavigationRoutes.boarding(simplifiedRoute,currentStationIndex)) {
                 nonTerminatingCallback.accept(simplifiedRoute, currentStationIndex);
                 if (!colors.contains(simplifiedRoute.getColor())) {
                     colors.add(simplifiedRoute.getColor());

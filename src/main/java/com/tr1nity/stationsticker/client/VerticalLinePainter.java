@@ -23,7 +23,7 @@ public final class VerticalLinePainter {
         font.density(1);
         if (data == null || data.stops().isEmpty()) { text(g,font,"MTR",40,100,24,INK); g.dispose(); return image; }
         badge(g,font,data.color(),data.number(),55,85,25);
-        if (data.direction().isEmpty()) text(g,font,"↑",96,57,16,INK);
+        if (data.direction().isEmpty()) forwardArrow(g,WIDTH-54,84);
         else {
             int captionWidth=WIDTH-96-38;
             fitted(g,font,data.direction(),96,48,12,captionWidth,INK);
@@ -32,8 +32,8 @@ public final class VerticalLinePainter {
                 circularArrow(g,96+Math.min(captionWidth,font.width(data.direction()))+13,42,data.rotation());
             }
         }
-        fitted(g,font,data.heading(),96,92,28,WIDTH-130,INK);
-        g.setColor(new Color(0xAAAAAA)); g.drawLine(32,142,WIDTH-32,142);
+        fitted(g,font,data.heading(),96,92,28,data.direction().isEmpty()?WIDTH-190:WIDTH-130,INK);
+        g.setStroke(new BasicStroke(1));g.setColor(new Color(0xAAAAAA)); g.drawLine(32,142,WIDTH-32,142);
         // Reserve a separate lower region for the transfer legend.
         int legendRows = (data.legend().size()+1)/2;
         double legendTop = HEIGHT-65-legendRows*30;
@@ -41,21 +41,21 @@ public final class VerticalLinePainter {
         double step = (end-start)/Math.max(1,data.stops().size()-1);
         font.density(step<20?2:1);
         int fontSize = step < 32 ? 8 : step < 50 ? 12 : 16;
-        if(!data.branches().isEmpty()) {
-            var tree=VerticalLineBranches.layout(data.stops(),data.branches());
+        var tree=VerticalLineBranches.layout(data.stops(),data.branches());
+        if(!data.branches().isEmpty() && !tree.points().isEmpty()) {
             double treeStep=(end-start)/Math.max(1,tree.depth());
             font.density(treeStep<20?2:1);
             var points=new HashMap<Long,VerticalLineBranches.Point>();tree.points().forEach(p->points.put(p.stop().stationId(),p));
             for(var point:tree.points())for(long child:tree.children().get(point.stop().stationId())){
                 var target=points.get(child);double y0=start+point.depth()*treeStep,y1=start+target.depth()*treeStep;
-                g.setColor(new Color(point.stop().passed() || target.stop().passed()?0xBABDBB:data.color()));g.setStroke(new BasicStroke(7,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));
+                g.setColor(new Color(point.stop().passed() || target.stop().passed()?0xBABDBB:data.color()));g.setStroke(new BasicStroke(7,BasicStroke.CAP_BUTT,BasicStroke.JOIN_ROUND));
                 g.draw(branchPath(point.x(),y0,target.x(),y1));
             }
             for(var point:tree.points())drawStop(g,font,icons,data,point.stop(),(int)point.x(),start+point.depth()*treeStep,treeStep,
                     tree.leaves()>1?Math.min(WIDTH-12,(int)point.x()+170):WIDTH,treeStep<32?8:12,point.first(),point.last());
         } else for(int i=0;i<data.stops().size();i++) {
             var stop=data.stops().get(i);double y=start+i*step;int x=160;
-            if(i+1<data.stops().size()){g.setColor(new Color(stop.passed()?0xBABDBB:data.color()));g.setStroke(new BasicStroke(7));g.draw(new Line2D.Double(x,y,x,y+step));}
+            if(i+1<data.stops().size()){g.setColor(new Color(stop.passed()?0xBABDBB:data.color()));g.setStroke(new BasicStroke(7,BasicStroke.CAP_BUTT,BasicStroke.JOIN_ROUND));g.draw(new Line2D.Double(x,y,x,y+step));}
             drawStop(g,font,icons,data,stop,x,y,step,WIDTH,fontSize,i==0,i==data.stops().size()-1);
 
         }
@@ -67,6 +67,11 @@ public final class VerticalLinePainter {
             fitted(g,font,line.name(),x0+15,y+3,8,200,INK);
         }
         g.dispose(); return image;
+    }
+    private static void forwardArrow(Graphics2D g,int x,int y){
+        g.setColor(INK);g.setStroke(new BasicStroke(7,BasicStroke.CAP_BUTT,BasicStroke.JOIN_MITER));
+        g.draw(new Line2D.Double(x,y+22,x,y-20));
+        var head=new Path2D.Double();head.moveTo(x-12,y-8);head.lineTo(x,y-22);head.lineTo(x+12,y-8);g.draw(head);
     }
     public static Path2D branchPath(double x0,double y0,double x1,double y1){
         var path=new Path2D.Double();path.moveTo(x0,y0);
