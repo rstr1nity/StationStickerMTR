@@ -27,17 +27,14 @@ public final class VerticalLineRenderer implements BlockEntityRenderer<VerticalL
         var data=VerticalLineData.at(pos,entity.getBlockState().getValue(VerticalLineBlock.ROUTE));
         if(previous!=null && Objects.equals(data,previous.data())) return previous.texture();
         Set<Integer> chars=new HashSet<>();"MTR↑По часовой стрелке Против часовой стрелки Посадки нет Clockwise Counterclockwise No boarding".codePoints().forEach(chars::add);
-        if(data!=null){data.heading().codePoints().forEach(chars::add);data.number().codePoints().forEach(chars::add);data.stops().forEach(s->{(s.name()+s.secondary()).codePoints().forEach(chars::add);s.transfers().forEach(t->t.number().codePoints().forEach(chars::add));});data.legend().forEach(t->(t.name()+t.number()).codePoints().forEach(chars::add));}
+        if(data!=null){data.heading().codePoints().forEach(chars::add);data.number().codePoints().forEach(chars::add);data.allStops().forEach(s->{(s.name()+s.secondary()).codePoints().forEach(chars::add);s.transfers().forEach(t->t.number().codePoints().forEach(chars::add));});data.legend().forEach(t->(t.name()+t.number()).codePoints().forEach(chars::add));}
         try{
             var font=NetworkMapFont.load(id->Minecraft.getInstance().getResourceManager().open(new ResourceLocation(id)),chars);
             Map<String,java.awt.image.BufferedImage> icons=new HashMap<>();
-            if(data!=null)for(var stop:data.stops())for(String id:stop.icons())if(!icons.containsKey(id)){
+            if(data!=null)for(var stop:data.allStops())for(String id:stop.icons())if(!icons.containsKey(id)){
                 var sign=com.tr1nity.stationsticker.client.display.MtrSigns.get(id);if(sign==null)continue;
                 try(var input=Minecraft.getInstance().getResourceManager().open(sign.texture())){
-                    var source=javax.imageio.ImageIO.read(input);if(source==null)continue;
-                    var icon=new java.awt.image.BufferedImage(32,32,java.awt.image.BufferedImage.TYPE_INT_ARGB);var g=icon.createGraphics();
-                    g.setColor(new java.awt.Color(sign.background(),true));g.fillRect(0,0,32,32);
-                    g.drawImage(source,sign.flip()?32:0,0,sign.flip()?0:32,32,0,0,source.getWidth(),source.getHeight(),null);g.dispose();source.flush();icons.put(id,icon);
+                    icons.put(id,VerticalLineIconImages.read(input,sign.background(),sign.flip()));
                 }catch(java.io.IOException ignored){}
             }
             var image=VerticalLinePainter.paint(data,font,icons);icons.values().forEach(java.awt.image.BufferedImage::flush);
@@ -45,7 +42,7 @@ public final class VerticalLineRenderer implements BlockEntityRenderer<VerticalL
             var texture=Minecraft.getInstance().getTextureManager().register("stationsticker_vertical_line",new DynamicTexture(nativeImage));
             if(previous!=null)Minecraft.getInstance().getTextureManager().release(previous.texture());
             TEXTURES.put(pos.immutable(),new Entry(data,texture));
-            while(TEXTURES.size()>16){var it=TEXTURES.entrySet().iterator();var first=it.next();Minecraft.getInstance().getTextureManager().release(first.getValue().texture());it.remove();}
+            while(TEXTURES.size()>8){var it=TEXTURES.entrySet().iterator();var first=it.next();Minecraft.getInstance().getTextureManager().release(first.getValue().texture());it.remove();}
             return texture;
         }catch(java.io.IOException error){org.mtr.mod.Init.LOGGER.error("Could not draw vertical line diagram",error);return previous==null?WHITE:previous.texture();}
     }
