@@ -14,7 +14,7 @@ public final class VerticalLineImageRegression {
         List<VerticalLineData.Stop> stops=new ArrayList<>();
         for(int i=0;i<names.length;i++)stops.add(new VerticalLineData.Stop(names[i],"",i==3,i<3,i==3?List.of(ring):i==1?List.of(blue):List.of()));
         var data=new VerticalLineData(main.color(),main.number(),"Котельники",List.copyOf(stops),List.of(main,ring,blue));
-        Set<Integer> needed=new HashSet<>();("По часовой стрелке↑MTRКотельники"+Arrays.toString(names)+ring.name()+blue.name()+main.name()+"0123456789").codePoints().forEach(needed::add);
+        Set<Integer> needed=new HashSet<>();("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzНачалоТекущаяРазвилкаВеткаБКонечнаяПо часовой стрелке↑MTRКотельники"+Arrays.toString(names)+ring.name()+blue.name()+main.name()+"0123456789").codePoints().forEach(needed::add);
         var font=NetworkMapFont.load(id->{var path=id.split(":",2);var input=VerticalLineImageRegression.class.getResourceAsStream("/assets/"+path[0]+"/"+path[1]);if(input==null)throw new IOException(id);return input;},needed);
         var image=VerticalLinePainter.paint(data,font);
         if(image.getWidth()!=512||image.getHeight()!=1344)throw new AssertionError("Wrong panel aspect");
@@ -66,6 +66,7 @@ public final class VerticalLineImageRegression {
         var directEdges=new ArrayList<>(network.edges());
         directEdges.add(new com.tr1nity.stationsticker.map.NetworkMapData.Edge(1,4,blue.color()));
         if(VerticalLineData.walking(new com.tr1nity.stationsticker.map.NetworkMapData(List.of(),directEdges,List.of()),1,blue.color())) throw new AssertionError("Direct interchange must override walking interchange of the same color");
+        VerticalLineAdvancedRegression.run(font);
         savedWorld();
         System.out.println("PASS: vertical panel, real Minecraft font, ring arc across the station, empty state");
     }

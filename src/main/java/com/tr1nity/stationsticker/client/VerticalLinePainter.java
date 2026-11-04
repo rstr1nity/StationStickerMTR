@@ -14,8 +14,10 @@ public final class VerticalLinePainter {
         return paint(data,font,Map.of());
     }
     public static BufferedImage paint(VerticalLineData data, NetworkMapFont font, Map<String,BufferedImage> icons) {
-        BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        int resolution=data!=null && data.allStops().size()>=40?2:1;
+        BufferedImage image = new BufferedImage(WIDTH*resolution, HEIGHT*resolution, BufferedImage.TYPE_INT_ARGB);
         var g = image.createGraphics();
+        g.scale(resolution,resolution);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setColor(PAPER); g.fillRect(0, 0, WIDTH, HEIGHT);
         font.density(1);
@@ -37,24 +39,57 @@ public final class VerticalLinePainter {
         double legendTop = HEIGHT-65-legendRows*30;
         double start = 190, end = legendTop-75;
         double step = (end-start)/Math.max(1,data.stops().size()-1);
+        font.density(step<20?2:1);
         int fontSize = step < 32 ? 8 : step < 50 ? 12 : 16;
-        int x = 160;
-        for (int i=0;i<data.stops().size();i++) {
-            var stop=data.stops().get(i); double y=start+i*step;
+        if(!data.branches().isEmpty()) {
+            var tree=VerticalLineBranches.layout(data.stops(),data.branches());
+            double treeStep=(end-start)/Math.max(1,tree.depth());
+            font.density(treeStep<20?2:1);
+            var points=new HashMap<Long,VerticalLineBranches.Point>();tree.points().forEach(p->points.put(p.stop().stationId(),p));
+            for(var point:tree.points())for(long child:tree.children().get(point.stop().stationId())){
+                var target=points.get(child);double y0=start+point.depth()*treeStep,y1=start+target.depth()*treeStep;
+                g.setColor(new Color(point.stop().passed() || target.stop().passed()?0xBABDBB:data.color()));g.setStroke(new BasicStroke(7,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));
+                g.draw(branchPath(point.x(),y0,target.x(),y1));
+            }
+            for(var point:tree.points())drawStop(g,font,icons,data,point.stop(),(int)point.x(),start+point.depth()*treeStep,treeStep,
+                    tree.leaves()>1?Math.min(WIDTH-12,(int)point.x()+170):WIDTH,treeStep<32?8:12,point.first(),point.last());
+        } else for(int i=0;i<data.stops().size();i++) {
+            var stop=data.stops().get(i);double y=start+i*step;int x=160;
+            if(i+1<data.stops().size()){g.setColor(new Color(stop.passed()?0xBABDBB:data.color()));g.setStroke(new BasicStroke(7));g.draw(new Line2D.Double(x,y,x,y+step));}
+            drawStop(g,font,icons,data,stop,x,y,step,WIDTH,fontSize,i==0,i==data.stops().size()-1);
+
+        }
+        font.density(1);
+        g.setStroke(new BasicStroke(1));g.setColor(new Color(0xAAAAAA));g.draw(new Line2D.Double(32,legendTop-20,WIDTH-32,legendTop-20));
+        for(int i=0;i<data.legend().size();i++) {
+            var line=data.legend().get(i); double x0=34+(i%2)*235, y=legendTop+(i/2)*30;
+            badge(g,font,line.color(),line.number(),x0,y,9);
+            fitted(g,font,line.name(),x0+15,y+3,8,200,INK);
+        }
+        g.dispose(); return image;
+    }
+    public static Path2D branchPath(double x0,double y0,double x1,double y1){
+        var path=new Path2D.Double();path.moveTo(x0,y0);
+        if(Math.abs(x1-x0)<.01){path.lineTo(x1,y1);return path;}
+        double direction=Math.signum(x1-x0),run=Math.min(Math.abs(x1-x0),(y1-y0)*.45);
+        double start=y0+Math.min(10,(y1-y0)*.1),end=start+run,r=Math.min(6,run/4);
+        path.lineTo(x0,start-r);path.quadTo(x0,start,x0+direction*r,start+r);
+        path.lineTo(x1-direction*r,end-r);path.quadTo(x1,end,x1,end+r);path.lineTo(x1,y1);return path;
+    }
+    private static void drawStop(Graphics2D g,NetworkMapFont font,Map<String,BufferedImage> icons,VerticalLineData data,VerticalLineData.Stop stop,int x,double y,double step,int right,int fontSize,boolean first,boolean last){
             Color line = new Color(stop.passed()?0xBABDBB:data.color());
-            if (i+1<data.stops().size()) { g.setColor(line); g.setStroke(new BasicStroke(7)); g.draw(new Line2D.Double(x,y,x,y+step)); }
             int arc=0;
             for (var transfer:stop.transfers()) if(transfer.circular()) {
                 g.setColor(new Color(transfer.color())); g.setStroke(new BasicStroke(4.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                g.draw(new QuadCurve2D.Double(20,y-27-arc*10,WIDTH/2.0,y+27-arc*10,WIDTH-20,y-27-arc*10)); arc++;
+                g.draw(new QuadCurve2D.Double(20,y-27-arc*10,WIDTH/2.0,y+27-arc*10,right-20,y-27-arc*10)); arc++;
             }
             g.setColor(line); g.setStroke(new BasicStroke(5));
-            boolean stationRing=stop.current() || stop.transfers().stream().anyMatch(t -> !t.walking()) || data.circular() && (i==0 || i==data.stops().size()-1);
+            boolean stationRing=stop.current() || stop.transfers().stream().anyMatch(t -> !t.walking()) || data.circular() && (first || last);
             if(stationRing) {
                 g.setColor(PAPER); g.fill(new Ellipse2D.Double(x-9,y-9,18,18));
                 g.setColor(line); g.draw(new Ellipse2D.Double(x-9,y-9,18,18));
             } else g.draw(new Line2D.Double(x,y,x+13,y));
-            if(!data.circular() && !stationRing && (i==0 || i==data.stops().size()-1)) g.draw(new Line2D.Double(x-10,y,x+10,y));
+            if(!data.circular() && !stationRing && (first || last)) g.draw(new Line2D.Double(x-10,y,x+10,y));
             double units=stop.transfers().stream().mapToInt(t -> t.walking() ? 38 : 23).sum();
             double compression=Math.min(1,120.0/Math.max(1,units));
             double bx=x, previousRadius=9;
@@ -74,9 +109,10 @@ public final class VerticalLinePainter {
             font.size(size);
             var stopIcons=stop.icons().stream().filter(id -> !id.isBlank()).limit(3).toList();
             int iconSize=Math.max(10,fontSize), iconWidth=stopIcons.size()*(iconSize+5);
-            int textWidth=WIDTH-x-55-iconWidth;
+            int textWidth=right-x-55-iconWidth;
             List<String> rows=wrap(name,font,textWidth);
             while(rows.size()>2 && size>8) {size-=4; font.size(size); rows=wrap(name,font,textWidth);}
+            if(rows.size()*font.height()+9>step)rows=List.of(name);
             double top=y-(rows.size()*font.height())/2.0+font.height()-3;
             if(!stop.current()) {
                 font.size(size);
@@ -96,15 +132,7 @@ public final class VerticalLinePainter {
                 fitted(g,font,row,x+25,top,size,textWidth,stop.current()?Color.WHITE:stop.passed()?new Color(0x888888):INK);
                 top+=font.height();
             }
-            if(!stop.secondary().isBlank() && step>=65) fitted(g,font,stop.secondary(),x+25,top+2,8,WIDTH-x-55,new Color(0x777777));
-        }
-        g.setStroke(new BasicStroke(1));g.setColor(new Color(0xAAAAAA));g.draw(new Line2D.Double(32,legendTop-20,WIDTH-32,legendTop-20));
-        for(int i=0;i<data.legend().size();i++) {
-            var line=data.legend().get(i); double x0=34+(i%2)*235, y=legendTop+(i/2)*30;
-            badge(g,font,line.color(),line.number(),x0,y,9);
-            fitted(g,font,line.name(),x0+15,y+3,8,200,INK);
-        }
-        g.dispose(); return image;
+            if(!stop.secondary().isBlank() && step>=65) fitted(g,font,stop.secondary(),x+25,top+2,8,right-x-55,new Color(0x777777));
     }
     private static void circularArrow(Graphics2D g, double x, double y, int direction) {
         double radius=7, angle=0;
