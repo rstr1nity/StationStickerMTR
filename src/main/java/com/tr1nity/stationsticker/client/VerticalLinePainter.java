@@ -39,14 +39,26 @@ public final class VerticalLinePainter {
                 g.draw(new QuadCurve2D.Double(20,y-27-arc*10,WIDTH/2.0,y+27-arc*10,WIDTH-20,y-27-arc*10)); arc++;
             }
             g.setColor(line); g.setStroke(new BasicStroke(5));
-            if(stop.current() || !stop.transfers().isEmpty() || data.circular() && (i==0 || i==data.stops().size()-1)) {
+            if(stop.current() || stop.transfers().stream().anyMatch(t -> !t.walking()) || data.circular() && (i==0 || i==data.stops().size()-1)) {
                 g.setColor(PAPER); g.fill(new Ellipse2D.Double(x-9,y-9,18,18));
                 g.setColor(line); g.draw(new Ellipse2D.Double(x-9,y-9,18,18));
             } else g.draw(new Line2D.Double(x,y,x+13,y));
             if(!data.circular() && (i==0 || i==data.stops().size()-1)) g.draw(new Line2D.Double(x-10,y,x+10,y));
-            double gap=Math.min(23,120.0/Math.max(1,stop.transfers().size()));
-            double bx=x-25;
-            for(var transfer:stop.transfers()) { badge(g,font,transfer.color(),transfer.number(),bx,y,(int)Math.min(9,gap/2-1)); bx-=gap; }
+            double units=stop.transfers().stream().mapToInt(t -> t.walking() ? 38 : 23).sum();
+            double compression=Math.min(1,120.0/Math.max(1,units));
+            double bx=x, previousRadius=9;
+            for(var transfer:stop.transfers()) {
+                double previous=bx;
+                bx-=(transfer.walking()?38:23)*compression;
+                int radius=Math.max(3,(int)Math.min(9,10*compression));
+                if(transfer.walking()) {
+                    g.setColor(new Color(0x999999));
+                    g.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1, new float[]{3,3},0));
+                    g.draw(new Line2D.Double(bx+radius+2,y,previous-previousRadius-2,y));
+                }
+                badge(g,font,transfer.color(),transfer.number(),bx,y,radius);
+                previousRadius=radius;
+            }
             String name=stop.name(); int size=fontSize;
             font.size(size);
             List<String> rows=wrap(name,font,WIDTH-x-48);

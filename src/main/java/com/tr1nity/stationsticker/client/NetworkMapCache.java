@@ -43,13 +43,18 @@ public final class NetworkMapCache {
             TEXTURES.clear(); TEXTURE_BYTES.clear(); GENERATING.clear(); FAILED_UNTIL.clear(); generation++; data = snapshot;
         }
     }
-    public static ResourceLocation texture(BlockPos pos) {
+    public static NetworkMapData snapshot(BlockPos pos) {
         ensureWorld();
         long now = System.currentTimeMillis();
         if (now - requested > 30_000 && Minecraft.getInstance().getConnection() != null) {
             requested = now;
             ModNetwork.CHANNEL.sendToServer(new NetworkMapRequestPacket(pos));
         }
+        return data;
+    }
+    public static ResourceLocation texture(BlockPos pos) {
+        snapshot(pos);
+        long now = System.currentTimeMillis();
         if (data == null) return null;
         var station = InitClient.findStation(new org.mtr.mapping.holder.BlockPos(pos.getX(), pos.getY(), pos.getZ()));
         long stationId = station == null ? 0 : station.getId();
