@@ -22,8 +22,14 @@ public final class VerticalLinePainter {
         if (data == null || data.stops().isEmpty()) { text(g,font,"MTR",40,100,24,INK); g.dispose(); return image; }
         badge(g,font,data.color(),data.number(),55,85,25);
         if (data.direction().isEmpty()) text(g,font,"↑",96,57,16,INK);
-        else fitted(g,font,data.direction(),96,48,12,WIDTH-130,INK);
-        if (data.circular() && data.rotation()!=0) circularArrow(g,75,42,data.rotation());
+        else {
+            int captionWidth=WIDTH-96-38;
+            fitted(g,font,data.direction(),96,48,12,captionWidth,INK);
+            if (data.circular() && data.rotation()!=0) {
+                font.size(12);
+                circularArrow(g,96+Math.min(captionWidth,font.width(data.direction()))+13,42,data.rotation());
+            }
+        }
         fitted(g,font,data.heading(),96,92,28,WIDTH-130,INK);
         g.setColor(new Color(0xAAAAAA)); g.drawLine(32,142,WIDTH-32,142);
         // Reserve a separate lower region for the transfer legend.
@@ -101,14 +107,14 @@ public final class VerticalLinePainter {
         g.dispose(); return image;
     }
     private static void circularArrow(Graphics2D g, double x, double y, int direction) {
-        double radius=9, angle=0;
+        double radius=7, angle=0;
         var path=new Path2D.Double();
         for(int i=0;i<=40;i++){
-            angle=-Math.PI/2+direction*i/40.0*Math.PI*1.55;
+            angle=Math.toRadians(direction>0 ? -235 : 415)+direction*i/40.0*Math.toRadians(280);
             double px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
             if(i==0)path.moveTo(px,py);else path.lineTo(px,py);
         }
-        g.setColor(INK);g.setStroke(new BasicStroke(2.5f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));g.draw(path);
+        g.setColor(INK);g.setStroke(new BasicStroke(2.3f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND));g.draw(path);
         double px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
         double tx=-Math.sin(angle)*direction,ty=Math.cos(angle)*direction;
         var tip=new Path2D.Double();tip.moveTo(px+tx*4,py+ty*4);
