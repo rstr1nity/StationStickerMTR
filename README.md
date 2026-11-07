@@ -74,3 +74,7 @@ mods_dir_1.20.1=C:/Users/<user>/AppData/Roaming/.minecraft/mods
 Tr1nity. Спасибо команде MTR и kykko.
 
 Распространяется под лицензией [MIT](LICENSE).
+
+## Разработка для Forge и Fabric
+
+Сборки 2.1.0 для обоих загрузчиков и поддерживаемых версий, зависимости и результаты проверок описаны в [docs/PORTS.md](docs/PORTS.md). Fabric собирается из подкаталога fabric на общих исходниках текущей ветки.
