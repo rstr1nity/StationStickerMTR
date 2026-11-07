@@ -66,6 +66,28 @@ public final class NetworkMapFont {
                 }
                 sheet.flush();
             }
+            if (type.equals("legacy_unicode")) {
+                byte[] sizes;
+                try (InputStream input=resources.open(provider.get("sizes").getAsString())) { sizes=input.readAllBytes(); }
+                Map<Integer,BufferedImage> pages=new HashMap<>();
+                try {
+                    for(int code:needed){
+                        if(code<0 || code>=sizes.length || glyphs.containsKey(code))continue;
+                        int packed=sizes[code]&255;if(packed==0)continue;
+                        int left=packed>>>4,right=(packed&15)+1,w=right-left;if(w<=0)continue;
+                        int page=code>>>8;BufferedImage sheet=pages.get(page);
+                        if(sheet==null){
+                            String pagePath=String.format(Locale.ROOT,provider.get("template").getAsString(),String.format(Locale.ROOT,"%02x",page));
+                            String[] location=pagePath.split(":",2);
+                            try(InputStream input=resources.open((location.length==2?location[0]:"minecraft")+":textures/"+location[location.length-1])){sheet=ImageIO.read(input);}
+                            pages.put(page,sheet);
+                        }
+                        boolean[][] pixels=new boolean[16][w];
+                        for(int y=0;y<16;y++)for(int x=0;x<w;x++)pixels[y][x]=(sheet.getRGB((code&15)*16+left+x,((code&255)>>>4)*16+y)>>>24)>127;
+                        glyphs.put(code,new Glyph(pixels,.5f,w*.5f+1,7));
+                    }
+                } finally {pages.values().forEach(BufferedImage::flush);}
+            }
             if (type.equals("unihex")) {
                 try (ZipInputStream zip = new ZipInputStream(resources.open(provider.get("hex_file").getAsString()))) {
                     java.util.zip.ZipEntry entry;

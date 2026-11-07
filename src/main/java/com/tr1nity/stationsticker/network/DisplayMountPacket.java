@@ -30,9 +30,9 @@ public record DisplayMountPacket(BlockPos pos, int width, int drop, boolean side
         if (player == null || !player.mayBuild() || player.isSpectator()) return;
         if (!player.getItemInHand(InteractionHand.MAIN_HAND).is(org.mtr.mod.Items.BRUSH.get().data)
                 && !player.getItemInHand(InteractionHand.OFF_HAND).is(org.mtr.mod.Items.BRUSH.get().data)) return;
-        if (!player.level().isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > 64
-                || !player.level().mayInteract(player, pos)) return;
-        BlockState state = player.level().getBlockState(pos);
+        if (!player.level.isLoaded(pos) || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos)) > 64
+                || !player.level.mayInteract(player, pos)) return;
+        BlockState state = player.level.getBlockState(pos);
         if (!(state.getBlock() instanceof WideDisplayBlock)) return;
         BlockState target = state;
         if (state.getBlock() instanceof ResizableDisplayBlock) {
@@ -49,12 +49,12 @@ public record DisplayMountPacket(BlockPos pos, int width, int drop, boolean side
         }
         if (state.getBlock() instanceof ArrivalDisplayBlock) target = target.setValue(ArrivalDisplayBlock.SOUND, sound);
         for (BlockPos occupied : WideDisplayBlock.parts(pos, state).keySet()) {
-            if (!player.level().isLoaded(occupied) || !player.level().mayInteract(player, occupied)) return;
+            if (!player.level.isLoaded(occupied) || !player.level.mayInteract(player, occupied)) return;
         }
         for (BlockPos occupied : WideDisplayBlock.parts(pos, target).keySet()) {
-            if (!player.level().isLoaded(occupied) || !player.level().mayInteract(player, occupied)) return;
+            if (!player.level.isLoaded(occupied) || !player.level.mayInteract(player, occupied)) return;
         }
-        if (!WideDisplayBlock.reconfigure(player.level(), pos, state, target)) {
+        if (!WideDisplayBlock.reconfigure(player.level, pos, state, target)) {
             player.displayClientMessage(Component.translatable("message.stationsticker.display.no_space"), true);
         }
     }

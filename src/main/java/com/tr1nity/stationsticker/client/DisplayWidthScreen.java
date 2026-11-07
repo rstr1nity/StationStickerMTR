@@ -57,9 +57,7 @@ public class DisplayWidthScreen extends Screen {
                     Component.translatable("gui.stationsticker.display.sound"), (button, value) -> sound = value));
             y += 24;
         }
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> save())
-                .bounds(x, y + 8, WIDGET_WIDTH, WIDGET_HEIGHT)
-                .build());
+        addRenderableWidget(new Button(x,y+8,WIDGET_WIDTH,WIDGET_HEIGHT,CommonComponents.GUI_DONE,button->save()));
     }
 
     private void save() {
@@ -70,7 +68,7 @@ public class DisplayWidthScreen extends Screen {
     @Override
     public void render(PoseStack graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, height / 2 - 64, 0xFFFFFF);
+        drawCenteredString(graphics, font, title, width / 2, height / 2 - 64, 0xFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 

@@ -83,7 +83,7 @@ public abstract class WideDisplayBlock extends BaseEntityBlock {
             BlockState occupied = level.getBlockState(partPos);
             boolean own = oldParts.containsKey(partPos) && occupied.getBlock() instanceof DisplayPartBlock
                     && DisplayPartBlock.getMainPos(occupied, partPos).equals(pos);
-            if (!own && !occupied.canBeReplaced()) return false;
+            if (!own && !occupied.getMaterial().isReplaceable()) return false;
         }
         // onRemove старых частей уже не должен разрушать изменённый экран.
         level.setBlock(pos, target, Block.UPDATE_ALL);

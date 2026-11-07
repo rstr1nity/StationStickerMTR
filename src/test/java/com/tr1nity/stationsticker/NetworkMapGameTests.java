@@ -19,6 +19,8 @@ import java.util.List;
 @GameTestHolder("stationsticker")
 @PrefixGameTestTemplate(false)
 public class NetworkMapGameTests {
+    private static void assertTrue(boolean condition,String message){if(!condition)throw new net.minecraft.gametest.framework.GameTestAssertException(message);}
+
     @GameTest(template = "empty")
     public static void extractPublicRoutes(GameTestHelper helper) {
         ClientData data = new ClientData();
@@ -43,14 +45,14 @@ public class NetworkMapGameTests {
         data.sync();
         var response = new ListDataResponse(data).list();
         var map = new MtrNetworkMapResponse(new org.mtr.core.serializer.JsonReader(org.mtr.core.tool.Utilities.getJsonObjectFromData(response))).map;
-        helper.assertTrue(map.stations().size() == 2, "Full snapshot preserves station coordinates without nearby-client data");
-        helper.assertTrue(map.stations().stream().allMatch(station -> station.z() == p.getMidPosition().getZ()),
+        assertTrue(map.stations().size() == 2, "Full snapshot preserves station coordinates without nearby-client data");
+        assertTrue(map.stations().stream().allMatch(station -> station.z() == p.getMidPosition().getZ()),
                 "Map positions use platform midpoints like the MTR website, not station area centers");
-        helper.assertTrue(map.lines().size() == 1 && map.edges().size() == 1, "Hidden routes excluded, reverse directions deduplicated");
+        assertTrue(map.lines().size() == 1 && map.edges().size() == 1, "Hidden routes excluded, reverse directions deduplicated");
         var bytes = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         try {
             map.write(bytes);
-            helper.assertTrue(new NetworkMapData(bytes).equals(map), "Network snapshot survives packet roundtrip");
+            assertTrue(new NetworkMapData(bytes).equals(map), "Network snapshot survives packet roundtrip");
         } finally { bytes.release(); }
         helper.succeed();
     }
@@ -63,7 +65,7 @@ public class NetworkMapGameTests {
                 new org.mtr.mapping.holder.World(helper.getLevel()), new ListDataResponse(new ClientData()),
                 response -> received[0] = new MtrNetworkMapResponse(new org.mtr.core.serializer.JsonReader(
                         org.mtr.core.tool.Utilities.getJsonObjectFromData(response))).map != null, ListDataResponse.class));
-        helper.succeedWhen(() -> helper.assertTrue(received[0], "MTR must return full network snapshot without HTTP"));
+        helper.succeedWhen(() -> assertTrue(received[0], "MTR must return full network snapshot without HTTP"));
     }
 
     @GameTest(template = "empty")
@@ -76,28 +78,28 @@ public class NetworkMapGameTests {
             level.setBlockAndUpdate(main, state);
             block.setPlacedBy(level, main, state, null, ItemStack.EMPTY);
             var parts = NetworkMapBlock.parts(main, facing);
-            helper.assertTrue(parts.size() == 11, "Stand must occupy 3x4 cells including main");
+            assertTrue(parts.size() == 11, "Stand must occupy 3x4 cells including main");
             var player = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(level);
             player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(org.mtr.mod.Items.BRUSH.get().data));
             var clicked = parts.keySet().iterator().next();
             var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(clicked), facing, clicked, false);
             var partState = level.getBlockState(clicked);
             partState.getBlock().use(partState, level, clicked, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
-            helper.assertTrue(level.getBlockState(main).getValue(NetworkMapBlock.SCHEMATIC), "Brush on a stand part switches its owner to schematic mode");
-            helper.assertTrue(level.getBlockEntity(main) != null, "Mode switch preserves the block entity");
+            assertTrue(level.getBlockState(main).getValue(NetworkMapBlock.SCHEMATIC), "Brush on a stand part switches its owner to schematic mode");
+            assertTrue(level.getBlockEntity(main) != null, "Mode switch preserves the block entity");
             block.use(level.getBlockState(main), level, main, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
-            helper.assertTrue(!level.getBlockState(main).getValue(NetworkMapBlock.SCHEMATIC), "Second brush click restores original mode");
+            assertTrue(!level.getBlockState(main).getValue(NetworkMapBlock.SCHEMATIC), "Second brush click restores original mode");
             for (var part : parts.entrySet()) {
-                helper.assertTrue(NetworkMapPartBlock.mainPos(part.getKey(), part.getValue()).equals(main), "Every stand part resolves its owner");
+                assertTrue(NetworkMapPartBlock.mainPos(part.getKey(), part.getValue()).equals(main), "Every stand part resolves its owner");
                 var shape = level.getBlockState(part.getKey()).getShape(level, part.getKey());
                 if (!shape.isEmpty()) {
                     var box = shape.bounds();
-                    helper.assertTrue(box.minX >= 0 && box.maxX <= 1 && box.minY >= 0 && box.maxY <= 1 && box.minZ >= 0 && box.maxZ <= 1, "Shapes must stay inside their cell");
+                    assertTrue(box.minX >= 0 && box.maxX <= 1 && box.minY >= 0 && box.maxY <= 1 && box.minZ >= 0 && box.maxZ <= 1, "Shapes must stay inside their cell");
                 }
             }
             level.destroyBlock(parts.keySet().iterator().next(), false);
-            helper.assertTrue(level.getBlockState(main).isAir(), "Breaking a stand part destroys the stand");
-            for (BlockPos pos : parts.keySet()) helper.assertTrue(level.getBlockState(pos).isAir(), "No invisible stand parts left");
+            assertTrue(level.getBlockState(main).isAir(), "Breaking a stand part destroys the stand");
+            for (BlockPos pos : parts.keySet()) assertTrue(level.getBlockState(pos).isAir(), "No invisible stand parts left");
         }
         helper.succeed();
     }
@@ -112,39 +114,39 @@ public class NetworkMapGameTests {
             level.setBlockAndUpdate(main, state);
             block.setPlacedBy(level, main, state, null, ItemStack.EMPTY);
             var parts = com.tr1nity.stationsticker.block.VerticalLineBlock.parts(main, facing);
-            helper.assertTrue(parts.size() == 2, "Stand must occupy 1x3 cells including main");
+            assertTrue(parts.size() == 2, "Stand must occupy 1x3 cells including main");
             var player = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(level);
             player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(org.mtr.mod.Items.BRUSH.get().data));
             var clicked = parts.keySet().iterator().next();
             var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(clicked), facing, clicked, false);
             var partState = level.getBlockState(clicked);
             partState.getBlock().use(partState, level, clicked, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
-            helper.assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 0, "Brush opens client settings without cycling a server route");
-            helper.assertTrue(level.getBlockEntity(main) != null, "Mode switch preserves the block entity");
+            assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 0, "Brush opens client settings without cycling a server route");
+            assertTrue(level.getBlockEntity(main) != null, "Mode switch preserves the block entity");
             block.use(level.getBlockState(main), level, main, player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
-            helper.assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 0, "Menu changes require an explicit settings packet");
+            assertTrue(level.getBlockState(main).getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE) == 0, "Menu changes require an explicit settings packet");
             var vertical=(com.tr1nity.stationsticker.block.entity.VerticalLineBlockEntity)level.getBlockEntity(main);
             var settings=new com.tr1nity.stationsticker.block.VerticalLineSettings(321,java.util.Map.of(123L,java.util.List.of("test:train","test:accessible")));
             vertical.applySettings(settings);
             var saved=vertical.getUpdateTag();vertical.load(saved);
-            helper.assertTrue(vertical.settings().equals(settings),"Stable route id and per-station icons survive NBT synchronization");
+            assertTrue(vertical.settings().equals(settings),"Stable route id and per-station icons survive NBT synchronization");
             var bytes=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
             try{
                 new com.tr1nity.stationsticker.network.VerticalLineSettingsPacket(main,settings).encode(bytes);
                 var decoded=new com.tr1nity.stationsticker.network.VerticalLineSettingsPacket(bytes);
-                helper.assertTrue(decoded.pos().equals(main) && decoded.settings().equals(settings),"Vertical settings packet roundtrip");
+                assertTrue(decoded.pos().equals(main) && decoded.settings().equals(settings),"Vertical settings packet roundtrip");
             }finally{bytes.release();}
             for (var part : parts.entrySet()) {
-                helper.assertTrue(com.tr1nity.stationsticker.block.VerticalLinePartBlock.mainPos(part.getKey(), part.getValue()).equals(main), "Every stand part resolves its owner");
+                assertTrue(com.tr1nity.stationsticker.block.VerticalLinePartBlock.mainPos(part.getKey(), part.getValue()).equals(main), "Every stand part resolves its owner");
                 var shape = level.getBlockState(part.getKey()).getShape(level, part.getKey());
                 if (!shape.isEmpty()) {
                     var box = shape.bounds();
-                    helper.assertTrue(box.minX >= 0 && box.maxX <= 1 && box.minY >= 0 && box.maxY <= 1 && box.minZ >= 0 && box.maxZ <= 1, "Shapes must stay inside their cell");
+                    assertTrue(box.minX >= 0 && box.maxX <= 1 && box.minY >= 0 && box.maxY <= 1 && box.minZ >= 0 && box.maxZ <= 1, "Shapes must stay inside their cell");
                 }
             }
             level.destroyBlock(parts.keySet().iterator().next(), false);
-            helper.assertTrue(level.getBlockState(main).isAir(), "Breaking a stand part destroys the stand");
-            for (BlockPos pos : parts.keySet()) helper.assertTrue(level.getBlockState(pos).isAir(), "No invisible stand parts left");
+            assertTrue(level.getBlockState(main).isAir(), "Breaking a stand part destroys the stand");
+            for (BlockPos pos : parts.keySet()) assertTrue(level.getBlockState(pos).isAir(), "No invisible stand parts left");
         }
         helper.succeed();
     }
@@ -160,9 +162,9 @@ public class NetworkMapGameTests {
                         new NetworkMapData.Edge(2, 4, 0x1673BB)),
                 List.of(new NetworkMapData.Line(0xD92E36, "1", "Красная|Red"), new NetworkMapData.Line(0x1673BB, "2", "Синяя|Blue")));
         var image = NetworkMapPainter.paint(map, 2, true);
-        helper.assertTrue((image.getRGB(0, 0) >>> 24) == 0, "Corners of circular texture must be transparent");
-        helper.assertTrue((image.getRGB(1024, 1024) >>> 24) == 255, "Face must be opaque");
-        for (var point : NetworkMapPainter.layout(map).values()) helper.assertTrue(point.distance(1024, 1010) <= 691, "Entire network must fit the circular face");
+        assertTrue((image.getRGB(0, 0) >>> 24) == 0, "Corners of circular texture must be transparent");
+        assertTrue((image.getRGB(1024, 1024) >>> 24) == 255, "Face must be opaque");
+        for (var point : NetworkMapPainter.layout(map).values()) assertTrue(point.distance(1024, 1010) <= 691, "Entire network must fit the circular face");
         var preview = new java.io.File("../network-map-preview.png");
         javax.imageio.ImageIO.write(image, "PNG", preview);
         helper.succeed();

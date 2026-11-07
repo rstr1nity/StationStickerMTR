@@ -166,7 +166,7 @@ public class NavSignScreen extends Screen {
     @Override
     public void render(PoseStack graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
-        graphics.drawCenteredString(font, title, width / 2, height / 2 - ROW * 3 - 20, 0xFFFFFF);
+        drawCenteredString(graphics, font, title, width / 2, height / 2 - ROW * 3 - 20, 0xFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 

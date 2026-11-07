@@ -4,7 +4,7 @@ import com.tr1nity.stationsticker.block.VerticalLineSettings;
 import com.tr1nity.stationsticker.block.entity.VerticalLineBlockEntity;
 import com.tr1nity.stationsticker.client.display.*;
 import com.tr1nity.stationsticker.network.*;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -18,8 +18,8 @@ public final class VerticalLineScreen extends Screen {
     private int page;
     private List<org.mtr.core.data.SimplifiedRoute> routes=List.of();
     public VerticalLineScreen(VerticalLineBlockEntity entity){super(Component.literal(""));this.entity=entity;routeId=entity.settings().routeId();icons.putAll(entity.settings().icons());}
-    private String tr(String ru,String en){return minecraft.getLanguageManager().getSelected().startsWith("ru")?ru:en;}
-    private void button(String text,int x,int y,int w,Runnable action){addRenderableWidget(Button.builder(Component.literal(text),b->action.run()).bounds(x,y,w,20).build());}
+    private String tr(String ru,String en){return minecraft.getLanguageManager().getSelected().getCode().startsWith("ru")?ru:en;}
+    private void button(String text,int x,int y,int w,Runnable action){addRenderableWidget(new Button(x,y,w,20,Component.literal(text),b->action.run()));}
     private int count(){return Math.max(1,(height-125)/26);}
     private org.mtr.core.data.SimplifiedRoute selected(){return routes.stream().filter(r->r.getId()==routeId).findFirst().orElse(routes.isEmpty()?null:routes.get(Math.floorMod(entity.getBlockState().getValue(com.tr1nity.stationsticker.block.VerticalLineBlock.ROUTE),routes.size())));}
     @Override protected void init(){
@@ -58,8 +58,8 @@ public final class VerticalLineScreen extends Screen {
         String signature=platform==null?"":NavigationRoutes.signature(platform.getId());
         if(!signature.equals(routeSignature)){routeSignature=signature;rebuildWidgets();}
     }
-    @Override public void render(GuiGraphics g,int x,int y,float partial){renderBackground(g);g.drawCenteredString(font,tr("Вертикальная схема линии","Vertical line diagram"),width/2,15,0xFFFFFF);super.render(g,x,y,partial);
-        if(routes.isEmpty())g.drawCenteredString(font,tr("Нет маршрутов: проверьте область станции MTR","No routes: check the MTR station area"),width/2,75,0xCCCCCC);
+    @Override public void render(PoseStack g,int x,int y,float partial){renderBackground(g);drawCenteredString(g,font,tr("Вертикальная схема линии","Vertical line diagram"),width/2,15,0xFFFFFF);super.render(g,x,y,partial);
+        if(routes.isEmpty())drawCenteredString(g,font,tr("Нет маршрутов: проверьте область станции MTR","No routes: check the MTR station area"),width/2,75,0xCCCCCC);
         if(stations){var route=selected();if(route!=null){int left=(width-360)/2;for(int row=0;row<count();row++){int index=page*count()+row;if(index>=route.getPlatforms().size())break;var ids=icons.getOrDefault(route.getPlatforms().get(index).getStationId(),List.of());for(int i=0;i<ids.size();i++)if(!ids.get(i).isEmpty())IconPickerScreen.drawIcon(g,ids.get(i),left+238+i*44,67+row*26,16);}}}
     }
     @Override public boolean isPauseScreen(){return false;}

@@ -13,10 +13,11 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.*;
 
 public class NetworkMapPartBlock extends Block {
+    @Override public PushReaction getPistonPushReaction(BlockState state){return PushReaction.BLOCK;}
     public static final IntegerProperty HORIZONTAL = IntegerProperty.create("horizontal", 0, 2);
     public static final IntegerProperty ROW = IntegerProperty.create("row", 0, 3);
     public NetworkMapPartBlock() {
-        super(Properties.of().strength(1).sound(SoundType.METAL).noOcclusion().noLootTable().pushReaction(PushReaction.BLOCK));
+        super(Properties.of(net.minecraft.world.level.material.Material.METAL).strength(1).sound(SoundType.METAL).noOcclusion().noLootTable());
     }
     public static BlockPos mainPos(BlockPos pos, BlockState state) {
         return pos.subtract(NetworkMapBlock.offset(state.getValue(NetworkMapBlock.FACING), state.getValue(HORIZONTAL) - 1, state.getValue(ROW)));

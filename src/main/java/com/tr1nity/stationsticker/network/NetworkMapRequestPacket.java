@@ -29,8 +29,8 @@ public record NetworkMapRequestPacket(BlockPos pos) {
         var player = context.get().getSender();
         context.get().setPacketHandled(true);
         if (player == null) return;
-        ServerLevel level = player.serverLevel();
-        if (!level.isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > 64 * 64
+        ServerLevel level = player.getLevel();
+        if (!level.isLoaded(pos) || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos)) > 64 * 64
                 || (!(level.getBlockState(pos).getBlock() instanceof NetworkMapBlock)
                 && !(level.getBlockState(pos).getBlock() instanceof com.tr1nity.stationsticker.block.VerticalLineBlock))) return;
         Cached cached = CACHE.computeIfAbsent(level, unused -> new Cached());
@@ -53,7 +53,7 @@ public record NetworkMapRequestPacket(BlockPos pos) {
                     cached.fetched = System.currentTimeMillis();
                     for (UUID uuid : cached.waiting) {
                         var recipient = level.getServer().getPlayerList().getPlayer(uuid);
-                        if (recipient != null && recipient.serverLevel() == level) {
+                        if (recipient != null && recipient.getLevel() == level) {
                             ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> recipient), new NetworkMapPacket(dimension, cached.data));
                         }
                     }

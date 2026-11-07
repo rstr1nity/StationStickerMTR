@@ -12,7 +12,7 @@ public record VerticalLineSettingsPacket(BlockPos pos,VerticalLineSettings setti
     public void encode(FriendlyByteBuf buf){buf.writeBlockPos(pos);buf.writeNbt(settings.save());}
     public void handle(Supplier<NetworkEvent.Context> context){
         var player=context.get().getSender();context.get().setPacketHandled(true);
-        if(player==null || !player.mayBuild() || !player.level().isLoaded(pos) || player.distanceToSqr(pos.getCenter())>64)return;
-        if(player.level().getBlockEntity(pos) instanceof VerticalLineBlockEntity entity)entity.applySettings(settings);
+        if(player==null || !player.mayBuild() || !player.level.isLoaded(pos) || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>64)return;
+        if(player.level.getBlockEntity(pos) instanceof VerticalLineBlockEntity entity)entity.applySettings(settings);
     }
 }

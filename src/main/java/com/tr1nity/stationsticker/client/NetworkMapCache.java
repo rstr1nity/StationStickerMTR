@@ -58,7 +58,7 @@ public final class NetworkMapCache {
         if (data == null) return null;
         var station = com.tr1nity.stationsticker.client.PlatformLocator.findStationAt(pos);
         long stationId = station == null ? 0 : station.getId();
-        String language = Minecraft.getInstance().getLanguageManager().getSelected();
+        String language = Minecraft.getInstance().getLanguageManager().getSelected().getCode();
         var state = Minecraft.getInstance().level.getBlockState(pos);
         boolean schematic = state.hasProperty(com.tr1nity.stationsticker.block.NetworkMapBlock.SCHEMATIC) && state.getValue(com.tr1nity.stationsticker.block.NetworkMapBlock.SCHEMATIC);
         String key = stationId + ":" + language + ":" + schematic;

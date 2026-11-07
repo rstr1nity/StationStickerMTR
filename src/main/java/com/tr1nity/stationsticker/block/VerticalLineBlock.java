@@ -23,11 +23,12 @@ import java.util.Map;
 
 // Напольный стенд: 1 клетка по ширине, 3 по высоте; основной блок внизу по центру.
 public class VerticalLineBlock extends BaseEntityBlock {
+    @Override public PushReaction getPistonPushReaction(BlockState state){return PushReaction.BLOCK;}
     public static final net.minecraft.world.level.block.state.properties.BooleanProperty WALL = net.minecraft.world.level.block.state.properties.BooleanProperty.create("wall");
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final net.minecraft.world.level.block.state.properties.IntegerProperty ROUTE = net.minecraft.world.level.block.state.properties.IntegerProperty.create("route", 0, 63);
     public VerticalLineBlock() {
-        super(Properties.of().strength(1).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.BLOCK));
+        super(Properties.of(net.minecraft.world.level.material.Material.METAL).strength(1).sound(SoundType.METAL).noOcclusion());
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(ROUTE, 0).setValue(WALL, false));
     }
     public static BlockPos offset(Direction facing, int h, int row) {

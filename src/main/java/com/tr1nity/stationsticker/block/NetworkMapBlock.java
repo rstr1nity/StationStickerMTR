@@ -23,6 +23,7 @@ import java.util.Map;
 
 // Напольный стенд: 3 клетки по ширине, 4 по высоте; основной блок внизу по центру.
 public class NetworkMapBlock extends BaseEntityBlock {
+    @Override public PushReaction getPistonPushReaction(BlockState state){return PushReaction.BLOCK;}
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final net.minecraft.world.level.block.state.properties.BooleanProperty SCHEMATIC = net.minecraft.world.level.block.state.properties.BooleanProperty.create("schematic");
     public static final float RADIUS = 1.45f;
@@ -31,7 +32,7 @@ public class NetworkMapBlock extends BaseEntityBlock {
     public static final float BASE_HEIGHT = 0.68f;
     public static final float BASE_HALF_DEPTH = 0.22f;
     public NetworkMapBlock() {
-        super(Properties.of().strength(1).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.BLOCK));
+        super(Properties.of(net.minecraft.world.level.material.Material.METAL).strength(1).sound(SoundType.METAL).noOcclusion());
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(SCHEMATIC, false));
     }
     public static BlockPos offset(Direction facing, int h, int row) {

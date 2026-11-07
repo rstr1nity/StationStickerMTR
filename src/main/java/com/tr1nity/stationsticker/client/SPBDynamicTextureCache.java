@@ -80,7 +80,7 @@ public class SPBDynamicTextureCache implements IGui {
         final long dataVersion = generateDataVersion(platformId);
 
         // 2. Включаем эту версию в ключ
-        String key = String.format("spb_route_map_v3_%s_%s_%s_%s_%s_%s", platformId, dataVersion, vertical, flip, aspectRatio, transparentWhite) + ":" + Config.getClient().getDynamicTextureResolution() + ":" + net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();
+        String key = String.format("spb_route_map_v3_%s_%s_%s_%s_%s_%s", platformId, dataVersion, vertical, flip, aspectRatio, transparentWhite) + ":" + Config.getClient().getDynamicTextureResolution() + ":" + net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected().getCode();
 
         // 3. Вызываем ваш генератор
         return getResource(key, () -> SPBRouteMapGenerator.generateRouteMap(platformId, vertical, flip, aspectRatio, transparentWhite),

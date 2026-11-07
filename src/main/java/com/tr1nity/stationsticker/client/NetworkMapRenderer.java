@@ -2,7 +2,7 @@ package com.tr1nity.stationsticker.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
+import com.mojang.math.Vector3f;
 import com.tr1nity.stationsticker.block.NetworkMapBlock;
 import com.tr1nity.stationsticker.block.entity.NetworkMapBlockEntity;
 import net.minecraft.client.Minecraft;
@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.ResourceLocation;
-import org.joml.Matrix4f;
+import com.mojang.math.Matrix4f;
 
 public class NetworkMapRenderer implements BlockEntityRenderer<NetworkMapBlockEntity> {
     private static final ResourceLocation WHITE = new ResourceLocation("minecraft", "textures/misc/white.png");
@@ -21,7 +21,7 @@ public class NetworkMapRenderer implements BlockEntityRenderer<NetworkMapBlockEn
     @Override public void render(NetworkMapBlockEntity entity, float tick, PoseStack poses, MultiBufferSource buffers, int light, int overlay) {
         poses.pushPose();
         poses.translate(0.5, 0, 0.5);
-        poses.mulPose(Axis.YP.rotationDegrees(-entity.getBlockState().getValue(NetworkMapBlock.FACING).toYRot()));
+        poses.mulPose(Vector3f.YP.rotationDegrees(-entity.getBlockState().getValue(NetworkMapBlock.FACING).toYRot()));
         VertexConsumer body = buffers.getBuffer(RenderType.text(WHITE));
         base(body, poses.last().pose(), light);
         disk(body, poses.last().pose(), NetworkMapBlock.RADIUS, 0.065f, 0xFF303237, light);
@@ -35,7 +35,7 @@ public class NetworkMapRenderer implements BlockEntityRenderer<NetworkMapBlockEn
         ResourceLocation texture = NetworkMapCache.texture(entity.getBlockPos());
         for (int side = 0; side < 2; side++) {
             poses.pushPose();
-            if (side == 1) poses.mulPose(Axis.YP.rotationDegrees(180));
+            if (side == 1) poses.mulPose(Vector3f.YP.rotationDegrees(180));
             // Узкая металлическая кромка; световая панель утоплена за фаской.
             VertexConsumer rim = buffers.getBuffer(RenderType.text(WHITE));
             ring(rim, poses.last().pose(), NetworkMapBlock.RADIUS, 0.08f, NetworkMapBlock.RADIUS - 0.012f, 0.085f, 0xFF64666A, light);
@@ -48,7 +48,7 @@ public class NetworkMapRenderer implements BlockEntityRenderer<NetworkMapBlockEn
                 poses.translate(-Minecraft.getInstance().font.width(loading) * 0.006 / 2, NetworkMapBlock.CENTER_Y, 0.073);
                 poses.scale(0.006f, -0.006f, 0.006f);
                 Minecraft.getInstance().font.drawInBatch(loading, 0, 0, 0xFF333333, false, poses.last().pose(), buffers,
-                        net.minecraft.client.gui.Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+                        false, 0, LightTexture.FULL_BRIGHT);
             }
             poses.popPose();
         }
