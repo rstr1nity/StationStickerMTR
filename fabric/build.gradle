@@ -46,6 +46,7 @@ tasks.withType(JavaCompile).configureEach { options.encoding='UTF-8' }
 processResources {
  inputs.property 'version',project.version
  filesMatching('fabric.mod.json') { expand(version:project.version,minecraft_version:mc,fabric_loader_version:shared.fabric_loader_version,fabric_mtr_version:shared.fabric_mtr_version) }
+ filesMatching('data/stationsticker/recipes/*.json') { filter { line -> line.replace('forge:', 'stationsticker:') } }
  filesMatching('pack.mcmeta') { expand(mod_id:shared.mod_id,mod_version:shared.mod_version) }
 }
 loom { runs { client { runDir('run-client') }; server { runDir('run-server') } } }
