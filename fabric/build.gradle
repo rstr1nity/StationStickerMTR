@@ -1,0 +1,54 @@
+plugins { id 'fabric-loom' }
+def shared = new Properties()
+file('../gradle.properties').withInputStream { shared.load(it) }
+def mc=shared.minecraft_version
+def old=mc=='1.19.2'
+version=shared.mod_version+'+'+mc
+group=shared.mod_group_id
+base { archivesName='StationStickerMTR-Fabric' }
+java { toolchain.languageVersion=JavaLanguageVersion.of(17) }
+repositories { maven { url='https://api.modrinth.com/maven' }; mavenCentral() }
+dependencies {
+ minecraft "com.mojang:minecraft:${mc}"
+ mappings loom.officialMojangMappings()
+ modImplementation "net.fabricmc:fabric-loader:${shared.fabric_loader_version}"
+ modImplementation "net.fabricmc.fabric-api:fabric-api:${shared.fabric_api_version}"
+ modImplementation "maven.modrinth:minecraft-transit-railway:FABRIC-${shared.fabric_mtr_version}+${mc}"
+}
+def generated=layout.buildDirectory.dir('generated/shared')
+tasks.register('prepareSharedSources') {
+ inputs.dir('../src/main/java');outputs.dir(generated)
+ doLast {
+  def target=generated.get().asFile;delete target
+  fileTree('../src/main/java').matching { exclude '**/StationStickerMod.java','**/ClientModEvents.java','**/ClientCacheEvents.java','**/network/ModNetwork.java' }.each { source ->
+   def relative=file('../src/main/java').toPath().relativize(source.toPath()).toString()
+   def dest=new File(target,relative);dest.parentFile.mkdirs()
+   def text=source.getText('UTF-8').replace('javax.annotation.Nullable','org.jetbrains.annotations.Nullable')
+   ['net.minecraftforge.registries.DeferredRegister':'com.tr1nity.stationsticker.fabric.compat.RegistrationQueue',
+    'net.minecraftforge.registries.RegistryObject':'com.tr1nity.stationsticker.fabric.compat.RegisteredValue',
+    'net.minecraftforge.registries.ForgeRegistries':'com.tr1nity.stationsticker.fabric.compat.GameRegistries',
+    'net.minecraftforge.network.NetworkEvent':'com.tr1nity.stationsticker.fabric.compat.PacketContext',
+    'net.minecraftforge.network.PacketDistributor':'com.tr1nity.stationsticker.fabric.compat.PacketTargets',
+    'net.minecraftforge.fml.DistExecutor':'com.tr1nity.stationsticker.fabric.compat.EnvironmentExecutor',
+    'net.minecraftforge.api.distmarker.Dist':'com.tr1nity.stationsticker.fabric.compat.EnvironmentType'].each { a,b -> text=text.replace(a,b) }
+   ['DeferredRegister':'RegistrationQueue','RegistryObject':'RegisteredValue','ForgeRegistries':'GameRegistries','NetworkEvent.Context':'PacketContext.Context','PacketDistributor':'PacketTargets','DistExecutor':'EnvironmentExecutor','Dist.CLIENT':'EnvironmentType.CLIENT'].each { a,b -> text=text.replace(a,b) }
+   text=text.replace('CreativeModeTab.builder()','net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup.builder()').replace('Registries.CREATIVE_MODE_TAB','net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB')
+   text=text.replaceAll(/@Override\s+(public AABB getRenderBoundingBox)/, '$1')
+   dest.setText(text,'UTF-8')
+  }
+ }
+}
+sourceSets.main.java.srcDir(generated)
+sourceSets.main.resources { srcDir('../src/main/resources');exclude 'META-INF/mods.toml' }
+compileJava.dependsOn prepareSharedSources
+tasks.withType(JavaCompile).configureEach { options.encoding='UTF-8' }
+processResources {
+ inputs.property 'version',project.version
+ filesMatching('fabric.mod.json') { expand(version:project.version,minecraft_version:mc,fabric_loader_version:shared.fabric_loader_version,fabric_mtr_version:shared.fabric_mtr_version) }
+ filesMatching('pack.mcmeta') { expand(mod_id:shared.mod_id,mod_version:shared.mod_version) }
+}
+loom { runs { client { runDir('run-client') }; server { runDir('run-server') } } }
+
+loom.runs.server { vmArg "-Dstationsticker.smoke=${project.findProperty('smoke') ?: 'false'}" }
+
+loom.runs.client { vmArg "-Dstationsticker.smokeClient=${project.findProperty('smokeClient') ?: 'false'}" }

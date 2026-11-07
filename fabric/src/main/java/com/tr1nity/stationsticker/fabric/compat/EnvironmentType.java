@@ -1,0 +1,1 @@
+package com.tr1nity.stationsticker.fabric.compat; public enum EnvironmentType { CLIENT, SERVER }
