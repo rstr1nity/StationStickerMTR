@@ -2,41 +2,6 @@
   "version": "2.0.0",
   "tasks": [
 {
-  "label": "Fabric: build jar for compatibility test",
-  "type": "shell",
-  "command": "./gradlew",
-  "windows": {
-    "command": ".\\gradlew.bat"
-  },
-  "args": [
-    "build",
-    "--console=plain"
-  ],
-  "options": {
-    "cwd": "${workspaceFolder}/fabric"
-  },
-  "problemMatcher": []
-},
-{
-  "label": "Fabric 1.20.4: compatibility test",
-  "type": "shell",
-  "command": "./gradlew",
-  "windows": {
-    "command": ".\\gradlew.bat"
-  },
-  "args": [
-    "-p",
-    "compat-1.20.4",
-    "runClient",
-    "--console=plain"
-  ],
-  "options": {
-    "cwd": "${workspaceFolder}/fabric"
-  },
-  "dependsOn": "Fabric: build jar for compatibility test",
-  "problemMatcher": []
-},
-{
   "label": "Fabric: automatic hot swap",
   "type": "shell",
   "command": "powershell.exe",
