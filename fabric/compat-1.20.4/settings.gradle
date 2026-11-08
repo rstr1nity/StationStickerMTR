@@ -1,0 +1,6 @@
+pluginManagement {
+ def shared=new Properties();file('../../gradle.properties').withInputStream { shared.load(it) }
+ repositories { maven { url='https://maven.fabricmc.net/' }; gradlePluginPortal(); mavenCentral() }
+ plugins { id 'fabric-loom' version shared.fabric_loom_version }
+}
+rootProject.name='StationStickerMTR-Fabric-1.20.4-CompatibilityTest'

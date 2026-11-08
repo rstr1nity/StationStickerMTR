@@ -1,5 +1,5 @@
 {
  "schemaVersion":1,"id":"stationsticker","version":"${version}","name":"Station Sticker","description":"Station signs, arrivals and network maps for MTR.","authors":["Tr1nity"],"license":"MIT","icon":"logo.png","environment":"*",
  "entrypoints":{"main":["com.tr1nity.stationsticker.StationStickerMod"],"client":["com.tr1nity.stationsticker.fabric.FabricClient"]},
- "depends":{"fabricloader":">=${fabric_loader_version}","fabric-api":"*","minecraft":"${minecraft_version}","java":">=17","mtr":">=${fabric_mtr_version} <4.1"}
+ "depends":{"fabricloader":">=${fabric_loader_version}","fabric-api":"*","minecraft":"${minecraft_version_range}","java":">=17","mtr":">=${fabric_mtr_version} <4.1"}
 }
