@@ -1,6 +1,19 @@
 {
   "version": "2.0.0",
   "tasks": [
+{
+  "label": "Fabric: automatic hot swap",
+  "type": "shell",
+  "command": "powershell.exe",
+  "args": [
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "${workspaceFolder}/fabric/tools/Start-HotSwap.ps1"
+  ],
+  "problemMatcher": []
+},
     {
       // Запускает игру на паузе; задача считается готовой, когда JVM открыла порт 5005 для отладчика.
       // --console=plain: без прогресс-бара Gradle строка «Listening for transport» приходит целиком,

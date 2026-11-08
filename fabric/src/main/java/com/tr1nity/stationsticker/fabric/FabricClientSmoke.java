@@ -16,7 +16,7 @@ public final class FabricClientSmoke {
     var image=new java.awt.image.BufferedImage(64,64,java.awt.image.BufferedImage.TYPE_INT_ARGB);image.setRGB(0,0,0x80cc2233);
     var id=new net.minecraft.resources.ResourceLocation("stationsticker","smoke_texture");client.getTextureManager().register(id,new net.minecraft.client.renderer.texture.DynamicTexture(NetworkMapImages.create(image)));client.getTextureManager().release(id);image.flush();
     com.tr1nity.stationsticker.StationStickerMod.LOGGER.info("FABRIC CLIENT SMOKE PASS: 8 renderers, Minecraft fonts, native texture upload");
-   }catch(Exception error){throw new RuntimeException("Fabric client smoke failed",error);}finally{client.stop();}
+   }catch(Exception error){throw new RuntimeException("Fabric client smoke failed",error);}finally{if(Boolean.getBoolean("stationsticker.hotSwapVerification"))try{Thread.sleep(45000);}catch(InterruptedException e){Thread.currentThread().interrupt();}client.stop();}
   });
  }
 }

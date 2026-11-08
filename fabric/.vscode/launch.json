@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Fabric 1.19.2 attach (manual debugger only)",
+      "request": "attach",
+      "hostName": "127.0.0.1",
+      "port": 5008,
+      "projectName": "StationStickerMTR-Fabric"
+    }
+  ]
+}
