@@ -25,7 +25,7 @@ public final class VerticalLineImageRegression {
         if(!left||!right)throw new AssertionError("Ring arc missing on a side");
         int transferY=(int)Math.round(190+(1344-65-60-75-190)/11.0);
         int dashes=0;
-        for(int y0=transferY-2;y0<=transferY+2;y0++)for(int x0=134;x0<149;x0++){
+        for(int y0=transferY-2;y0<=transferY+2;y0++)for(int x0=230;x0<245;x0++){
             int pixel=image.getRGB(x0,y0)&0xFFFFFF;
             int r=(pixel>>16)&255,g0=(pixel>>8)&255,b=pixel&255;
             if(Math.abs(r-g0)<3 && Math.abs(g0-b)<3 && r<210)dashes++;
@@ -35,12 +35,13 @@ public final class VerticalLineImageRegression {
         // Initial current station is a ring, never a terminus bar across its centre.
         var firstData=new VerticalLineData(data.color(),data.number(),data.heading(),List.of(new VerticalLineData.Stop("Начало","",true,false,List.of()), new VerticalLineData.Stop("Конец","",false,false,List.of())),List.of());
         var firstImage=VerticalLinePainter.paint(firstData,font);
-        if((firstImage.getRGB(160,190)&0xFFFFFF)!=0xFAF8F1)throw new AssertionError("Initial station circle crossed by terminus bar");firstImage.flush();
+        if((firstImage.getRGB(256,210)&0xFFFFFF)!=firstData.color())throw new AssertionError("Main line axis must be at panel centre");
+        if((firstImage.getRGB(256,190)&0xFFFFFF)!=0xFAF8F1)throw new AssertionError("Initial station circle crossed by terminus bar");firstImage.flush();
         var ringRows=VerticalLineData.ringStops(stops,3);
         if(!ringRows.get(0).current() || ringRows.stream().anyMatch(VerticalLineData.Stop::passed) || ringRows.size()!=stops.size()) throw new AssertionError("Ring must begin at current stop without passed stations");
         var circular=new VerticalLineData(main.color(),"7","Таганская",ringRows,List.of(main,ring),"По часовой стрелке",true,1);
         var ringImage=VerticalLinePainter.paint(circular,font);
-        if ((ringImage.getRGB(160, 1344-65-30-75)&0xFFFFFF)!=0xFAF8F1) throw new AssertionError("Ring end has a terminus bar through its circle");
+        if ((ringImage.getRGB(256, 1344-65-30-75)&0xFFFFFF)!=0xFAF8F1) throw new AssertionError("Ring end has a terminus bar through its circle");
         font.size(12);
         int arrowX=96+Math.min(512-96-38,font.width(circular.direction()))+13;
         int arrowInk=0;
