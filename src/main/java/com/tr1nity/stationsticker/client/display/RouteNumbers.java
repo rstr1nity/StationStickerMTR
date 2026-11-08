@@ -24,6 +24,25 @@ public final class RouteNumbers {
     // Живут до выхода из игры; если номер в MTR поменяли, новый придёт из тех же источников
     private static final Map<Long, String> KNOWN = new HashMap<>();
 
+    public record Badge(int color, String number) {}
+
+    // A shared destination must preserve all service numbers, including unknown ones.
+    public static List<Badge> forRoutes(List<SimplifiedRoute> routes) {
+        return badges(routes, routes.size()==1 ? RouteNumbers::forRoute : RouteNumbers::forOwnRoute);
+    }
+
+    public static List<Badge> badges(List<SimplifiedRoute> routes, java.util.function.Function<SimplifiedRoute,String> numbers) {
+        var result=new java.util.LinkedHashSet<Badge>();
+        for(var route:routes)result.add(new Badge(route.getColor(), numbers.apply(route).strip()));
+        return List.copyOf(result);
+    }
+
+    private static String forOwnRoute(SimplifiedRoute route) {
+        String number=find(route);
+        if(!number.isEmpty())KNOWN.put(route.getId(),number);
+        return number.isEmpty()?KNOWN.getOrDefault(route.getId(),""):number;
+    }
+
     public static String forRoute(SimplifiedRoute route) {
         String number = find(route);
         if (!number.isEmpty()) {
