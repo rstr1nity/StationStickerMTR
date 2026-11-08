@@ -16,6 +16,11 @@ public final class NavigationConsistencyRegression {
         var reverse=route(3,new long[]{22,21},new long[]{2,1});var end=route(4,new long[]{25,11},new long[]{5,1});var routes=List.of(a,b,reverse,end);
         if(NavigationRoutes.atPlatform(routes,11).size()!=3||NavigationRoutes.destinations(routes,11).size()!=1||NavigationRoutes.destinations(routes,11).values().iterator().next().size()!=2)throw new AssertionError("Same-platform services, arrival-only routes or shared terminal grouping disagree");
         if(NavigationRoutes.stationPassed(routes,11,2)||NavigationRoutes.stationPassed(routes,11,3)||!NavigationRoutes.stationPassed(routes,12,1)||!NavigationRoutes.stationPassed(routes,12,3))throw new AssertionError("Passed/reachable state must use the same platform across all boards");
+        var badges=com.tr1nity.stationsticker.client.display.RouteNumbers.badges(List.of(a,b,a),r->r.getId()==1?"1":"12");
+        if(badges.size()!=2 || !badges.get(0).number().equals("1") || !badges.get(1).number().equals("12"))throw new AssertionError("Shared destination must show both route numbers once");
+        var same=com.tr1nity.stationsticker.client.display.RouteNumbers.badges(List.of(a,b),r->"1");
+        var unknown=com.tr1nity.stationsticker.client.display.RouteNumbers.badges(List.of(a,b),r->r.getId()==1?"1":"");
+        if(same.size()!=1 || unknown.size()!=2 || !unknown.get(1).number().isEmpty())throw new AssertionError("Repeated numbers must deduplicate; unknown service must not borrow another branch number");
         var other=route(5,new long[]{11,15},new long[]{1,5});var multiple=new ArrayList<>(routes);multiple.add(other);
         if(NavigationRoutes.destinations(multiple,11).size()!=2)throw new AssertionError("Distinct destinations must remain distinct");
         var data=new ClientData();var station=new Station(data);station.setCorners(new Position(-10,-10,-10),new Position(10,10,10));data.stations.add(station);

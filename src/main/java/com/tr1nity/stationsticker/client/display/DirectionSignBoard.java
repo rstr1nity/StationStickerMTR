@@ -160,7 +160,8 @@ public final class DirectionSignBoard {
         String terminal = stops.get(stops.size() - 1).getStationName();
         String circularTitle = CircularDirections.title(side.route.getCircularState());
         if (!circularTitle.isEmpty()) terminal = circularTitle;
-        String number = RouteNumbers.forRoute(side.route);
+        var badges=RouteNumbers.forRoutes(variants.stream().map(variant->variant.route).toList());
+        float naturalBadgesWidth=badges.size()*LINE_RADIUS*2+Math.max(0,badges.size()-1)*GAP;
         float centerY = NAME_SCALE * 7 / 2 + 1;
 
         String[] arrow = rightSide ? Pictograms.mirror(Pictograms.ARROW_LEFT) : Pictograms.ARROW_LEFT;
@@ -176,7 +177,7 @@ public final class DirectionSignBoard {
             columns=Math.min(columns,Math.max(1,(next.size()+LIST_ROWS-1)/LIST_ROWS));
             capacity=columns*LIST_ROWS;
             float available=Math.max(1,x1-x0-2*GAP);
-            float headingWidth=arrowWidth+2*GAP+2*LINE_RADIUS+Math.max(canvas.textWidth(StationNames.primary(terminal),NAME_SCALE),canvas.textWidth(StationNames.secondary(terminal),SECONDARY_SCALE));
+            float headingWidth=arrowWidth+2*GAP+naturalBadgesWidth+Math.max(canvas.textWidth(StationNames.primary(terminal),NAME_SCALE),canvas.textWidth(StationNames.secondary(terminal),SECONDARY_SCALE));
             float listColumnWidth=0;
             for(var stop:next.values()){
                 var colors=new java.util.HashSet<Integer>();stop.forEach((color,names)->{if(color!=side.route.getColor())colors.add(color);});
@@ -189,10 +190,14 @@ public final class DirectionSignBoard {
         float arrowX = rightSide ? x1 - arrowWidth : x0;
         Pictograms.draw(canvas, arrow, arrowX, centerY - arrow.length * ARROW_SCALE / 2, ARROW_SCALE, TEXT_COLOR, false);
 
-        float circleX = rightSide ? arrowX - GAP - LINE_RADIUS : arrowX + arrowWidth + GAP + LINE_RADIUS;
-        numberCircle(canvas, circleX, centerY, LINE_RADIUS, side.route.getColor(), number);
-
-        float textEdge = rightSide ? circleX - LINE_RADIUS - GAP : circleX + LINE_RADIUS + GAP;
+        float badgeScale=Math.min(1,Math.max(1,(x1-x0-arrowWidth-3*GAP)*.5f)/naturalBadgesWidth);
+        float radius=LINE_RADIUS*badgeScale, badgeGap=GAP*badgeScale, badgesWidth=naturalBadgesWidth*badgeScale;
+        float circleX=rightSide?arrowX-GAP-radius:arrowX+arrowWidth+GAP+radius;
+        for(var badge:badges){
+            numberCircle(canvas,circleX,centerY,radius,badge.color(),badge.number());
+            circleX+=(rightSide?-1:1)*(2*radius+badgeGap);
+        }
+        float textEdge=rightSide?arrowX-GAP-badgesWidth-GAP:arrowX+arrowWidth+GAP+badgesWidth+GAP;
         float maxWidth = rightSide ? textEdge - x0 : x1 - textEdge;
         if (rightSide) {
             canvas.textRight(StationNames.primary(terminal), textEdge, 0, NAME_SCALE, TEXT_COLOR, maxWidth);
