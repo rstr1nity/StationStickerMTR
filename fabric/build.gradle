@@ -53,3 +53,21 @@ loom { runs { client { runDir('run-client') }; server { runDir('run-server') } }
 loom.runs.server { vmArg "-Dstationsticker.smoke=${project.findProperty('smoke') ?: 'false'}" }
 
 loom.runs.client { vmArg "-Dstationsticker.smokeClient=${project.findProperty('smokeClient') ?: 'false'}" }
+
+// Isolated Fabric debugger, never conflicts with the Forge client ports.
+loom.runs.client {
+ if(project.hasProperty('hotSwapClient') && project.findProperty('smokeClient')=='true') vmArg '-Dstationsticker.hotSwapVerification=true'
+ if(project.hasProperty('hotSwapClient')) vmArg '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=127.0.0.1:5007'
+}
+tasks.register('exportHotSwap') {
+ dependsOn classes
+ doLast {
+  def config=new Properties()
+  config.setProperty('classpath',sourceSets.main.compileClasspath.asPath)
+  config.setProperty('minecraft',mc)
+  config.setProperty('port','5007')
+  file('build/hotswap.properties').withOutputStream { config.store(it,'Fabric hot swap') }
+  def javaExe=javaToolchains.launcherFor { languageVersion=JavaLanguageVersion.of(17) }.get().executablePath.asFile.absolutePath
+  file('build/hotswap-launch.json').text=groovy.json.JsonOutput.toJson([java:javaExe])
+ }
+}
