@@ -43,26 +43,34 @@ public final class VerticalLinePainter {
         int fontSize = step < 32 ? 8 : step < 50 ? 12 : 16;
         var tree=VerticalLineBranches.layout(data.stops(),data.branches());
         if(!data.branches().isEmpty() && !tree.points().isEmpty()) {
+            double centerOffset=WIDTH/2.0-190;
             double treeStep=(end-start)/Math.max(1,tree.depth());
             font.density(treeStep<20?2:1);
             var points=new HashMap<Long,VerticalLineBranches.Point>();tree.points().forEach(p->points.put(p.stop().stationId(),p));
             for(var point:tree.points())for(long child:tree.children().get(point.stop().stationId())){
                 var target=points.get(child);double y0=start+point.depth()*treeStep,y1=start+target.depth()*treeStep;
                 g.setColor(new Color(point.stop().passed() || target.stop().passed()?0xBABDBB:data.color()));g.setStroke(new BasicStroke(7,BasicStroke.CAP_BUTT,BasicStroke.JOIN_ROUND));
-                g.draw(branchPath(point.x(),y0,target.x(),y1));
+                g.draw(branchPath(point.x()+centerOffset,y0,target.x()+centerOffset,y1));
             }
-            for(var point:tree.points())drawStop(g,font,icons,data,point.stop(),(int)point.x(),start+point.depth()*treeStep,treeStep,
-                    tree.leaves()>1?Math.min(WIDTH-12,(int)point.x()+170):WIDTH,treeStep<32?8:12,point.first(),point.last());
+            for(var point:tree.points())drawStop(g,font,icons,data,point.stop(),(int)(point.x()+centerOffset),start+point.depth()*treeStep,treeStep,
+                    tree.leaves()>1?Math.min(WIDTH-12,(int)(point.x()+centerOffset)+170):WIDTH,treeStep<32?8:12,point.first(),point.last());
         } else for(int i=0;i<data.stops().size();i++) {
-            var stop=data.stops().get(i);double y=start+i*step;int x=160;
+            var stop=data.stops().get(i);double y=start+i*step;int x=WIDTH/2;
             if(i+1<data.stops().size()){g.setColor(new Color(stop.passed()?0xBABDBB:data.color()));g.setStroke(new BasicStroke(7,BasicStroke.CAP_BUTT,BasicStroke.JOIN_ROUND));g.draw(new Line2D.Double(x,y,x,y+step));}
             drawStop(g,font,icons,data,stop,x,y,step,WIDTH,fontSize,i==0,i==data.stops().size()-1);
 
         }
         font.density(1);
         g.setStroke(new BasicStroke(1));g.setColor(new Color(0xAAAAAA));g.draw(new Line2D.Double(32,legendTop-20,WIDTH-32,legendTop-20));
+        int legendColumns=Math.min(2,data.legend().size());
+        double[] columnWidths=new double[legendColumns];font.size(8);
+        for(int i=0;i<data.legend().size();i++)columnWidths[i%legendColumns]=Math.max(columnWidths[i%legendColumns],24+Math.min(200,font.width(data.legend().get(i).name())));
+        double legendWidth=java.util.Arrays.stream(columnWidths).sum()+Math.max(0,legendColumns-1)*24;
+        double legendLeft=(WIDTH-legendWidth)/2;
         for(int i=0;i<data.legend().size();i++) {
-            var line=data.legend().get(i); double x0=34+(i%2)*235, y=legendTop+(i/2)*30;
+            int column=i%legendColumns;double x0=legendLeft+9;
+            for(int c=0;c<column;c++)x0+=columnWidths[c]+24;
+            var line=data.legend().get(i);double y=legendTop+(i/legendColumns)*30;
             badge(g,font,line.color(),line.number(),x0,y,9);
             fitted(g,font,line.name(),x0+15,y+3,8,200,INK);
         }
