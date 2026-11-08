@@ -44,3 +44,7 @@ Java 17. Версии зависимостей заданы в корневом 
 Логи: `fabric/build/hotswap-watcher.log` и `hotswap-watcher-errors.log`. В VS Code можно открыть Fabric-*.code-workspace и запустить задачу «Fabric: automatic hot swap». Ручное подключение Java-debugger предусмотрено отдельно: запустить `./gradlew runClient -PhotSwapClient=true` без watcher и использовать профиль attach. Один порт не обслуживает одновременно автоматический watcher и отдельный Java-debugger.
 
 Служебная проверка запуска/watcher: `powershell -File fabric/tools/Start-HotSwap.ps1 -Verify`. Только при этой проверке клиент сам завершается после теста; обычный запуск остаётся открытым.
+
+## Экспериментальные диапазоны Minecraft
+
+Fabric metadata теперь использует тот же диапазон Minecraft, что Forge соответствующей ветки: >=1.20.1 <1.21 или >=1.19.2 <1.20. Проверенными сборками остаются 1.20.1 и 1.19.2. Для экспериментальной проверки исходного jar 1.20.1 на 1.20.4 есть отдельный клиент fabric/compat-1.20.4 в ветке 1.20.1; прочие версии не объявлять поддерживаемыми без проверки.

@@ -28,6 +28,7 @@ public class HotSwap {
  }
  static void resources() throws Exception {
   var values=new Properties();try(var in=Files.newBufferedReader(fabric.resolve("../gradle.properties"))){values.load(in);}
+  String range=values.getProperty("minecraft_version_range");String[] bounds=range.substring(1,range.length()-1).split(",");values.setProperty("minecraft_version_range",">="+bounds[0]+" <"+bounds[1]);
   values.setProperty("version",values.getProperty("mod_version")+"+"+values.getProperty("minecraft_version"));
   for(Path dir:List.of(fabric.resolve("../src/main/resources").normalize(),fabric.resolve("src/main/resources")))try(var walk=Files.walk(dir)){for(Path p:walk.filter(Files::isRegularFile).toList()){
    String relative=dir.relativize(p).toString().replace('\\','/');if(relative.equals("META-INF/mods.toml"))continue;

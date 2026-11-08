@@ -3,6 +3,8 @@ def shared = new Properties()
 file('../gradle.properties').withInputStream { shared.load(it) }
 def mc=shared.minecraft_version
 def old=mc=='1.19.2'
+def rangeBounds=shared.minecraft_version_range.substring(1,shared.minecraft_version_range.length()-1).split(',')
+def fabricMinecraftRange=">=${rangeBounds[0]} <${rangeBounds[1]}"
 version=shared.mod_version+'+'+mc
 group=shared.mod_group_id
 base { archivesName='StationStickerMTR-Fabric' }
@@ -45,7 +47,8 @@ compileJava.dependsOn prepareSharedSources
 tasks.withType(JavaCompile).configureEach { options.encoding='UTF-8' }
 processResources {
  inputs.property 'version',project.version
- filesMatching('fabric.mod.json') { expand(version:project.version,minecraft_version:mc,fabric_loader_version:shared.fabric_loader_version,fabric_mtr_version:shared.fabric_mtr_version) }
+ inputs.property 'minecraft_version_range',fabricMinecraftRange
+ filesMatching('fabric.mod.json') { expand(version:project.version,minecraft_version:mc,minecraft_version_range:fabricMinecraftRange,fabric_loader_version:shared.fabric_loader_version,fabric_mtr_version:shared.fabric_mtr_version) }
  filesMatching('data/stationsticker/recipes/*.json') { filter { line -> line.replace('forge:', 'stationsticker:') } }
  filesMatching('pack.mcmeta') { expand(mod_id:shared.mod_id,mod_version:shared.mod_version) }
 }
